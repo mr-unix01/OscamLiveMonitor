@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -91,38 +94,39 @@ fun Greeting(
         )
     }
 
-    var stato by remember { mutableStateOf("") }
-    var ultimoAggiornamento by remember { mutableStateOf("") }
-    var erroriRefreshConsecutivi by remember { mutableStateOf(0) }
+    var stato by rememberSaveable { mutableStateOf("") }
+    var ultimoAggiornamento by rememberSaveable { mutableStateOf("") }
+    var erroriRefreshConsecutivi by rememberSaveable { mutableStateOf(0) }
 
-    var versioneOscam by remember { mutableStateOf("") }
-    var uptime by remember { mutableStateOf("") }
-    var cpuOscam by remember { mutableStateOf("") }
-    var ramOscam by remember { mutableStateOf("") }
+    var versioneOscam by rememberSaveable { mutableStateOf("") }
+    var uptime by rememberSaveable { mutableStateOf("") }
+    var cpuOscam by rememberSaveable { mutableStateOf("") }
+    var ramOscam by rememberSaveable { mutableStateOf("") }
 
-    var servers by remember { mutableStateOf("") }
-    var readers by remember { mutableStateOf("") }
-    var proxies by remember { mutableStateOf("") }
-    var clients by remember { mutableStateOf("") }
+    var servers by rememberSaveable { mutableStateOf("") }
+    var readers by rememberSaveable { mutableStateOf("") }
+    var proxies by rememberSaveable { mutableStateOf("") }
+    var clients by rememberSaveable { mutableStateOf("") }
 
-    var elencoServers by remember {
+    var elencoServers by rememberSaveable {
         mutableStateOf(emptyList<String>())
     }
 
-    var elencoReaders by remember {
+    var elencoReaders by rememberSaveable {
         mutableStateOf(emptyList<String>())
     }
 
-    var elencoProxies by remember {
+    var elencoProxies by rememberSaveable {
         mutableStateOf(emptyList<String>())
     }
 
-    var elencoClients by remember {
+    var elencoClients by rememberSaveable {
         mutableStateOf(emptyList<String>())
     }
 
-    var mostraConnessione by remember { mutableStateOf(true) }
-    var mostraWebIf by remember { mutableStateOf(false) }
+    var mostraConnessione by rememberSaveable { mutableStateOf(true) }
+    var mostraWebIf by rememberSaveable { mutableStateOf(false) }
+    var mostraLiveLog by rememberSaveable { mutableStateOf(false) }
 
     var serverSalvati by remember {
         mutableStateOf(caricaServerSalvati(preferences))
@@ -325,6 +329,8 @@ fun Greeting(
     LaunchedEffect(
         mostraConnessione,
         mostraWebIf,
+        mostraLiveLog,
+        riavvioInCorso,
         host,
         porta,
         username,
@@ -332,11 +338,13 @@ fun Greeting(
     ) {
         if (
             !mostraConnessione &&
-            !mostraWebIf
+            !mostraWebIf &&
+            !mostraLiveLog &&
+            !riavvioInCorso
         ) {
             while (true) {
-                kotlinx.coroutines.delay(5000)
-
+                // Primo refresh immediato: quando si chiude WebIF/Live Log
+                // la dashboard non aspetta più 5 secondi prima di aggiornarsi.
                 val aggiornato =
                     aggiornaDashboardDaOscam(
                         mostraErroreSubito = false
@@ -351,6 +359,8 @@ fun Greeting(
                         stato = "Connessione persa"
                     }
                 }
+
+                kotlinx.coroutines.delay(5000)
             }
         }
     }
@@ -425,17 +435,30 @@ fun Greeting(
                                 return@launch
                             }
 
+                            // OSCam ha ricevuto il comando: ora può restare offline
+                            // per alcuni secondi mentre il WebIF viene riavviato.
+                            // Manteniamo gli ultimi dati della dashboard e non mostriamo
+                            // gli errori transitori dei singoli tentativi.
+                            stato = "Riconnessione OSCam..."
                             kotlinx.coroutines.delay(3000)
 
                             var riconnesso = false
 
                             for (tentativo in 1..10) {
-                                if (aggiornaDashboardDaOscam()) {
+                                val aggiornato =
+                                    aggiornaDashboardDaOscam(
+                                        mostraErroreSubito = false
+                                    )
+
+                                if (aggiornato) {
                                     riconnesso = true
                                     break
                                 }
 
-                                kotlinx.coroutines.delay(2000)
+                                if (tentativo < 10) {
+                                    stato = "Riconnessione OSCam... ($tentativo/10)"
+                                    kotlinx.coroutines.delay(2000)
+                                }
                             }
 
                             riavvioInCorso = false
@@ -445,7 +468,7 @@ fun Greeting(
                                 stato = "Connesso"
                             } else {
                                 stato =
-                                    "OSCam non ancora raggiungibile dopo il riavvio"
+                                    "ERRORE: OSCam non raggiungibile dopo il riavvio"
                             }
                         }
                     }
@@ -995,20 +1018,14 @@ fun Greeting(
         )
     }
 
-    if (mostraWebIf) {
-        WebIfScreen(
-            host = host,
-            porta = porta,
-            username = username,
-            password = password,
-            onClose = {
-                mostraWebIf = false
-            },
-            modifier = modifier
-        )
-    } else {
+    // La dashboard resta sempre composta anche mentre WebIF o Live Log sono aperti.
+    // In questo modo, alla chiusura torna immediatamente completa con gli ultimi dati.
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
         Column(
-            modifier = modifier
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .imePadding()
                 .padding(
@@ -1016,17 +1033,8 @@ fun Greeting(
                     vertical = 16.dp
                 )
         ) {
-            Text(
-                text = "OSCam Pulse",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4CAF50)
-            )
-
-            Text(
-                text = "Real-time OSCam Dashboard",
-                fontSize = 15.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            ExpressiveAppHeader(
+                compatto = schermoCompatto
             )
 
             Spacer(
@@ -1101,10 +1109,14 @@ fun Greeting(
                                     if (temaScuro) {
                                         Color(0xFF153A22)
                                     } else {
-                                        Color(0xFFE3F4E7)
+                                        Color.White
                                     }
                                 } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
+                                    if (temaScuro) {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    } else {
+                                        Color.White
+                                    }
                                 }
                             ),
                             onClick = {
@@ -1146,7 +1158,7 @@ fun Greeting(
                                                 Color(0xFF16351F)
                                             }
                                         } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                            if (temaScuro) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                                         }
                                     )
 
@@ -1162,18 +1174,32 @@ fun Greeting(
                                                 Color(0xFF365D40)
                                             }
                                         } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                            if (temaScuro) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant
                                         }
                                     )
                                 }
 
                                 if (serverSelezionato) {
-                                    Text(
-                                        text = "● Attivo",
-                                        color = Color(0xFF66BB6A),
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = if (schermoCompatto) 11.sp else 12.sp
-                                    )
+                                    androidx.compose.material3.Surface(
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                                        color = if (temaScuro) {
+                                            Color(0xFF66BB6A).copy(alpha = 0.15f)
+                                        } else {
+                                            Color.White
+                                        },
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            if (temaScuro) 1.dp else 1.1.dp,
+                                            Color(0xFF4CAF50).copy(alpha = if (temaScuro) 0.45f else 0.60f)
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "● Attivo",
+                                            color = if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = if (schermoCompatto) 11.sp else 12.sp,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                        )
+                                    }
                                 }
 
                                 TextButton(
@@ -1357,58 +1383,22 @@ fun Greeting(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(if (schermoCompatto) 46.dp else 50.dp),
-                    enabled = !riavvioInCorso,
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(
-                            14.dp
-                        ),
-                    border =
-                        androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            Color(0xFFFF7043)
-                        ),
-                    colors =
-                        androidx.compose.material3.ButtonDefaults
-                            .outlinedButtonColors(
-                                contentColor = Color(0xFFFF7043)
-                            ),
-                    onClick = {
-                        if (host.isBlank() || porta.isBlank()) {
-                            stato =
-                                "Inserisci prima Host/IP e Porta"
-                        } else {
-                            mostraConfermaRiavvio = true
-                        }
-                    }
-                ) {
-                    Text(
-                        if (riavvioInCorso) {
-                            "↻ Riavvio..."
-                        } else {
-                            "↻ Riavvia OSCam"
-                        }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
+            if (mostraConnessione && stato.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
             }
 
             if (stato.isNotBlank()) {
                 val coloreStato = when {
                     stato.equals("Connesso", ignoreCase = true) ->
-                        Color(0xFF66BB6A)
+                        if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32)
 
                     stato.contains("selezionato", ignoreCase = true) ->
-                        Color(0xFF66BB6A)
+                        if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32)
 
                     stato.contains("Connessione", ignoreCase = true) ->
-                        Color(0xFFFFB74D)
+                        if (temaScuro) Color(0xFFFFB74D) else Color(0xFFD96B00)
 
                     stato.startsWith("ERRORE:", ignoreCase = true) ->
                         Color(0xFFEF5350)
@@ -1420,31 +1410,14 @@ fun Greeting(
                         MaterialTheme.colorScheme.primary
                 }
 
-                androidx.compose.material3.Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
-                    color = coloreStato.copy(alpha = 0.14f),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        coloreStato.copy(alpha = 0.55f)
-                    )
-                ) {
-                    Text(
-                        text = "●  $stato",
-                        color = coloreStato,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(
-                            horizontal = 12.dp,
-                            vertical = 7.dp
-                        )
-                    )
-                }
-            }
-
-            if (!mostraConnessione) {
                 val serverAttivoDashboard =
-                    serverSalvati.firstOrNull { server ->
-                        server.host.trim() == host.trim() &&
-                                server.porta.trim() == porta.trim()
+                    if (!mostraConnessione) {
+                        serverSalvati.firstOrNull { server ->
+                            server.host.trim() == host.trim() &&
+                                    server.porta.trim() == porta.trim()
+                        }
+                    } else {
+                        null
                     }
 
                 val nomeServerDashboard =
@@ -1453,36 +1426,112 @@ fun Greeting(
                             ?.takeIf { it.isNotBlank() }
                         ?: host.trim()
 
-                if (host.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.Surface(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                        color = if (temaScuro) {
+                            coloreStato.copy(alpha = 0.16f)
+                        } else {
+                            Color.White
+                        },
+                        border = androidx.compose.foundation.BorderStroke(
+                            if (temaScuro) 1.dp else 1.3.dp,
+                            coloreStato.copy(alpha = if (temaScuro) 0.70f else 0.90f)
+                        ),
+                        shadowElevation = if (temaScuro) 2.dp else 1.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(
+                                horizontal = 15.dp,
+                                vertical = 9.dp
+                            ),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .size(if (schermoCompatto) 10.dp else 11.dp)
+                                    .background(
+                                        color = coloreStato,
+                                        shape = androidx.compose.foundation.shape.CircleShape
+                                    )
+                            )
 
-                    Text(
-                        text = nomeServerDashboard,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
+                            Spacer(modifier = Modifier.width(10.dp))
 
-                    if (porta.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "${host.trim()}:${porta.trim()}",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                            Text(
+                                text = stato,
+                                color = coloreStato,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = if (schermoCompatto) 14.sp else 15.sp
+                            )
+                        }
+                    }
+
+                    if (
+                        !mostraConnessione &&
+                        stato.equals("Connesso", ignoreCase = true) &&
+                        host.isNotBlank()
+                    ) {
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            color = if (temaScuro) {
+                                coloreStato.copy(alpha = 0.10f)
+                            } else {
+                                Color.White
+                            },
+                            border = androidx.compose.foundation.BorderStroke(
+                                if (temaScuro) 1.dp else 1.2.dp,
+                                coloreStato.copy(alpha = if (temaScuro) 0.42f else 0.58f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(
+                                    horizontal = 11.dp,
+                                    vertical = 7.dp
+                                ),
+                                horizontalAlignment = androidx.compose.ui.Alignment.End
+                            ) {
+                                Text(
+                                    text = nomeServerDashboard,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = coloreStato,
+                                    maxLines = 1
+                                )
+
+                                if (porta.isNotBlank()) {
+                                    Text(
+                                        text = "${host.trim()}:${porta.trim()}",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
+            }
 
+            if (!mostraConnessione) {
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Button(
+                OutlinedButton(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outline
+                    ),
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     ),
                     onClick = {
                         mostraConnessione = true
@@ -1531,6 +1580,33 @@ fun Greeting(
                 ) {
                     Text("🌐  Apri WebIF")
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.primary
+                    ),
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    onClick = {
+                        mostraLiveLog = true
+                    }
+                ) {
+                    Text(
+                        text = ">_",
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Live Log")
+                }
             }
 
             if (versioneOscam.isNotBlank()) {
@@ -1555,6 +1631,41 @@ fun Greeting(
             if (ramOscam.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = "RAM OSCam: $ramOscam")
+            }
+
+            if (!mostraConnessione) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(if (schermoCompatto) 42.dp else 46.dp),
+                    enabled = !riavvioInCorso,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        Color(0xFFFF7043)
+                    ),
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFF7043)
+                    ),
+                    onClick = {
+                        if (host.isBlank() || porta.isBlank()) {
+                            stato = "Inserisci prima Host/IP e Porta"
+                        } else {
+                            mostraConfermaRiavvio = true
+                        }
+                    }
+                ) {
+                    Text(
+                        if (riavvioInCorso) {
+                            "↻ Riavvio..."
+                        } else {
+                            "↻ Riavvia OSCam"
+                        },
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
 
             if (mostraConnessione) {
@@ -1784,6 +1895,40 @@ fun Greeting(
                 }
             }
         }
+
+        if (mostraWebIf) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                WebIfScreen(
+                    host = host,
+                    porta = porta,
+                    username = username,
+                    password = password,
+                    onClose = {
+                        mostraWebIf = false
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        } else if (mostraLiveLog) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                LiveLogScreen(
+                    host = host,
+                    porta = porta,
+                    username = username,
+                    password = password,
+                    onClose = {
+                        mostraLiveLog = false
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
     }
 }
 
@@ -1853,13 +1998,18 @@ fun BadgeStatoDashboard(
     compatto: Boolean
 ) {
     val colore = coloreStatoDashboard(stato)
+    val temaScuroBadge = androidx.compose.foundation.isSystemInDarkTheme()
 
     androidx.compose.material3.Surface(
         shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
-        color = colore.copy(alpha = 0.13f),
+        color = if (temaScuroBadge) {
+            colore.copy(alpha = 0.13f)
+        } else {
+            Color.White
+        },
         border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            colore.copy(alpha = 0.38f)
+            if (temaScuroBadge) 1.dp else 1.1.dp,
+            colore.copy(alpha = if (temaScuroBadge) 0.38f else 0.48f)
         )
     ) {
         Text(
@@ -1882,27 +2032,28 @@ fun VoceStatoCard(
     coloreAccento: Color,
     compatto: Boolean
 ) {
-    val nome = testo
-        .substringBeforeLast("—", testo)
-        .trim()
+    val temaScuroVoce = androidx.compose.foundation.isSystemInDarkTheme()
 
-    val stato = testo
-        .substringAfterLast("—", "")
-        .trim()
+    val nome = testo.substringBeforeLast("—", testo).trim()
+    val stato = testo.substringAfterLast("—", "").trim()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            if (compatto) 14.dp else 16.dp
+            if (compatto) 20.dp else 24.dp
         ),
         border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            coloreAccento.copy(alpha = 0.22f)
+            if (temaScuroVoce) 1.dp else 1.1.dp,
+            coloreAccento.copy(alpha = if (temaScuroVoce) 0.22f else 0.34f)
         ),
         colors = CardDefaults.cardColors(
-            containerColor =
+            containerColor = if (temaScuroVoce) {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
-        )
+            } else {
+                Color.White
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroVoce) 1.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -1914,8 +2065,8 @@ fun VoceStatoCard(
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             androidx.compose.material3.Surface(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                color = coloreAccento.copy(alpha = 0.14f)
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                color = coloreAccento.copy(alpha = if (temaScuroVoce) 0.14f else 0.10f)
             ) {
                 Icon(
                     imageVector = icona,
@@ -2072,18 +2223,24 @@ fun ClientInfoCard(
         ?.substringAfter(" ")
         ?.trim()
 
+    val temaScuroClient = androidx.compose.foundation.isSystemInDarkTheme()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
             if (compatto) 16.dp else 18.dp
         ),
         border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            Color(0xFFFFA726).copy(alpha = 0.30f)
+            if (temaScuroClient) 1.dp else 1.1.dp,
+            Color(0xFFFFA726).copy(alpha = if (temaScuroClient) 0.30f else 0.36f)
         ),
         colors = CardDefaults.cardColors(
             containerColor =
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.60f)
+                if (temaScuroClient) {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.60f)
+                } else {
+                    Color.White
+                }
         )
     ) {
         Column(
@@ -2098,7 +2255,7 @@ fun ClientInfoCard(
             ) {
                 androidx.compose.material3.Surface(
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                    color = Color(0xFFFFA726).copy(alpha = 0.15f)
+                    color = Color(0xFFFFA726).copy(alpha = if (temaScuroClient) 0.15f else 0.10f)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Devices,
@@ -2198,6 +2355,275 @@ fun ClientInfoCard(
                     etichetta = "Reader",
                     valore = reader,
                     compatto = compatto
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun LiveLogScreen(
+    host: String,
+    porta: String,
+    username: String,
+    password: String,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.activity.compose.BackHandler {
+        onClose()
+    }
+
+    val api = remember { OscamApi() }
+    var righeLog by remember(host, porta, username, password) {
+        mutableStateOf(emptyList<String>())
+    }
+    var ultimoId by remember(host, porta, username, password) {
+        mutableStateOf("start")
+    }
+    var inPausa by remember { mutableStateOf(false) }
+    var erroreLiveLog by remember { mutableStateOf("") }
+    var erroriLiveLogConsecutivi by remember { mutableStateOf(0) }
+    var riconnessioneLiveLog by remember { mutableStateOf(false) }
+    var primaRichiestaCompletata by remember { mutableStateOf(false) }
+
+    val scrollVerticale = rememberScrollState()
+    val scrollOrizzontale = rememberScrollState()
+
+    LaunchedEffect(
+        host,
+        porta,
+        username,
+        password,
+        inPausa
+    ) {
+        if (!inPausa) {
+            while (true) {
+                val risposta = withContext(Dispatchers.IO) {
+                    api.scaricaLiveLog(
+                        host = host,
+                        porta = porta,
+                        username = username,
+                        password = password,
+                        lastId = ultimoId
+                    )
+                }
+
+                primaRichiestaCompletata = true
+
+                if (risposta.startsWith("ERRORE:")) {
+                    erroriLiveLogConsecutivi += 1
+
+                    if (erroriLiveLogConsecutivi >= 3) {
+                        riconnessioneLiveLog = false
+                        erroreLiveLog = risposta
+                    } else {
+                        // Un singolo errore di rete può capitare quando Android
+                        // riprende l'app dal background. Non lampeggiamo subito
+                        // in rosso: tentiamo automaticamente la riconnessione.
+                        riconnessioneLiveLog = true
+                        erroreLiveLog = ""
+                    }
+                } else {
+                    val risultato = api.estraiLiveLog(risposta)
+
+                    if (!risultato.valido) {
+                        erroriLiveLogConsecutivi = 3
+                        riconnessioneLiveLog = false
+                        erroreLiveLog =
+                            "Live Log non disponibile su questo server"
+                    } else {
+                        erroriLiveLogConsecutivi = 0
+                        riconnessioneLiveLog = false
+                        erroreLiveLog = ""
+
+                        if (risultato.ultimoId.isNotBlank()) {
+                            ultimoId = risultato.ultimoId
+                        }
+
+                        if (risultato.righe.isNotEmpty()) {
+                            righeLog =
+                                (righeLog + risultato.righe)
+                                    .takeLast(300)
+                        }
+                    }
+                }
+
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+    }
+
+    LaunchedEffect(righeLog.size, inPausa) {
+        if (!inPausa && righeLog.isNotEmpty()) {
+            kotlinx.coroutines.delay(40)
+            scrollVerticale.scrollTo(
+                scrollVerticale.maxValue
+            )
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        androidx.compose.material3.Surface(
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+            tonalElevation = 3.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                FilledTonalButton(
+                    onClick = onClose,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    contentPadding = PaddingValues(
+                        horizontal = 12.dp,
+                        vertical = 8.dp
+                    )
+                ) {
+                    Text("❌  Chiudi")
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = "Live Log",
+                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            FilledTonalButton(
+                modifier = Modifier.weight(1f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                onClick = {
+                    inPausa = !inPausa
+                }
+            ) {
+                Text(
+                    if (inPausa) {
+                        "▶  Riprendi"
+                    } else {
+                        "⏸  Pausa"
+                    }
+                )
+            }
+
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                onClick = {
+                    righeLog = emptyList()
+                }
+            ) {
+                Text("⌫  Pulisci")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            val coloreLive =
+                if (inPausa) {
+                    Color(0xFFFFB74D)
+                } else if (erroreLiveLog.isNotBlank()) {
+                    Color(0xFFEF5350)
+                } else if (riconnessioneLiveLog) {
+                    Color(0xFFFFB74D)
+                } else {
+                    Color(0xFF66BB6A)
+                }
+
+            Text(
+                text = when {
+                    inPausa -> "●  In pausa"
+                    erroreLiveLog.isNotBlank() -> "●  Errore"
+                    riconnessioneLiveLog -> "●  Riconnessione..."
+                    primaRichiestaCompletata -> "●  Live"
+                    else -> "●  Connessione..."
+                },
+                color = coloreLive,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text(
+                text = "${host.trim()}:${porta.trim()}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                modifier = Modifier.weight(1f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.End
+            )
+        }
+
+        if (erroreLiveLog.isNotBlank()) {
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = erroreLiveLog,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 12.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        androidx.compose.material3.Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp)
+                    .verticalScroll(scrollVerticale)
+                    .horizontalScroll(scrollOrizzontale)
+            ) {
+                Text(
+                    text = when {
+                        righeLog.isNotEmpty() ->
+                            righeLog.joinToString("\n")
+
+                        erroreLiveLog.isNotBlank() ->
+                            "Nessun dato Live Log"
+
+                        else ->
+                            "In attesa delle righe OSCam..."
+                    },
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    softWrap = false
                 )
             }
         }
@@ -2526,6 +2952,103 @@ fun WebIfScreen(
     }
 }
 
+
+@Composable
+fun ExpressiveAppHeader(
+    compatto: Boolean
+) {
+    val temaScuroHeader = androidx.compose.foundation.isSystemInDarkTheme()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 22.dp else 26.dp
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            if (temaScuroHeader) 1.dp else 1.1.dp,
+            if (temaScuroHeader) {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
+            } else {
+                Color(0xFFD8DED8)
+            }
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor =
+                if (temaScuroHeader) {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
+                } else {
+                    Color(0xFFF8F9F8)
+                }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroHeader) 3.dp else 1.5.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = if (compatto) 16.dp else 20.dp,
+                    vertical = if (compatto) 14.dp else 17.dp
+                ),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                    if (compatto) 17.dp else 20.dp
+                ),
+                color = if (temaScuroHeader) {
+                    Color(0xFF4CAF50).copy(alpha = 0.16f)
+                } else {
+                    Color(0xFF4CAF50).copy(alpha = 0.12f)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null,
+                    tint = if (temaScuroHeader) Color(0xFF4CAF50) else Color(0xFF2E7D32),
+                    modifier = Modifier
+                        .padding(if (compatto) 10.dp else 13.dp)
+                        .size(if (compatto) 23.dp else 28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(if (compatto) 12.dp else 16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "OSCam",
+                        fontSize = if (compatto) 25.sp else 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (temaScuroHeader) MaterialTheme.colorScheme.onSurface else Color(0xFF1F2320)
+                    )
+
+                    Spacer(modifier = Modifier.width(7.dp))
+
+                    Text(
+                        text = "Pulse",
+                        fontSize = if (compatto) 25.sp else 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (temaScuroHeader) Color(0xFF4CAF50) else Color(0xFF2E7D32)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                Text(
+                    text = "Real-time OSCam Dashboard",
+                    fontSize = if (compatto) 13.sp else 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (temaScuroHeader) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF5E6760)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun StatoColorato(
     testo: String
@@ -2560,10 +3083,10 @@ fun StatoColorato(
     }
 
     Text(
-            text = testo,
-            color = colore,
-            fontWeight = FontWeight.SemiBold
-        )
+        text = testo,
+        color = colore,
+        fontWeight = FontWeight.SemiBold
+    )
 }
 
 @Composable
@@ -2577,6 +3100,8 @@ fun DashboardCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val temaScuroCard = androidx.compose.foundation.isSystemInDarkTheme()
+
     Card(
         modifier = modifier,
         onClick = onClick,
@@ -2585,12 +3110,16 @@ fun DashboardCard(
                 if (compatto) 14.dp else 16.dp
             ),
         border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            coloreAccento.copy(alpha = 0.35f)
+            if (temaScuroCard) 1.dp else 1.2.dp,
+            coloreAccento.copy(alpha = if (temaScuroCard) 0.35f else 0.46f)
         ),
         colors = CardDefaults.cardColors(
             containerColor =
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+                if (temaScuroCard) {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+                } else {
+                    Color.White
+                }
         )
     ) {
         Column(
@@ -2600,21 +3129,17 @@ fun DashboardCard(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment =
-                    androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                    color = coloreAccento.copy(alpha = 0.14f)
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                    color = coloreAccento.copy(alpha = if (temaScuroCard) 0.14f else 0.10f)
                 ) {
                     androidx.compose.material3.Icon(
                         imageVector = icona,
                         contentDescription = null,
                         tint = coloreAccento,
-                        modifier = Modifier.padding(
-                            if (compatto) 5.dp else 7.dp
-                        )
+                        modifier = Modifier.padding(if (compatto) 5.dp else 7.dp)
                     )
                 }
 
@@ -2624,36 +3149,23 @@ fun DashboardCard(
                     text = titolo,
                     fontSize = if (compatto) 12.sp else 14.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 androidx.compose.material3.Icon(
-                    imageVector =
-                        if (aperta) {
-                            Icons.Default.ExpandLess
-                        } else {
-                            Icons.Default.ExpandMore
-                        },
-                    contentDescription =
-                        if (aperta) {
-                            "Nascondi $titolo"
-                        } else {
-                            "Mostra $titolo"
-                        },
+                    imageVector = if (aperta) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (aperta) "Nascondi $titolo" else "Mostra $titolo",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(
-                    if (compatto) 6.dp else 10.dp
-                )
-            )
+            Spacer(modifier = Modifier.height(if (compatto) 6.dp else 10.dp))
 
             Text(
                 text = valore,
-                fontSize = if (compatto) 23.sp else 26.sp,
+                fontSize = if (compatto) 25.sp else 29.sp,
                 fontWeight = FontWeight.Bold,
                 color = coloreAccento
             )
@@ -2759,4 +3271,4 @@ fun GreetingPreview() {
         Greeting("Oscam Monitor")
     }
 }
-
+-

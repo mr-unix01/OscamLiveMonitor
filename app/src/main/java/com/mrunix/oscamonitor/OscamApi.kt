@@ -1,5 +1,6 @@
 package com.mrunix.oscamonitor
 
+import android.util.Base64
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -9,6 +10,12 @@ import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 
 class OscamApi {
+
+    data class LiveLogRisultato(
+        val righe: List<String>,
+        val ultimoId: String,
+        val valido: Boolean
+    )
 
     private data class AuthDati(
         val username: String,
@@ -101,6 +108,226 @@ class OscamApi {
             password = password,
             percorso = "oscamapi.json?part=status"
         )
+    }
+
+    fun scaricaLiveLog(
+        host: String,
+        porta: String,
+        username: String,
+        password: String,
+        lastId: String
+    ): String {
+        val idPulito = lastId.trim().ifBlank { "start" }
+
+        // OSCam usa lastid=start per costruire la pagina HTML del Live Log.
+        // Il polling JSON vero e proprio usa invece un lastid numerico.
+        // Alla prima chiamata ricaviamo quindi l'id corrente dalla pagina HTML;
+        // se una build non lo espone nel template, usiamo 0 come fallback.
+        val idDaUsare =
+            if (idPulito.equals("start", ignoreCase = true)) {
+                val paginaIniziale = scaricaPagina(
+                    host = host,
+                    porta = porta,
+                    username = username,
+                    password = password,
+                    percorso = "logpoll.html?lastid=start"
+                )
+
+                if (paginaIniziale.startsWith("ERRORE:")) {
+                    return paginaIniziale
+                }
+
+                estraiLastIdDaHtml(paginaIniziale)
+                    .ifBlank { "0" }
+            } else {
+                idPulito
+            }
+
+        return scaricaPagina(
+            host = host,
+            porta = porta,
+            username = username,
+            password = password,
+            percorso = "logpoll.html?lastid=$idDaUsare&_=${System.currentTimeMillis()}",
+            richiestaAjax = true
+        )
+    }
+
+    private fun estraiLastIdDaHtml(html: String): String {
+        val pattern = listOf(
+            Regex(
+                """lastid\s*=\s*[\"']?(\d+)""",
+                RegexOption.IGNORE_CASE
+            ),
+            Regex(
+                """[\"']lastid[\"']\s*:\s*[\"']?(\d+)""",
+                RegexOption.IGNORE_CASE
+            ),
+            Regex(
+                """data-lastid\s*=\s*[\"'](\d+)[\"']""",
+                RegexOption.IGNORE_CASE
+            ),
+            Regex(
+                """id\s*=\s*[\"']lastid[\"'][^>]*value\s*=\s*[\"'](\d+)[\"']""",
+                setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)
+            )
+        )
+
+        for (regex in pattern) {
+            val id = regex.find(html)
+                ?.groupValues
+                ?.getOrNull(1)
+                ?.trim()
+                .orEmpty()
+
+            if (id.isNotBlank()) {
+                return id
+            }
+        }
+
+        return ""
+    }
+
+    fun estraiLiveLog(json: String): LiveLogRisultato {
+        return try {
+            val root = JSONObject(json)
+            val oscam = root.getJSONObject("oscam")
+            val lines = oscam.optJSONArray("lines")
+
+            if (lines == null) {
+                return LiveLogRisultato(
+                    righe = emptyList(),
+                    ultimoId = "",
+                    valido = false
+                )
+            }
+
+            val righe = mutableListOf<String>()
+            var ultimoId =
+                oscam.optString("lastid", "")
+                    .ifBlank { root.optString("lastid", "") }
+
+            for (indice in 0 until lines.length()) {
+                val elemento = lines.opt(indice)
+
+                when (elemento) {
+                    is JSONObject -> {
+                        val idElemento =
+                            sequenceOf(
+                                "id",
+                                "lineid",
+                                "lastid",
+                                "logid"
+                            )
+                                .map { chiave ->
+                                    elemento.optString(chiave, "").trim()
+                                }
+                                .firstOrNull { it.isNotBlank() }
+                                .orEmpty()
+
+                        if (idElemento.isNotBlank()) {
+                            ultimoId = idElemento
+                        }
+
+                        // Nelle build OSCam/Streamboard il campo "line" del Live Log
+                        // e' codificato in Base64. Lo decodifichiamo prima di mostrarlo.
+                        val lineaCodificata =
+                            elemento.optString("line", "").trim()
+
+                        val testoDiretto =
+                            if (lineaCodificata.isNotBlank()) {
+                                decodificaLineaLiveLog(lineaCodificata)
+                            } else {
+                                sequenceOf(
+                                    "text",
+                                    "txt",
+                                    "message",
+                                    "msg",
+                                    "log"
+                                )
+                                    .map { chiave ->
+                                        elemento.optString(chiave, "").trimEnd()
+                                    }
+                                    .firstOrNull { it.isNotBlank() }
+                                    .orEmpty()
+                            }
+
+                        val testo =
+                            if (testoDiretto.isNotBlank()) {
+                                testoDiretto
+                            } else {
+                                val parti = mutableListOf<String>()
+                                val chiavi = elemento.keys()
+
+                                while (chiavi.hasNext()) {
+                                    val chiave = chiavi.next()
+
+                                    if (
+                                        chiave.equals("id", ignoreCase = true) ||
+                                        chiave.equals("lineid", ignoreCase = true) ||
+                                        chiave.equals("lastid", ignoreCase = true) ||
+                                        chiave.equals("logid", ignoreCase = true)
+                                    ) {
+                                        continue
+                                    }
+
+                                    val valore = elemento.opt(chiave)
+                                        ?.toString()
+                                        ?.trim()
+                                        .orEmpty()
+
+                                    if (valore.isNotBlank() && valore != "null") {
+                                        parti.add(valore)
+                                    }
+                                }
+
+                                parti.joinToString(" ")
+                            }
+
+                        if (testo.isNotBlank()) {
+                            righe.add(testo)
+                        }
+                    }
+
+                    null, JSONObject.NULL -> Unit
+
+                    else -> {
+                        val testo = elemento.toString().trimEnd()
+                        if (testo.isNotBlank()) {
+                            righe.add(testo)
+                        }
+                    }
+                }
+            }
+
+            LiveLogRisultato(
+                righe = righe,
+                ultimoId = ultimoId,
+                valido = true
+            )
+        } catch (_: Exception) {
+            LiveLogRisultato(
+                righe = emptyList(),
+                ultimoId = "",
+                valido = false
+            )
+        }
+    }
+
+    private fun decodificaLineaLiveLog(valore: String): String {
+        if (valore.isBlank()) {
+            return ""
+        }
+
+        return try {
+            String(
+                Base64.decode(valore, Base64.DEFAULT),
+                Charsets.UTF_8
+            ).trimEnd('\r', '\n')
+        } catch (_: Exception) {
+            // Fallback per eventuali build OSCam che restituiscono gia' testo normale.
+            valore.trimEnd()
+        }
     }
 
     fun riavviaOscam(
@@ -462,7 +689,8 @@ class OscamApi {
         porta: String,
         username: String,
         password: String,
-        percorso: String
+        percorso: String,
+        richiestaAjax: Boolean = false
     ): String {
         val hostPulito = host.trim()
         val portaPulita = porta.trim()
@@ -481,7 +709,8 @@ class OscamApi {
                 porta = portaPulita,
                 username = username,
                 password = password,
-                percorso = percorso
+                percorso = percorso,
+                richiestaAjax = richiestaAjax
             )
 
             client.newCall(request).execute().use { response ->
@@ -501,10 +730,21 @@ class OscamApi {
         porta: String,
         username: String,
         password: String,
-        percorso: String
+        percorso: String,
+        richiestaAjax: Boolean = false
     ): Request {
         val builder = Request.Builder()
             .url("http://$host:$porta/$percorso")
+
+        if (richiestaAjax) {
+            builder
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header(
+                    "Accept",
+                    "application/json, text/javascript, */*; q=0.01"
+                )
+                .header("Cache-Control", "no-cache")
+        }
 
         if (username.isNotBlank() && password.isNotBlank()) {
             builder
@@ -683,4 +923,3 @@ class OscamApi {
     }
 
 }
-

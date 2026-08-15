@@ -3029,7 +3029,7 @@ fun ExpressiveAppHeader(
                     Spacer(modifier = Modifier.width(7.dp))
 
                     Text(
-                        text = "Pulse",
+                        text = "Live Monitor",
                         fontSize = if (compatto) 25.sp else 30.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = if (temaScuroHeader) Color(0xFF4CAF50) else Color(0xFF2E7D32)

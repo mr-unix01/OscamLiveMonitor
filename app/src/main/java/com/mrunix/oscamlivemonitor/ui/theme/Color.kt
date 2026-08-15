@@ -1,4 +1,4 @@
-package com.mrunix.oscamonitor.ui.theme
+package com.mrunix.oscamlivemonitor.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -1,4 +1,4 @@
-package com.mrunix.oscamonitor
+package com.mrunix.oscamlivemonitor
 
 data class OscamServer(
     val nome: String,

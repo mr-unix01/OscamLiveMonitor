@@ -1,4 +1,4 @@
-package com.mrunix.oscamonitor
+package com.mrunix.oscamlivemonitor
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -28,7 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.mrunix.oscamonitor.ui.theme.OscamMonitorTheme
+import com.mrunix.oscamlivemonitor.ui.theme.OscamLiveMonitorTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -40,12 +40,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            OscamMonitorTheme {
+            OscamLiveMonitorTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
                     Greeting(
-                        name = "Oscam Monitor",
+                        name = "OSCam Live Monitor",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -395,7 +395,7 @@ fun Greeting(
                             "${host.trim()}:${porta.trim()}\n\n" +
                             "Gli altri server salvati non verranno toccati. " +
                             "I client di questo server verranno temporaneamente " +
-                            "disconnessi e OSCam Pulse proverà a riconnettersi " +
+                            "disconnessi e OSCam Live Monitor proverà a riconnettersi " +
                             "automaticamente."
                 )
             },
@@ -498,7 +498,7 @@ fun Greeting(
             },
             text = {
                 Text(
-                    "OSCam Pulse deve accedere alla rete locale " +
+                    "OSCam Live Monitor deve accedere alla rete locale " +
                             "per collegarsi al WebIF di OSCam."
                 )
             },
@@ -2775,7 +2775,7 @@ fun WebIfScreen(
                                         <div class="title">WebIF non raggiungibile</div>
                                         <div class="text">
                                             La connessione è stata interrotta.<br>
-                                            OSCam Pulse ha già provato a riconnettersi.
+                                            OSCam Live Monitor ha già provato a riconnettersi.
                                         </div>
                                         <a class="button" href="oscampulse://retry">Riprova</a>
                                     </div>
@@ -3267,8 +3267,7 @@ private fun salvaServerSalvati(
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    OscamMonitorTheme {
-        Greeting("Oscam Monitor")
+    OscamLiveMonitorTheme {
+        Greeting("OSCam Live Monitor")
     }
 }
--

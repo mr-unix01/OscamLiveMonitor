@@ -1,4 +1,4 @@
-package com.mrunix.oscamonitor
+package com.mrunix.oscamlivemonitor
 
 import android.util.Base64
 import okhttp3.Credentials

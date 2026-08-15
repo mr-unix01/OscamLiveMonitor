@@ -1,4 +1,4 @@
-package com.mrunix.oscamonitor
+package com.mrunix.oscamlivemonitor
 
 import org.junit.Test
 

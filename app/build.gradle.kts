@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.mrunix.oscamonitor"
+    namespace = "com.mrunix.oscamlivemonitor"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.mrunix.oscamonitor"
+        applicationId = "com.mrunix.oscamlivemonitor"
         minSdk = 26
         targetSdk = 37
         versionCode = 1

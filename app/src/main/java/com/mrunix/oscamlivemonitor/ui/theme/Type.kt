@@ -1,4 +1,4 @@
-package com.mrunix.oscamonitor.ui.theme
+package com.mrunix.oscamlivemonitor.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

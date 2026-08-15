@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Oscam Monitor"
+rootProject.name = "OscamLiveMonitor"
 include(":app")

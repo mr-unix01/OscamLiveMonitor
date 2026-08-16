@@ -215,15 +215,9 @@ fun TerminalToolsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .then(
-                if (fullscreenTerminale) {
-                    Modifier
-                } else {
-                    Modifier.imePadding()
-                }
-            )
+            .imePadding()
             .padding(
-                if (fullscreenTerminale) 6.dp else 14.dp
+                if (fullscreenTerminale) 2.dp else 14.dp
             )
     ) {
         if (!fullscreenTerminale) {
@@ -599,7 +593,7 @@ fun TerminalToolsScreen(
                         androidx.compose.ui.Alignment.CenterVertically
                 ) {
                     IconButton(
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier.size(32.dp),
                         onClick = {
                             disconnectTerminal()
                             onClose()
@@ -780,7 +774,12 @@ fun TerminalToolsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(terminalScroll)
-                        .padding(12.dp),
+                        .padding(
+                            horizontal = 8.dp,
+                            vertical =
+                                if (fullscreenTerminale) 3.dp
+                                else 12.dp
+                        ),
                     textStyle =
                         androidx.compose.ui.text.TextStyle(
                             color = Color(0xFFE6EDF3),

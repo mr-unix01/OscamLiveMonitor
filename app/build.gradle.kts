@@ -13,8 +13,8 @@ android {
         applicationId = "com.mrunix.oscamlivemonitor"
         minSdk = 26
         targetSdk = 37
-        versionCode = 901
-        versionName = "0.9.1"
+        versionCode = 902
+        versionName = "0.9.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,6 +48,9 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.github.mwiede:jsch:2.28.5")
+    implementation("commons-net:commons-net:3.13.0")
+
     testImplementation(libs.junit)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))

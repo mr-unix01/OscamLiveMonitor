@@ -219,11 +219,26 @@ fun TerminalToolsScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                if (!connected) {
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                } else {
+                    Modifier.fillMaxWidth()
+                },
             shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
         ) {
             Column(
-                modifier = Modifier.padding(14.dp)
+                modifier = Modifier
+                    .padding(14.dp)
+                    .then(
+                        if (!connected) {
+                            Modifier.verticalScroll(rememberScrollState())
+                        } else {
+                            Modifier
+                        }
+                    )
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -517,6 +532,7 @@ fun TerminalToolsScreen(
             }
         }
 
+        if (connected) {
         Spacer(modifier = Modifier.height(10.dp))
 
         Surface(
@@ -599,6 +615,8 @@ fun TerminalToolsScreen(
             }
         }
 
+        }
+        
         Spacer(modifier = Modifier.height(6.dp))
 
         TextButton(

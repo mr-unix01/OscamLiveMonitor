@@ -109,6 +109,7 @@ fun Greeting(
     var readers by rememberSaveable { mutableStateOf("") }
     var proxies by rememberSaveable { mutableStateOf("") }
     var clients by rememberSaveable { mutableStateOf("") }
+    var users by rememberSaveable { mutableStateOf("") }
 
     var elencoServers by rememberSaveable {
         mutableStateOf(emptyList<String>())
@@ -123,6 +124,10 @@ fun Greeting(
     }
 
     var elencoClients by rememberSaveable {
+        mutableStateOf(emptyList<String>())
+    }
+
+    var elencoUsers by rememberSaveable {
         mutableStateOf(emptyList<String>())
     }
 
@@ -225,6 +230,39 @@ fun Greeting(
 
         clients =
             api.estraiClientsJson(risultato)
+
+        val risultatoUserStats =
+            withContext(Dispatchers.IO) {
+                api.scaricaUserStatsJson(
+                    host = host.trim(),
+                    porta = porta.trim(),
+                    username = username,
+                    password = password
+                )
+            }
+
+        if (!risultatoUserStats.startsWith("ERRORE:")) {
+            users =
+                api.estraiUsersJson(risultatoUserStats)
+
+            val paginaUserConfig =
+                withContext(Dispatchers.IO) {
+                    api.scaricaUserConfig(
+                        host = host.trim(),
+                        porta = porta.trim(),
+                        username = username,
+                        password = password
+                    )
+                }
+
+            if (!paginaUserConfig.startsWith("ERRORE:")) {
+                elencoUsers =
+                    api.estraiElencoUsersJson(
+                        json = risultatoUserStats,
+                        htmlUserConfig = paginaUserConfig
+                    )
+            }
+        }
 
         val elencoServersOriginale =
             api.estraiElencoServersJson(risultato)
@@ -1402,11 +1440,13 @@ fun Greeting(
                         readers = ""
                         proxies = ""
                         clients = ""
+                        users = ""
 
                         elencoServers = emptyList()
                         elencoReaders = emptyList()
                         elencoProxies = emptyList()
                         elencoClients = emptyList()
+                        elencoUsers = emptyList()
 
                         mostraServers = true
                         mostraReaders = true
@@ -1587,11 +1627,13 @@ fun Greeting(
                         readers = ""
                         proxies = ""
                         clients = ""
+                        users = ""
 
                         elencoServers = emptyList()
                         elencoReaders = emptyList()
                         elencoProxies = emptyList()
                         elencoClients = emptyList()
+                        elencoUsers = emptyList()
 
                         mostraServers = true
                         mostraReaders = true
@@ -1749,7 +1791,8 @@ fun Greeting(
                 servers.isNotBlank() ||
                 readers.isNotBlank() ||
                 proxies.isNotBlank() ||
-                clients.isNotBlank()
+                clients.isNotBlank() ||
+                users.isNotBlank()
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -1810,9 +1853,14 @@ fun Greeting(
                     )
 
                     DashboardCard(
-                        titolo = "Clients",
+                        titolo = "Users / Clients",
                         compatto = schermoCompatto,
-                        valore = clients,
+                        valore =
+                            if (users.isNotBlank()) {
+                                "$users / $clients"
+                            } else {
+                                clients
+                            },
                         icona = Icons.Default.Devices,
                         coloreAccento = Color(0xFFFFA726),
                         aperta = mostraClients,
@@ -1906,11 +1954,35 @@ fun Greeting(
                 }
             }
 
+            if (mostraClients && elencoUsers.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(18.dp))
+
+                TitoloSezioneDashboard(
+                    titolo = "Users",
+                    icona = Icons.Default.Devices,
+                    coloreAccento = Color(0xFFFFA726),
+                    compatto = schermoCompatto
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                elencoUsers.forEachIndexed { indice, user ->
+                    ClientInfoCard(
+                        testo = user,
+                        compatto = schermoCompatto
+                    )
+
+                    if (indice < elencoUsers.lastIndex) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            }
+
             if (mostraClients && elencoClients.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(18.dp))
 
                 TitoloSezioneDashboard(
-                    titolo = "Elenco client",
+                    titolo = "Client connessi",
                     icona = Icons.Default.Devices,
                     coloreAccento = Color(0xFFFFA726),
                     compatto = schermoCompatto

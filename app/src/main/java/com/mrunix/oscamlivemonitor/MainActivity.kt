@@ -62,7 +62,8 @@ fun Greeting(
 ) {
     val context = LocalContext.current
     val temaScuro = androidx.compose.foundation.isSystemInDarkTheme()
-    val schermoCompatto = false
+    val schermoCompatto =
+        androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 500
 
     val preferences = remember {
         context.getSharedPreferences(

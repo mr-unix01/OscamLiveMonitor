@@ -2498,7 +2498,8 @@ fun coloreStatoDashboard(stato: String): Color {
                 stato.contains("NOT OK", ignoreCase = true) ||
                 stato.contains("ERROR", ignoreCase = true) ||
                 stato.contains("OFFLINE", ignoreCase = true) ||
-                stato.contains("DISABLED", ignoreCase = true) ->
+                stato.contains("DISABLED", ignoreCase = true) ||
+                stato.contains("DISABILITATO", ignoreCase = true) ->
             Color(0xFFF44336)
 
         stato.contains("TIMEOUT", ignoreCase = true) ->
@@ -2506,8 +2507,11 @@ fun coloreStatoDashboard(stato: String): Color {
 
         stato.contains("CARDOK", ignoreCase = true) ||
                 stato.contains("CONNECTED", ignoreCase = true) ||
+                stato.contains("CONNESSO", ignoreCase = true) ||
+                stato.contains("ONLINE", ignoreCase = true) ||
                 stato.equals("OK", ignoreCase = true) ||
-                stato.contains("ACTIVE", ignoreCase = true) ->
+                stato.contains("ACTIVE", ignoreCase = true) ||
+                stato.contains("ATTIVO", ignoreCase = true) ->
             Color(0xFF4CAF50)
 
         else ->
@@ -2520,7 +2524,15 @@ fun BadgeStatoDashboard(
     stato: String,
     compatto: Boolean
 ) {
-    val colore = coloreStatoDashboard(stato)
+    val statoVisualizzato =
+        when (stato.trim().uppercase()) {
+            "CONNECTED" -> "CONNESSO"
+            "ACTIVE" -> "ATTIVO"
+            "DISABLED" -> "DISABILITATO"
+            else -> stato
+        }
+
+    val colore = coloreStatoDashboard(statoVisualizzato)
     val temaScuroBadge = androidx.compose.foundation.isSystemInDarkTheme()
 
     androidx.compose.material3.Surface(
@@ -2536,7 +2548,7 @@ fun BadgeStatoDashboard(
         )
     ) {
         Text(
-            text = stato.ifBlank { "—" },
+            text = statoVisualizzato.ifBlank { "—" },
             color = colore,
             fontWeight = FontWeight.Bold,
             fontSize = if (compatto) 10.sp else 11.sp,

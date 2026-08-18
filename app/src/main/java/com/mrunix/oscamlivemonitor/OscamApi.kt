@@ -110,6 +110,36 @@ class OscamApi {
         )
     }
 
+    fun scaricaUserStatsJson(
+        host: String,
+        porta: String,
+        username: String,
+        password: String
+    ): String {
+        return scaricaPagina(
+            host = host,
+            porta = porta,
+            username = username,
+            password = password,
+            percorso = "oscamapi.json?part=userstats"
+        )
+    }
+
+    fun scaricaUserConfig(
+        host: String,
+        porta: String,
+        username: String,
+        password: String
+    ): String {
+        return scaricaPagina(
+            host = host,
+            porta = porta,
+            username = username,
+            password = password,
+            percorso = "userconfig.html"
+        )
+    }
+
     fun scaricaLiveLog(
         host: String,
         porta: String,
@@ -606,6 +636,125 @@ class OscamApi {
 
             elenco
         } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun estraiUsersJson(json: String): String {
+        return try {
+            JSONObject(json)
+                .getJSONObject("oscam")
+                .getJSONObject("totals")
+                .optString("total_users", "")
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    fun estraiElencoUsersJson(
+        json: String,
+        htmlUserConfig: String
+    ): List<String> {
+        return try {
+            val nomiUtenti =
+                Regex(
+                    """user_edit\.html\?user=([^"&]+)""",
+                    RegexOption.IGNORE_CASE
+                )
+                    .findAll(htmlUserConfig)
+                    .mapNotNull { match ->
+                        try {
+                            java.net.URLDecoder.decode(
+                                match.groupValues[1],
+                                "UTF-8"
+                            )
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+                    .distinct()
+                    .toList()
+
+            val nomiPerMd5 =
+                nomiUtenti.associateBy { nome ->
+                    "id_" + MessageDigest
+                        .getInstance("MD5")
+                        .digest(nome.toByteArray(Charsets.UTF_8))
+                        .joinToString("") { byte ->
+                            "%02x".format(byte.toInt() and 0xff)
+                        }
+                }
+
+            val oscam = JSONObject(json).getJSONObject("oscam")
+            val users = oscam.optJSONArray("users")
+                ?: return emptyList()
+
+            val elenco = mutableListOf<String>()
+
+            for (indice in 0 until users.length()) {
+                val user = users
+                    .getJSONObject(indice)
+                    .getJSONObject("user")
+
+                val id = user.optString("usermd5", "")
+                val nome =
+                    nomiPerMd5[id]
+                        ?: "Utente sconosciuto"
+
+                val statoOriginale =
+                    user.optString("status", "unknown")
+
+                val stato =
+                    when {
+                        statoOriginale.equals(
+                            "connected",
+                            ignoreCase = true
+                        ) -> "CONNESSO"
+
+                        statoOriginale.equals(
+                            "offline",
+                            ignoreCase = true
+                        ) -> "OFFLINE"
+
+                        else -> statoOriginale.uppercase()
+                    }
+
+                val righe = mutableListOf(
+                    "$nome — $stato"
+                )
+
+                val ip = user.optString("ip", "").trim()
+                val protocollo =
+                    user.optString("protocol", "").trim()
+                val canale =
+                    user.optString(
+                        "lastchanneltitle",
+                        user.optString("lastchannel", "")
+                    ).trim()
+
+                if (ip.isNotBlank()) {
+                    righe.add("IP: $ip")
+                }
+
+                if (protocollo.isNotBlank()) {
+                    righe.add("Protocollo: $protocollo")
+                }
+
+                if (canale.isNotBlank()) {
+                    righe.add("Canale: $canale")
+                }
+
+                elenco.add(righe.joinToString("\n"))
+            }
+
+            elenco.sortedWith(
+                compareByDescending<String> {
+                    it.contains("— CONNESSO")
+                }.thenBy {
+                    it.substringBefore(" — ").lowercase()
+                }
+            )
+        } catch (_: Exception) {
             emptyList()
         }
     }

@@ -879,6 +879,12 @@ class OscamApi {
                             user.optString("lastchannel", "")
                         ).trim()
 
+                    val tempoSulCanale =
+                        user.optJSONObject("stats")
+                            ?.optString("timeonchannel", "")
+                            ?.trim()
+                            .orEmpty()
+
                     if (ip.isNotBlank()) {
                         righe.add("IP: $ip")
                     }
@@ -887,7 +893,10 @@ class OscamApi {
                         righe.add("Protocollo: $protocollo")
                     }
 
-                    if (canale.isNotBlank()) {
+                    if (
+                        canale.isNotBlank() &&
+                        tempoSulCanale.isNotBlank()
+                    ) {
                         righe.add("Canale: $canale")
                     }
 

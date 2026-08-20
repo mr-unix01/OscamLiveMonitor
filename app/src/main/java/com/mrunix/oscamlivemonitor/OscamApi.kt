@@ -140,6 +140,63 @@ class OscamApi {
         )
     }
 
+    fun scaricaReadersHtml(
+        host: String,
+        porta: String,
+        username: String,
+        password: String
+    ): String {
+        return scaricaPagina(
+            host = host,
+            porta = porta,
+            username = username,
+            password = password,
+            percorso = "readers.html"
+        )
+    }
+
+    fun impostaReaderAbilitato(
+        host: String,
+        porta: String,
+        username: String,
+        password: String,
+        nomeReader: String,
+        abilita: Boolean
+    ): String {
+        val label = java.net.URLEncoder.encode(nomeReader, "UTF-8")
+        val azione = if (abilita) "enable" else "disable"
+
+        return scaricaPagina(
+            host = host,
+            porta = porta,
+            username = username,
+            password = password,
+            percorso = "oscamapi.json?part=readerlist&label=$label&action=$azione",
+            richiestaAjax = true
+        )
+    }
+
+    fun impostaUserAbilitato(
+        host: String,
+        porta: String,
+        username: String,
+        password: String,
+        nomeUser: String,
+        abilita: Boolean
+    ): String {
+        val user = java.net.URLEncoder.encode(nomeUser, "UTF-8")
+        val azione = if (abilita) "enable" else "disable"
+
+        return scaricaPagina(
+            host = host,
+            porta = porta,
+            username = username,
+            password = password,
+            percorso = "oscamapi.json?part=userstats&user=$user&action=$azione",
+            richiestaAjax = true
+        )
+    }
+
     fun scaricaLiveLog(
         host: String,
         porta: String,
@@ -640,6 +697,73 @@ class OscamApi {
         }
     }
 
+    fun estraiAbilitazioneReadersHtml(
+        html: String
+    ): Map<String, Boolean> {
+        return try {
+            val risultato = mutableMapOf<String, Boolean>()
+
+            val regex = Regex(
+                """class=["']switchreader["'][^>]*data-next-action=["'](enable|disable)["'][^>]*data-reader-name=["']([^"']+)["']""",
+                RegexOption.IGNORE_CASE
+            )
+
+            regex.findAll(html).forEach { match ->
+                val prossimaAzione = match.groupValues[1].lowercase()
+
+                val nome = try {
+                    java.net.URLDecoder.decode(
+                        match.groupValues[2],
+                        "UTF-8"
+                    )
+                } catch (_: Exception) {
+                    match.groupValues[2]
+                }
+
+                risultato[nome] = prossimaAzione == "disable"
+            }
+
+            risultato
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
+    fun estraiAbilitazioneUsersHtml(
+        htmlUserConfig: String
+    ): Map<String, Boolean> {
+        return try {
+            val risultato = mutableMapOf<String, Boolean>()
+
+            val regex = Regex(
+                """class=["']switchuser["'][^>]*data-next-action=["'](enable|disable)["'][^>]*data-user-name=["']([^"']+)["']""",
+                RegexOption.IGNORE_CASE
+            )
+
+            regex.findAll(htmlUserConfig).forEach { match ->
+                val prossimaAzione =
+                    match.groupValues[1].lowercase()
+
+                val nome =
+                    try {
+                        java.net.URLDecoder.decode(
+                            match.groupValues[2],
+                            "UTF-8"
+                        )
+                    } catch (_: Exception) {
+                        match.groupValues[2]
+                    }
+
+                risultato[nome] =
+                    prossimaAzione == "disable"
+            }
+
+            risultato
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
     fun estraiUsersJson(json: String): String {
         return try {
             JSONObject(json)
@@ -656,104 +780,120 @@ class OscamApi {
         htmlUserConfig: String
     ): List<String> {
         return try {
-            val nomiUtenti =
-                Regex(
-                    """user_edit\.html\?user=([^"&]+)""",
-                    RegexOption.IGNORE_CASE
-                )
-                    .findAll(htmlUserConfig)
-                    .mapNotNull { match ->
-                        try {
-                            java.net.URLDecoder.decode(
-                                match.groupValues[1],
-                                "UTF-8"
-                            )
-                        } catch (_: Exception) {
-                            null
-                        }
-                    }
-                    .distinct()
-                    .toList()
+            val regexUser = Regex(
+                """class=["']switchuser["'][^>]*data-next-action=["'](enable|disable)["'][^>]*data-user-name=["']([^"']+)["']""",
+                RegexOption.IGNORE_CASE
+            )
 
-            val nomiPerMd5 =
-                nomiUtenti.associateBy { nome ->
+            val configurati = regexUser
+                .findAll(htmlUserConfig)
+                .map { match ->
+                    val prossimo = match.groupValues[1].lowercase()
+
+                    val nome = try {
+                        java.net.URLDecoder.decode(
+                            match.groupValues[2],
+                            "UTF-8"
+                        )
+                    } catch (_: Exception) {
+                        match.groupValues[2]
+                    }
+
+                    nome to (prossimo == "disable")
+                }
+                .distinctBy { it.first }
+                .toList()
+
+            val oscam = JSONObject(json).getJSONObject("oscam")
+            val usersJson = oscam.optJSONArray("users")
+
+            val usersPerMd5 =
+                mutableMapOf<String, JSONObject>()
+
+            if (usersJson != null) {
+                for (indice in 0 until usersJson.length()) {
+                    val user = usersJson
+                        .getJSONObject(indice)
+                        .getJSONObject("user")
+
+                    val id = user.optString("usermd5", "")
+
+                    if (id.isNotBlank()) {
+                        usersPerMd5[id] = user
+                    }
+                }
+            }
+
+            configurati.map { (nome, abilitato) ->
+                val md5 =
                     "id_" + MessageDigest
                         .getInstance("MD5")
                         .digest(nome.toByteArray(Charsets.UTF_8))
                         .joinToString("") { byte ->
                             "%02x".format(byte.toInt() and 0xff)
                         }
-                }
 
-            val oscam = JSONObject(json).getJSONObject("oscam")
-            val users = oscam.optJSONArray("users")
-                ?: return emptyList()
+                val user = usersPerMd5[md5]
 
-            val elenco = mutableListOf<String>()
+                if (!abilitato) {
+                    "$nome — DISABILITATO"
+                } else if (user == null) {
+                    "$nome — OFFLINE"
+                } else {
+                    val statoOriginale =
+                        user.optString("status", "unknown")
 
-            for (indice in 0 until users.length()) {
-                val user = users
-                    .getJSONObject(indice)
-                    .getJSONObject("user")
+                    val stato =
+                        when {
+                            statoOriginale.equals(
+                                "connected",
+                                ignoreCase = true
+                            ) -> "CONNESSO"
 
-                val id = user.optString("usermd5", "")
-                val nome =
-                    nomiPerMd5[id]
-                        ?: "Utente sconosciuto"
+                            statoOriginale.equals(
+                                "offline",
+                                ignoreCase = true
+                            ) -> "OFFLINE"
 
-                val statoOriginale =
-                    user.optString("status", "unknown")
+                            statoOriginale.equals(
+                                "disabled",
+                                ignoreCase = true
+                            ) -> "DISABILITATO"
 
-                val stato =
-                    when {
-                        statoOriginale.equals(
-                            "connected",
-                            ignoreCase = true
-                        ) -> "CONNESSO"
+                            else ->
+                                statoOriginale.uppercase()
+                        }
 
-                        statoOriginale.equals(
-                            "offline",
-                            ignoreCase = true
-                        ) -> "OFFLINE"
+                    val righe =
+                        mutableListOf("$nome — $stato")
 
-                        else -> statoOriginale.uppercase()
+                    val ip =
+                        user.optString("ip", "").trim()
+
+                    val protocollo =
+                        user.optString("protocol", "").trim()
+
+                    val canale =
+                        user.optString(
+                            "lastchanneltitle",
+                            user.optString("lastchannel", "")
+                        ).trim()
+
+                    if (ip.isNotBlank()) {
+                        righe.add("IP: $ip")
                     }
 
-                val righe = mutableListOf(
-                    "$nome — $stato"
-                )
+                    if (protocollo.isNotBlank()) {
+                        righe.add("Protocollo: $protocollo")
+                    }
 
-                val ip = user.optString("ip", "").trim()
-                val protocollo =
-                    user.optString("protocol", "").trim()
-                val canale =
-                    user.optString(
-                        "lastchanneltitle",
-                        user.optString("lastchannel", "")
-                    ).trim()
+                    if (canale.isNotBlank()) {
+                        righe.add("Canale: $canale")
+                    }
 
-                if (ip.isNotBlank()) {
-                    righe.add("IP: $ip")
+                    righe.joinToString("\n")
                 }
-
-                if (protocollo.isNotBlank()) {
-                    righe.add("Protocollo: $protocollo")
-                }
-
-                if (canale.isNotBlank()) {
-                    righe.add("Canale: $canale")
-                }
-
-                elenco.add(righe.joinToString("\n"))
             }
-
-            elenco.sortedWith(
-                compareByDescending<String> {
-                    it.contains("— CONNESSO")
-                }.thenBy {
-                    it.substringBefore(" — ").lowercase()
-                }
-            )
         } catch (_: Exception) {
             emptyList()
         }

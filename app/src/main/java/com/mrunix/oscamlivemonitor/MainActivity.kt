@@ -131,6 +131,14 @@ fun Greeting(
         mutableStateOf(emptyList<String>())
     }
 
+    var readerAbilitati by remember {
+        mutableStateOf(emptyMap<String, Boolean>())
+    }
+
+    var userAbilitati by remember {
+        mutableStateOf(emptyMap<String, Boolean>())
+    }
+
     var mostraConnessione by rememberSaveable { mutableStateOf(true) }
     var mostraWebIf by rememberSaveable { mutableStateOf(false) }
     var mostraLiveLog by rememberSaveable { mutableStateOf(false) }
@@ -189,8 +197,12 @@ fun Greeting(
 
     val api = remember { OscamApi() }
     val coroutineScope = rememberCoroutineScope()
+    val refreshMutex = remember { kotlinx.coroutines.sync.Mutex() }
 
     suspend fun aggiornaDashboardDaOscam(mostraErroreSubito: Boolean = true): Boolean {
+        refreshMutex.lock()
+
+        try {
         val risultato = withContext(Dispatchers.IO) {
             api.scaricaStatusJson(
                 host = host.trim(),
@@ -261,6 +273,11 @@ fun Greeting(
                         json = risultatoUserStats,
                         htmlUserConfig = paginaUserConfig
                     )
+
+                userAbilitati =
+                    api.estraiAbilitazioneUsersHtml(
+                        paginaUserConfig
+                    )
             }
         }
 
@@ -316,11 +333,124 @@ fun Greeting(
                 }
             }
 
-        elencoReaders =
+        val elencoReadersPrecedente = elencoReaders
+
+        val elencoReadersAttuali =
             api.estraiElencoReadersJson(risultato)
 
-        elencoProxies =
+        val risultatoReadersHtml =
+            withContext(Dispatchers.IO) {
+                api.scaricaReadersHtml(
+                    host = host.trim(),
+                    porta = porta.trim(),
+                    username = username,
+                    password = password
+                )
+            }
+
+        if (!risultatoReadersHtml.startsWith("ERRORE:")) {
+            val nuoviStatiReader =
+                api.estraiAbilitazioneReadersHtml(
+                    risultatoReadersHtml
+                )
+
+            readerAbilitati = nuoviStatiReader
+
+            val attualiPerNome =
+                elencoReadersAttuali.associateBy {
+                    it.substringBeforeLast("—", it).trim()
+                }
+
+            val nomiPrecedenti =
+                elencoReadersPrecedente
+                    .map {
+                        it.substringBeforeLast("—", it).trim()
+                    }
+                    .toSet()
+
+            val elencoFinale = mutableListOf<String>()
+
+            elencoReadersPrecedente.forEach { voce ->
+                val nome =
+                    voce.substringBeforeLast("—", voce).trim()
+
+                val voceAttuale = attualiPerNome[nome]
+
+                if (voceAttuale != null) {
+                    elencoFinale += voceAttuale
+                } else if (nuoviStatiReader.containsKey(nome)) {
+                    elencoFinale +=
+                        if (nuoviStatiReader[nome] == false)
+                            "$nome — DISABILITATO"
+                        else
+                            "$nome — OFFLINE"
+                }
+            }
+
+            elencoReadersAttuali.forEach { voce ->
+                val nome =
+                    voce.substringBeforeLast("—", voce).trim()
+
+                if (nome !in nomiPrecedenti) {
+                    elencoFinale += voce
+                }
+            }
+
+            elencoReaders = elencoFinale
+        } else {
+            elencoReaders = elencoReadersAttuali
+        }
+
+        val elencoProxiesPrecedente = elencoProxies
+
+        val elencoProxiesAttuali =
             api.estraiElencoProxiesJson(risultato)
+
+        if (!risultatoReadersHtml.startsWith("ERRORE:")) {
+            val attualiPerNome =
+                elencoProxiesAttuali.associateBy {
+                    it.substringBeforeLast("—", it).trim()
+                }
+
+            val nomiPrecedenti =
+                elencoProxiesPrecedente
+                    .map {
+                        it.substringBeforeLast("—", it).trim()
+                    }
+                    .toSet()
+
+            val elencoFinaleProxy = mutableListOf<String>()
+
+            elencoProxiesPrecedente.forEach { voce ->
+                val nome =
+                    voce.substringBeforeLast("—", voce).trim()
+
+                val voceAttuale = attualiPerNome[nome]
+
+                if (voceAttuale != null) {
+                    elencoFinaleProxy += voceAttuale
+                } else if (readerAbilitati.containsKey(nome)) {
+                    elencoFinaleProxy +=
+                        if (readerAbilitati[nome] == false)
+                            "$nome — DISABILITATO"
+                        else
+                            "$nome — OFFLINE"
+                }
+            }
+
+            elencoProxiesAttuali.forEach { voce ->
+                val nome =
+                    voce.substringBeforeLast("—", voce).trim()
+
+                if (nome !in nomiPrecedenti) {
+                    elencoFinaleProxy += voce
+                }
+            }
+
+            elencoProxies = elencoFinaleProxy
+        } else {
+            elencoProxies = elencoProxiesAttuali
+        }
 
         elencoClients =
             api.estraiElencoClientsJson(risultato)
@@ -334,6 +464,9 @@ fun Greeting(
         erroriRefreshConsecutivi = 0
         stato = "Connesso"
         return true
+        } finally {
+            refreshMutex.unlock()
+        }
     }
 
     val richiestaPermessoRete = rememberLauncherForActivityResult(
@@ -1919,7 +2052,66 @@ fun Greeting(
                         testo = reader,
                         icona = Icons.Default.CreditCard,
                         coloreAccento = Color(0xFF66BB6A),
-                        compatto = schermoCompatto
+                        compatto = schermoCompatto,
+                        mostraToggleReader = true,
+                        readerAbilitato = readerAbilitati[
+                            reader.substringBeforeLast("—", reader).trim()
+                        ] ?: true,
+                        onToggleReader = {
+                            val nomeReader =
+                                reader.substringBeforeLast("—", reader).trim()
+
+                            val attualmenteAbilitato =
+                                readerAbilitati[nomeReader] ?: true
+
+                            coroutineScope.launch {
+                                val esito =
+                                    withContext(Dispatchers.IO) {
+                                        api.impostaReaderAbilitato(
+                                            host = host.trim(),
+                                            porta = porta.trim(),
+                                            username = username,
+                                            password = password,
+                                            nomeReader = nomeReader,
+                                            abilita = !attualmenteAbilitato
+                                        )
+                                    }
+
+                                if (!esito.startsWith("ERRORE:")) {
+                                    val nuovoStato =
+                                        !attualmenteAbilitato
+
+                                    readerAbilitati =
+                                        readerAbilitati +
+                                                (nomeReader to nuovoStato)
+
+                                    elencoReaders =
+                                        elencoReaders.map { voce ->
+                                            val nome =
+                                                voce.substringBeforeLast(
+                                                    "—",
+                                                    voce
+                                                ).trim()
+
+                                            if (nome == nomeReader) {
+                                                "$nomeReader — " +
+                                                    if (nuovoStato)
+                                                        "OFFLINE"
+                                                    else
+                                                        "DISABILITATO"
+                                            } else {
+                                                voce
+                                            }
+                                        }
+
+                                    kotlinx.coroutines.delay(400)
+
+                                    aggiornaDashboardDaOscam(
+                                        mostraErroreSubito = false
+                                    )
+                                }
+                            }
+                        }
                     )
 
                     if (indice < elencoReaders.lastIndex) {
@@ -1945,7 +2137,66 @@ fun Greeting(
                         testo = proxy,
                         icona = Icons.Default.SwapHoriz,
                         coloreAccento = Color(0xFFAB47BC),
-                        compatto = schermoCompatto
+                        compatto = schermoCompatto,
+                        mostraToggleReader = true,
+                        readerAbilitato = readerAbilitati[
+                            proxy.substringBeforeLast("—", proxy).trim()
+                        ] ?: true,
+                        onToggleReader = {
+                            val nomeProxy =
+                                proxy.substringBeforeLast("—", proxy).trim()
+
+                            val attualmenteAbilitato =
+                                readerAbilitati[nomeProxy] ?: true
+
+                            coroutineScope.launch {
+                                val esito =
+                                    withContext(Dispatchers.IO) {
+                                        api.impostaReaderAbilitato(
+                                            host = host.trim(),
+                                            porta = porta.trim(),
+                                            username = username,
+                                            password = password,
+                                            nomeReader = nomeProxy,
+                                            abilita = !attualmenteAbilitato
+                                        )
+                                    }
+
+                                if (!esito.startsWith("ERRORE:")) {
+                                    val nuovoStato =
+                                        !attualmenteAbilitato
+
+                                    readerAbilitati =
+                                        readerAbilitati +
+                                                (nomeProxy to nuovoStato)
+
+                                    elencoProxies =
+                                        elencoProxies.map { voce ->
+                                            val nome =
+                                                voce.substringBeforeLast(
+                                                    "—",
+                                                    voce
+                                                ).trim()
+
+                                            if (nome == nomeProxy) {
+                                                "$nomeProxy — " +
+                                                    if (nuovoStato)
+                                                        "OFFLINE"
+                                                    else
+                                                        "DISABILITATO"
+                                            } else {
+                                                voce
+                                            }
+                                        }
+
+                                    kotlinx.coroutines.delay(400)
+
+                                    aggiornaDashboardDaOscam(
+                                        mostraErroreSubito = false
+                                    )
+                                }
+                            }
+                        }
                     )
 
                     if (indice < elencoProxies.lastIndex) {
@@ -1969,7 +2220,55 @@ fun Greeting(
                 elencoUsers.forEachIndexed { indice, user ->
                     ClientInfoCard(
                         testo = user,
-                        compatto = schermoCompatto
+                        compatto = schermoCompatto,
+                        mostraToggleUser = true,
+                        userAbilitato = userAbilitati[
+                            user.lineSequence()
+                                .firstOrNull()
+                                ?.substringBeforeLast("—")
+                                ?.trim()
+                                .orEmpty()
+                        ] ?: true,
+                        onToggleUser = {
+                            val nomeUser =
+                                user.lineSequence()
+                                    .firstOrNull()
+                                    ?.substringBeforeLast("—")
+                                    ?.trim()
+                                    .orEmpty()
+
+                            val attualmenteAbilitato =
+                                userAbilitati[nomeUser] ?: true
+
+                            coroutineScope.launch {
+                                val esito =
+                                    withContext(Dispatchers.IO) {
+                                        api.impostaUserAbilitato(
+                                            host = host.trim(),
+                                            porta = porta.trim(),
+                                            username = username,
+                                            password = password,
+                                            nomeUser = nomeUser,
+                                            abilita = !attualmenteAbilitato
+                                        )
+                                    }
+
+                                if (!esito.startsWith("ERRORE:")) {
+                                    userAbilitati =
+                                        userAbilitati +
+                                                (
+                                                    nomeUser to
+                                                        !attualmenteAbilitato
+                                                )
+
+                                    kotlinx.coroutines.delay(1500)
+
+                                    aggiornaDashboardDaOscam(
+                                        mostraErroreSubito = false
+                                    )
+                                }
+                            }
+                        }
                     )
 
                     if (indice < elencoUsers.lastIndex) {
@@ -2566,7 +2865,10 @@ fun VoceStatoCard(
     testo: String,
     icona: androidx.compose.ui.graphics.vector.ImageVector,
     coloreAccento: Color,
-    compatto: Boolean
+    compatto: Boolean,
+    mostraToggleReader: Boolean = false,
+    readerAbilitato: Boolean = true,
+    onToggleReader: (() -> Unit)? = null
 ) {
     val temaScuroVoce = androidx.compose.foundation.isSystemInDarkTheme()
 
@@ -2631,10 +2933,33 @@ fun VoceStatoCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            BadgeStatoDashboard(
-                stato = stato,
-                compatto = compatto
-            )
+            Column(
+                horizontalAlignment = androidx.compose.ui.Alignment.End
+            ) {
+                BadgeStatoDashboard(
+                    stato = stato,
+                    compatto = compatto
+                )
+
+                if (mostraToggleReader) {
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    IconButton(
+                        onClick = { onToggleReader?.invoke() },
+                        modifier = Modifier.size(if (compatto) 28.dp else 32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PowerSettingsNew,
+                            contentDescription = "Abilita/disabilita reader",
+                            tint = if (readerAbilitato)
+                                Color(0xFFE53935)
+                            else
+                                Color(0xFF43A047),
+                            modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -2712,7 +3037,10 @@ fun MiniDatoClient(
 @Composable
 fun ClientInfoCard(
     testo: String,
-    compatto: Boolean
+    compatto: Boolean,
+    mostraToggleUser: Boolean = false,
+    userAbilitato: Boolean = true,
+    onToggleUser: (() -> Unit)? = null
 ) {
     val righe = testo
         .lines()
@@ -2821,10 +3149,33 @@ fun ClientInfoCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                BadgeStatoDashboard(
-                    stato = stato,
-                    compatto = compatto
-                )
+                Column(
+                    horizontalAlignment = androidx.compose.ui.Alignment.End
+                ) {
+                    BadgeStatoDashboard(
+                        stato = stato,
+                        compatto = compatto
+                    )
+
+                    if (mostraToggleUser) {
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        IconButton(
+                            onClick = { onToggleUser?.invoke() },
+                            modifier = Modifier.size(if (compatto) 28.dp else 32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PowerSettingsNew,
+                                contentDescription = "Abilita/disabilita user",
+                                tint = if (userAbilitato)
+                                    Color(0xFFE53935)
+                                else
+                                    Color(0xFF43A047),
+                                modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             if (

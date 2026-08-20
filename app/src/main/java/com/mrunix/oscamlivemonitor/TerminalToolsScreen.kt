@@ -809,19 +809,5 @@ fun TerminalToolsScreen(
         }
 
         }
-        
-        if (!fullscreenTerminale) {
-            Spacer(modifier = Modifier.height(6.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    disconnectTerminal()
-                    onClose()
-                }
-            ) {
-                Text("← Chiudi e torna alla Dashboard")
             }
-        }
-    }
 }

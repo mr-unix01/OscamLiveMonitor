@@ -36,6 +36,7 @@ import kotlinx.coroutines.withContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.clickable
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,6 +99,7 @@ fun Greeting(
 
     var stato by rememberSaveable { mutableStateOf("") }
     var ultimoAggiornamento by rememberSaveable { mutableStateOf("") }
+    var refreshManualeInCorso by remember { mutableStateOf(false) }
     var erroriRefreshConsecutivi by rememberSaveable { mutableStateOf(0) }
 
     var versioneOscam by rememberSaveable { mutableStateOf("") }
@@ -137,6 +139,18 @@ fun Greeting(
 
     var userAbilitati by remember {
         mutableStateOf(emptyMap<String, Boolean>())
+    }
+
+    var toggleReadersInCorso by remember {
+        mutableStateOf(emptySet<String>())
+    }
+
+    var toggleProxiesInCorso by remember {
+        mutableStateOf(emptySet<String>())
+    }
+
+    var toggleUsersInCorso by remember {
+        mutableStateOf(emptySet<String>())
     }
 
     var mostraConnessione by rememberSaveable { mutableStateOf(true) }
@@ -1903,12 +1917,36 @@ fun Greeting(
                     verticalAlignment =
                         androidx.compose.ui.Alignment.CenterVertically
                 ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = null,
-                        tint = Color(0xFF66BB6A),
-                        modifier = Modifier
-                    )
+                    if (refreshManualeInCorso) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF66BB6A)
+                        )
+                    } else {
+                        androidx.compose.material3.Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Aggiorna dashboard",
+                            tint = Color(0xFF66BB6A),
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable {
+                                    if (!refreshManualeInCorso) {
+                                        refreshManualeInCorso = true
+                    
+                                        coroutineScope.launch {
+                                            try {
+                                                aggiornaDashboardDaOscam(
+                                                    mostraErroreSubito = true
+                                                )
+                                            } finally {
+                                                refreshManualeInCorso = false
+                                            }
+                                        }
+                                    }
+                                }
+                        )
+                    }
 
                     Spacer(modifier = Modifier.padding(horizontal = 3.dp))
 
@@ -2057,12 +2095,18 @@ fun Greeting(
                         readerAbilitato = readerAbilitati[
                             reader.substringBeforeLast("—", reader).trim()
                         ] ?: true,
+                        toggleReaderInCorso =
+                            reader.substringBeforeLast("—", reader).trim() in
+                                toggleReadersInCorso,
                         onToggleReader = {
                             val nomeReader =
                                 reader.substringBeforeLast("—", reader).trim()
 
                             val attualmenteAbilitato =
                                 readerAbilitati[nomeReader] ?: true
+
+                            toggleReadersInCorso =
+                                toggleReadersInCorso + nomeReader
 
                             coroutineScope.launch {
                                 val esito =
@@ -2110,6 +2154,9 @@ fun Greeting(
                                         mostraErroreSubito = false
                                     )
                                 }
+
+                                toggleReadersInCorso =
+                                    toggleReadersInCorso - nomeReader
                             }
                         }
                     )
@@ -2142,12 +2189,18 @@ fun Greeting(
                         readerAbilitato = readerAbilitati[
                             proxy.substringBeforeLast("—", proxy).trim()
                         ] ?: true,
+                        toggleReaderInCorso =
+                            proxy.substringBeforeLast("—", proxy).trim() in
+                                toggleProxiesInCorso,
                         onToggleReader = {
                             val nomeProxy =
                                 proxy.substringBeforeLast("—", proxy).trim()
 
                             val attualmenteAbilitato =
                                 readerAbilitati[nomeProxy] ?: true
+
+                            toggleProxiesInCorso =
+                                toggleProxiesInCorso + nomeProxy
 
                             coroutineScope.launch {
                                 val esito =
@@ -2195,6 +2248,9 @@ fun Greeting(
                                         mostraErroreSubito = false
                                     )
                                 }
+
+                                toggleProxiesInCorso =
+                                    toggleProxiesInCorso - nomeProxy
                             }
                         }
                     )
@@ -2229,6 +2285,12 @@ fun Greeting(
                                 ?.trim()
                                 .orEmpty()
                         ] ?: true,
+                        toggleUserInCorso =
+                            user.lineSequence()
+                                .firstOrNull()
+                                ?.substringBeforeLast("—")
+                                ?.trim()
+                                .orEmpty() in toggleUsersInCorso,
                         onToggleUser = {
                             val nomeUser =
                                 user.lineSequence()
@@ -2239,6 +2301,9 @@ fun Greeting(
 
                             val attualmenteAbilitato =
                                 userAbilitati[nomeUser] ?: true
+
+                            toggleUsersInCorso =
+                                toggleUsersInCorso + nomeUser
 
                             coroutineScope.launch {
                                 val esito =
@@ -2267,6 +2332,9 @@ fun Greeting(
                                         mostraErroreSubito = false
                                     )
                                 }
+
+                                toggleUsersInCorso =
+                                    toggleUsersInCorso - nomeUser
                             }
                         }
                     )
@@ -2868,6 +2936,7 @@ fun VoceStatoCard(
     compatto: Boolean,
     mostraToggleReader: Boolean = false,
     readerAbilitato: Boolean = true,
+    toggleReaderInCorso: Boolean = false,
     onToggleReader: (() -> Unit)? = null
 ) {
     val temaScuroVoce = androidx.compose.foundation.isSystemInDarkTheme()
@@ -2946,17 +3015,29 @@ fun VoceStatoCard(
 
                     IconButton(
                         onClick = { onToggleReader?.invoke() },
+                        enabled = !toggleReaderInCorso,
                         modifier = Modifier.size(if (compatto) 28.dp else 32.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PowerSettingsNew,
-                            contentDescription = "Abilita/disabilita reader",
-                            tint = if (readerAbilitato)
-                                Color(0xFFE53935)
-                            else
-                                Color(0xFF43A047),
-                            modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
-                        )
+                        if (toggleReaderInCorso) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(if (compatto) 18.dp else 20.dp),
+                                strokeWidth = 2.dp,
+                                color = if (readerAbilitato)
+                                    Color(0xFFE53935)
+                                else
+                                    Color(0xFF43A047)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.PowerSettingsNew,
+                                contentDescription = "Abilita/disabilita reader",
+                                tint = if (readerAbilitato)
+                                    Color(0xFFE53935)
+                                else
+                                    Color(0xFF43A047),
+                                modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -3040,6 +3121,7 @@ fun ClientInfoCard(
     compatto: Boolean,
     mostraToggleUser: Boolean = false,
     userAbilitato: Boolean = true,
+    toggleUserInCorso: Boolean = false,
     onToggleUser: (() -> Unit)? = null
 ) {
     val righe = testo
@@ -3162,17 +3244,29 @@ fun ClientInfoCard(
 
                         IconButton(
                             onClick = { onToggleUser?.invoke() },
+                            enabled = !toggleUserInCorso,
                             modifier = Modifier.size(if (compatto) 28.dp else 32.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.PowerSettingsNew,
-                                contentDescription = "Abilita/disabilita user",
-                                tint = if (userAbilitato)
-                                    Color(0xFFE53935)
-                                else
-                                    Color(0xFF43A047),
-                                modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
-                            )
+                            if (toggleUserInCorso) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(if (compatto) 18.dp else 20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = if (userAbilitato)
+                                        Color(0xFFE53935)
+                                    else
+                                        Color(0xFF43A047)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.PowerSettingsNew,
+                                    contentDescription = "Abilita/disabilita user",
+                                    tint = if (userAbilitato)
+                                        Color(0xFFE53935)
+                                    else
+                                        Color(0xFF43A047),
+                                    modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
+                                )
+                            }
                         }
                     }
                 }

@@ -1,0 +1,4192 @@
+
+package com.mrunix.oscamlivemonitor
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import com.mrunix.oscamlivemonitor.ui.theme.OscamLiveMonitorTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.clickable
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            OscamLiveMonitorTheme {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+                    Greeting(
+                        name = "OSCam Live Monitor",
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Greeting(
+    name: String,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val temaScuro = androidx.compose.foundation.isSystemInDarkTheme()
+    val schermoCompatto =
+        androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 500
+
+    val preferences = remember {
+        context.getSharedPreferences(
+            "oscam_monitor",
+            android.content.Context.MODE_PRIVATE
+        )
+    }
+
+    var host by remember {
+        mutableStateOf(
+            preferences.getString("host", "") ?: ""
+        )
+    }
+
+    var porta by remember {
+        mutableStateOf(
+            preferences.getString("porta", "") ?: ""
+        )
+    }
+
+    var username by remember {
+        mutableStateOf(
+            preferences.getString("username", "") ?: ""
+        )
+    }
+
+    var password by remember {
+        mutableStateOf(
+            preferences.getString("password", "") ?: ""
+        )
+    }
+
+    var stato by rememberSaveable { mutableStateOf("") }
+    var ultimoAggiornamento by rememberSaveable { mutableStateOf("") }
+    var refreshManualeInCorso by remember { mutableStateOf(false) }
+    var erroriRefreshConsecutivi by rememberSaveable { mutableStateOf(0) }
+
+    var versioneOscam by rememberSaveable { mutableStateOf("") }
+    var uptime by rememberSaveable { mutableStateOf("") }
+    var cpuOscam by rememberSaveable { mutableStateOf("") }
+    var ramOscam by rememberSaveable { mutableStateOf("") }
+
+    var servers by rememberSaveable { mutableStateOf("") }
+    var readers by rememberSaveable { mutableStateOf("") }
+    var proxies by rememberSaveable { mutableStateOf("") }
+    var clients by rememberSaveable { mutableStateOf("") }
+    var users by rememberSaveable { mutableStateOf("") }
+
+    var elencoServers by rememberSaveable {
+        mutableStateOf(emptyList<String>())
+    }
+
+    var elencoReaders by rememberSaveable {
+        mutableStateOf(emptyList<String>())
+    }
+
+    var elencoProxies by rememberSaveable {
+        mutableStateOf(emptyList<String>())
+    }
+
+    var elencoClients by rememberSaveable {
+        mutableStateOf(emptyList<String>())
+    }
+
+    var elencoUsers by rememberSaveable {
+        mutableStateOf(emptyList<String>())
+    }
+
+    var readerAbilitati by remember {
+        mutableStateOf(emptyMap<String, Boolean>())
+    }
+
+    var userAbilitati by remember {
+        mutableStateOf(emptyMap<String, Boolean>())
+    }
+
+    var toggleReadersInCorso by remember {
+        mutableStateOf(emptySet<String>())
+    }
+
+    var toggleProxiesInCorso by remember {
+        mutableStateOf(emptySet<String>())
+    }
+
+    var toggleUsersInCorso by remember {
+        mutableStateOf(emptySet<String>())
+    }
+
+    var mostraConnessione by rememberSaveable { mutableStateOf(true) }
+    var mostraWebIf by rememberSaveable { mutableStateOf(false) }
+    var mostraLiveLog by rememberSaveable { mutableStateOf(false) }
+    var mostraStrumenti by rememberSaveable { mutableStateOf(false) }
+
+    var serverSalvati by remember {
+        mutableStateOf(caricaServerSalvati(preferences))
+    }
+
+    var mostraAggiungiServer by remember { mutableStateOf(false) }
+
+    var serverDaModificare by remember { mutableStateOf<OscamServer?>(null) }
+    var modificaNomeServer by remember { mutableStateOf("") }
+    var modificaHostServer by remember { mutableStateOf("") }
+    var modificaPortaServer by remember { mutableStateOf("") }
+    var modificaUsernameServer by remember { mutableStateOf("") }
+    var modificaPasswordServer by remember { mutableStateOf("") }
+    var mostraPasswordModifica by remember { mutableStateOf(false) }
+
+    var serverDaEliminare by remember { mutableStateOf<OscamServer?>(null) }
+
+    var nuovoNomeServer by remember { mutableStateOf("") }
+    var nuovoHostServer by remember { mutableStateOf("") }
+    var nuovaPortaServer by remember { mutableStateOf("") }
+    var nuovoUsernameServer by remember { mutableStateOf("") }
+    var nuovaPasswordServer by remember { mutableStateOf("") }
+    var mostraPasswordNuovo by remember { mutableStateOf(false) }
+    var mostraPasswordConnessione by remember { mutableStateOf(false) }
+
+    var mostraServers by remember { mutableStateOf(true) }
+    var mostraReaders by remember { mutableStateOf(true) }
+    var mostraProxies by remember { mutableStateOf(true) }
+    var mostraClients by remember { mutableStateOf(true) }
+
+    var mostraSpiegazionePermesso by remember {
+        mutableStateOf(false)
+    }
+
+    var mostraConfermaRiavvio by remember {
+        mutableStateOf(false)
+    }
+
+    var riavvioInCorso by remember {
+        mutableStateOf(false)
+    }
+
+    var permessoReteConcesso by remember {
+        mutableStateOf(
+            Build.VERSION.SDK_INT < 37 ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_LOCAL_NETWORK
+                    ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val api = remember { OscamApi() }
+    val coroutineScope = rememberCoroutineScope()
+    val refreshMutex = remember { kotlinx.coroutines.sync.Mutex() }
+
+    suspend fun aggiornaDashboardDaOscam(mostraErroreSubito: Boolean = true): Boolean {
+        refreshMutex.lock()
+
+        try {
+        val risultato = withContext(Dispatchers.IO) {
+            api.scaricaStatusJson(
+                host = host.trim(),
+                porta = porta.trim(),
+                username = username,
+                password = password
+            )
+        }
+
+        if (risultato.startsWith("ERRORE:")) {
+            if (mostraErroreSubito) {
+                stato = risultato
+            }
+            return false
+        }
+
+        versioneOscam =
+            api.estraiVersioneJson(risultato)
+
+        uptime =
+            api.estraiRuntimeJson(risultato)
+
+        cpuOscam =
+            api.estraiCpuJson(risultato)
+
+        ramOscam =
+            api.estraiMemoriaUsataJson(risultato)
+
+        servers =
+            api.estraiServersJson(risultato)
+
+        readers =
+            api.estraiReadersJson(risultato)
+
+        proxies =
+            api.estraiProxiesJson(risultato)
+
+        clients =
+            api.estraiClientsJson(risultato)
+
+        val risultatoUserStats =
+            withContext(Dispatchers.IO) {
+                api.scaricaUserStatsJson(
+                    host = host.trim(),
+                    porta = porta.trim(),
+                    username = username,
+                    password = password
+                )
+            }
+
+        if (!risultatoUserStats.startsWith("ERRORE:")) {
+            users =
+                api.estraiUsersJson(risultatoUserStats)
+
+            val paginaUserConfig =
+                withContext(Dispatchers.IO) {
+                    api.scaricaUserConfig(
+                        host = host.trim(),
+                        porta = porta.trim(),
+                        username = username,
+                        password = password
+                    )
+                }
+
+            if (!paginaUserConfig.startsWith("ERRORE:")) {
+                elencoUsers =
+                    api.estraiElencoUsersJson(
+                        json = risultatoUserStats,
+                        htmlUserConfig = paginaUserConfig
+                    )
+
+                userAbilitati =
+                    api.estraiAbilitazioneUsersHtml(
+                        paginaUserConfig
+                    )
+            }
+        }
+
+        val elencoServersOriginale =
+            api.estraiElencoServersJson(risultato)
+
+        elencoServers =
+            elencoServersOriginale.mapIndexed { indice, server ->
+                val statoServer =
+                    server
+                        .substringAfterLast("—", "")
+                        .trim()
+                        .ifBlank {
+                            when {
+                                server.contains(
+                                    "NOT OK",
+                                    ignoreCase = true
+                                ) ->
+                                    "NOT OK"
+
+                                server.contains(
+                                    "OFFLINE",
+                                    ignoreCase = true
+                                ) ->
+                                    "OFFLINE"
+
+                                server.contains(
+                                    "ERROR",
+                                    ignoreCase = true
+                                ) ->
+                                    "ERROR"
+
+                                server.contains(
+                                    "OK",
+                                    ignoreCase = true
+                                ) ->
+                                    "OK"
+
+                                else ->
+                                    "Stato sconosciuto"
+                            }
+                        }
+
+                when (indice) {
+                    0 ->
+                        "OSCam Core — $statoServer"
+
+                    1 ->
+                        "WebIF — $statoServer"
+
+                    else ->
+                        server
+                }
+            }
+
+        val elencoReadersPrecedente = elencoReaders
+
+        val elencoReadersAttuali =
+            api.estraiElencoReadersJson(risultato)
+
+        val risultatoReadersHtml =
+            withContext(Dispatchers.IO) {
+                api.scaricaReadersHtml(
+                    host = host.trim(),
+                    porta = porta.trim(),
+                    username = username,
+                    password = password
+                )
+            }
+
+        if (!risultatoReadersHtml.startsWith("ERRORE:")) {
+            val nuoviStatiReader =
+                api.estraiAbilitazioneReadersHtml(
+                    risultatoReadersHtml
+                )
+
+            readerAbilitati = nuoviStatiReader
+
+            val attualiPerNome =
+                elencoReadersAttuali.associateBy {
+                    it.substringBeforeLast("—", it).trim()
+                }
+
+            val nomiPrecedenti =
+                elencoReadersPrecedente
+                    .map {
+                        it.substringBeforeLast("—", it).trim()
+                    }
+                    .toSet()
+
+            val elencoFinale = mutableListOf<String>()
+
+            elencoReadersPrecedente.forEach { voce ->
+                val nome =
+                    voce.substringBeforeLast("—", voce).trim()
+
+                val voceAttuale = attualiPerNome[nome]
+
+                if (voceAttuale != null) {
+                    elencoFinale += voceAttuale
+                } else if (nuoviStatiReader.containsKey(nome)) {
+                    elencoFinale +=
+                        if (nuoviStatiReader[nome] == false)
+                            "$nome — DISABILITATO"
+                        else
+                            "$nome — OFFLINE"
+                }
+            }
+
+            elencoReadersAttuali.forEach { voce ->
+                val nome =
+                    voce.substringBeforeLast("—", voce).trim()
+
+                if (nome !in nomiPrecedenti) {
+                    elencoFinale += voce
+                }
+            }
+
+            elencoReaders = elencoFinale
+        } else {
+            elencoReaders = elencoReadersAttuali
+        }
+
+        val elencoProxiesPrecedente = elencoProxies
+
+        val elencoProxiesAttuali =
+            api.estraiElencoProxiesJson(risultato)
+
+        if (!risultatoReadersHtml.startsWith("ERRORE:")) {
+            val attualiPerNome =
+                elencoProxiesAttuali.associateBy {
+                    it.substringBeforeLast("—", it).trim()
+                }
+
+            val nomiPrecedenti =
+                elencoProxiesPrecedente
+                    .map {
+                        it.substringBeforeLast("—", it).trim()
+                    }
+                    .toSet()
+
+            val elencoFinaleProxy = mutableListOf<String>()
+
+            elencoProxiesPrecedente.forEach { voce ->
+                val nome =
+                    voce.substringBeforeLast("—", voce).trim()
+
+                val voceAttuale = attualiPerNome[nome]
+
+                if (voceAttuale != null) {
+                    elencoFinaleProxy += voceAttuale
+                } else if (readerAbilitati.containsKey(nome)) {
+                    elencoFinaleProxy +=
+                        if (readerAbilitati[nome] == false)
+                            "$nome — DISABILITATO"
+                        else
+                            "$nome — OFFLINE"
+                }
+            }
+
+            elencoProxiesAttuali.forEach { voce ->
+                val nome =
+                    voce.substringBeforeLast("—", voce).trim()
+
+                if (nome !in nomiPrecedenti) {
+                    elencoFinaleProxy += voce
+                }
+            }
+
+            elencoProxies = elencoFinaleProxy
+        } else {
+            elencoProxies = elencoProxiesAttuali
+        }
+
+        elencoClients =
+            api.estraiElencoClientsJson(risultato)
+
+        ultimoAggiornamento =
+            java.text.SimpleDateFormat(
+                "HH:mm:ss",
+                java.util.Locale.getDefault()
+            ).format(java.util.Date())
+
+        erroriRefreshConsecutivi = 0
+        stato = "Connesso"
+        return true
+        } finally {
+            refreshMutex.unlock()
+        }
+    }
+
+    val richiestaPermessoRete = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { concesso ->
+        permessoReteConcesso = concesso
+
+        stato = if (concesso) {
+            "Accesso alla rete locale consentito"
+        } else {
+            "Permesso rete locale necessario per collegarsi a OSCam"
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (
+            serverSalvati.isNotEmpty() &&
+            preferences.getString("server_salvati", null) == null
+        ) {
+            salvaServerSalvati(
+                preferences = preferences,
+                server = serverSalvati
+            )
+        }
+
+        if (
+            Build.VERSION.SDK_INT >= 37 &&
+            !permessoReteConcesso
+        ) {
+            mostraSpiegazionePermesso = true
+        }
+    }
+
+    LaunchedEffect(
+        mostraConnessione,
+        mostraWebIf,
+        mostraLiveLog,
+        riavvioInCorso,
+        host,
+        porta,
+        username,
+        password
+    ) {
+        if (
+            !mostraConnessione &&
+            !mostraWebIf &&
+            !mostraLiveLog &&
+            !riavvioInCorso
+        ) {
+            while (true) {
+                // Primo refresh immediato: quando si chiude WebIF/Live Log
+                // la dashboard non aspetta più 5 secondi prima di aggiornarsi.
+                val aggiornato =
+                    aggiornaDashboardDaOscam(
+                        mostraErroreSubito = false
+                    )
+
+                if (aggiornato) {
+                    erroriRefreshConsecutivi = 0
+                } else {
+                    erroriRefreshConsecutivi += 1
+
+                    if (erroriRefreshConsecutivi >= 3) {
+                        stato = "Connessione persa"
+                    }
+                }
+
+                kotlinx.coroutines.delay(5000)
+            }
+        }
+    }
+
+    if (mostraConfermaRiavvio) {
+        val serverAttivo =
+            serverSalvati.firstOrNull { server ->
+                server.host.trim() == host.trim() &&
+                        server.porta.trim() == porta.trim()
+            }
+
+        val nomeServerAttivo =
+            serverAttivo?.nome
+                ?: host.trim()
+                    .ifBlank { "server attivo" }
+
+        AlertDialog(
+            onDismissRequest = {
+                if (!riavvioInCorso) {
+                    mostraConfermaRiavvio = false
+                }
+            },
+            title = {
+                Text(
+                    "Riavviare $nomeServerAttivo?"
+                )
+            },
+            text = {
+                Text(
+                    "Verrà riavviato SOLO il server OSCam attivo:\n\n" +
+                            "$nomeServerAttivo\n" +
+                            "${host.trim()}:${porta.trim()}\n\n" +
+                            "Gli altri server salvati non verranno toccati. " +
+                            "I client di questo server verranno temporaneamente " +
+                            "disconnessi e OSCam Live Monitor proverà a riconnettersi " +
+                            "automaticamente."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mostraConfermaRiavvio = false
+
+                        if (host.isBlank() || porta.isBlank()) {
+                            stato =
+                                "Inserisci prima Host/IP e Porta"
+                            return@TextButton
+                        }
+
+                        riavvioInCorso = true
+                        stato = "Riavvio OSCam..."
+
+                        coroutineScope.launch {
+                            val risultatoRiavvio =
+                                withContext(Dispatchers.IO) {
+                                    api.riavviaOscam(
+                                        host = host.trim(),
+                                        porta = porta.trim(),
+                                        username = username,
+                                        password = password
+                                    )
+                                }
+
+                            if (
+                                risultatoRiavvio.startsWith(
+                                    "ERRORE:",
+                                    ignoreCase = true
+                                )
+                            ) {
+                                riavvioInCorso = false
+                                stato = risultatoRiavvio
+                                return@launch
+                            }
+
+                            // OSCam ha ricevuto il comando: ora può restare offline
+                            // per alcuni secondi mentre il WebIF viene riavviato.
+                            // Manteniamo gli ultimi dati della dashboard e non mostriamo
+                            // gli errori transitori dei singoli tentativi.
+                            stato = "Riconnessione OSCam..."
+                            kotlinx.coroutines.delay(3000)
+
+                            var riconnesso = false
+
+                            for (tentativo in 1..10) {
+                                val aggiornato =
+                                    aggiornaDashboardDaOscam(
+                                        mostraErroreSubito = false
+                                    )
+
+                                if (aggiornato) {
+                                    riconnesso = true
+                                    break
+                                }
+
+                                if (tentativo < 10) {
+                                    stato = "Riconnessione OSCam... ($tentativo/10)"
+                                    kotlinx.coroutines.delay(2000)
+                                }
+                            }
+
+                            riavvioInCorso = false
+
+                            if (riconnesso) {
+                                mostraConnessione = false
+                                stato = "Connesso"
+                            } else {
+                                stato =
+                                    "ERRORE: OSCam non raggiungibile dopo il riavvio"
+                            }
+                        }
+                    }
+                ) {
+                    Text("Riavvia $nomeServerAttivo")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        mostraConfermaRiavvio = false
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    if (mostraSpiegazionePermesso) {
+        AlertDialog(
+            onDismissRequest = {
+                mostraSpiegazionePermesso = false
+            },
+            title = {
+                Text("Accesso alla rete locale")
+            },
+            text = {
+                Text(
+                    "OSCam Live Monitor deve accedere alla rete locale " +
+                            "per collegarsi al WebIF di OSCam."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mostraSpiegazionePermesso = false
+
+                        if (Build.VERSION.SDK_INT >= 37) {
+                            richiestaPermessoRete.launch(
+                                Manifest.permission.ACCESS_LOCAL_NETWORK
+                            )
+                        }
+                    }
+                ) {
+                    Text("Continua")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        mostraSpiegazionePermesso = false
+                        stato =
+                            "Permesso rete locale necessario per OSCam"
+                    }
+                ) {
+                    Text("Non ora")
+                }
+            }
+        )
+    }
+
+    if (mostraAggiungiServer) {
+        AlertDialog(
+            onDismissRequest = {
+                mostraAggiungiServer = false
+            },
+            title = {
+                Text("Aggiungi server OSCam")
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = nuovoNomeServer,
+                        onValueChange = { nuovoNomeServer = it },
+                        label = { Text("Nome server") },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = nuovoHostServer,
+                        onValueChange = { nuovoHostServer = it },
+                        label = { Text("Host/IP") },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = nuovaPortaServer,
+                        onValueChange = { nuovaPortaServer = it },
+                        label = { Text("Porta") },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = nuovoUsernameServer,
+                        onValueChange = { nuovoUsernameServer = it },
+                        label = { Text("Username") },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = nuovaPasswordServer,
+                        onValueChange = { nuovaPasswordServer = it },
+                        label = { Text("Password") },
+                        visualTransformation =
+                            if (mostraPasswordNuovo) {
+                                androidx.compose.ui.text.input.VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
+                        trailingIcon = {
+                            TextButton(
+                                onClick = {
+                                    mostraPasswordNuovo =
+                                        !mostraPasswordNuovo
+                                }
+                            ) {
+                                Text("👁")
+                            }
+                        },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val nomePulito = nuovoNomeServer.trim()
+                        val hostPulito = nuovoHostServer.trim()
+                        val portaPulita = nuovaPortaServer.trim()
+
+                        if (
+                            nomePulito.isBlank() ||
+                            hostPulito.isBlank() ||
+                            portaPulita.toIntOrNull() == null
+                        ) {
+                            stato = "Inserisci nome, Host/IP e una porta valida"
+                        } else {
+                            val nuovoServer = OscamServer(
+                                nome = nomePulito,
+                                host = hostPulito,
+                                porta = portaPulita,
+                                username = nuovoUsernameServer,
+                                password = nuovaPasswordServer
+                            )
+
+                            serverSalvati = serverSalvati + nuovoServer
+
+                            salvaServerSalvati(
+                                preferences = preferences,
+                                server = serverSalvati
+                            )
+
+                            host = nuovoServer.host
+                            porta = nuovoServer.porta
+                            username = nuovoServer.username
+                            password = nuovoServer.password
+
+                            preferences.edit()
+                                .putString("nome_server", nuovoServer.nome)
+                                .putString("host", nuovoServer.host)
+                                .putString("porta", nuovoServer.porta)
+                                .putString("username", nuovoServer.username)
+                                .putString("password", nuovoServer.password)
+                                .apply()
+
+                            nuovoNomeServer = ""
+                            nuovoHostServer = ""
+                            nuovaPortaServer = ""
+                            nuovoUsernameServer = ""
+                            nuovaPasswordServer = ""
+                            mostraAggiungiServer = false
+                            stato = "Server ${nuovoServer.nome} aggiunto"
+                        }
+                    }
+                ) {
+                    Text("Salva")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        mostraAggiungiServer = false
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    serverDaModificare?.let { serverOriginale ->
+        AlertDialog(
+            onDismissRequest = {
+                serverDaModificare = null
+            },
+            title = {
+                Text("Modifica server OSCam")
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = modificaNomeServer,
+                        onValueChange = {
+                            modificaNomeServer = it
+                        },
+                        label = {
+                            Text("Nome server")
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = modificaHostServer,
+                        onValueChange = {
+                            modificaHostServer = it
+                        },
+                        label = {
+                            Text("Host/IP")
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = modificaPortaServer,
+                        onValueChange = {
+                            modificaPortaServer = it
+                        },
+                        label = {
+                            Text("Porta")
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = modificaUsernameServer,
+                        onValueChange = {
+                            modificaUsernameServer = it
+                        },
+                        label = {
+                            Text("Username")
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        value = modificaPasswordServer,
+                        onValueChange = {
+                            modificaPasswordServer = it
+                        },
+                        label = {
+                            Text("Password")
+                        },
+                        visualTransformation =
+                            if (mostraPasswordModifica) {
+                                androidx.compose.ui.text.input.VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
+                        trailingIcon = {
+                            TextButton(
+                                onClick = {
+                                    mostraPasswordModifica =
+                                        !mostraPasswordModifica
+                                }
+                            ) {
+                                Text("👁")
+                            }
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    TextButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            serverDaEliminare = serverOriginale
+                            serverDaModificare = null
+                        }
+                    ) {
+                        Text("Elimina server")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val nomePulito =
+                            modificaNomeServer.trim()
+
+                        val hostPulito =
+                            modificaHostServer.trim()
+
+                        val portaPulita =
+                            modificaPortaServer.trim()
+
+                        if (
+                            nomePulito.isBlank() ||
+                            hostPulito.isBlank() ||
+                            portaPulita.toIntOrNull() == null
+                        ) {
+                            stato =
+                                "Inserisci nome, Host/IP e una porta valida"
+                        } else {
+                            val serverAggiornato =
+                                serverOriginale.copy(
+                                    nome = nomePulito,
+                                    host = hostPulito,
+                                    porta = portaPulita,
+                                    username = modificaUsernameServer,
+                                    password = modificaPasswordServer
+                                )
+
+                            val indice =
+                                serverSalvati.indexOf(
+                                    serverOriginale
+                                )
+
+                            if (indice >= 0) {
+                                val nuovaLista =
+                                    serverSalvati.toMutableList()
+
+                                nuovaLista[indice] =
+                                    serverAggiornato
+
+                                serverSalvati =
+                                    nuovaLista
+
+                                salvaServerSalvati(
+                                    preferences = preferences,
+                                    server = serverSalvati
+                                )
+
+                                val eraSelezionato =
+                                    host.trim() == serverOriginale.host &&
+                                            porta.trim() == serverOriginale.porta
+
+                                if (eraSelezionato) {
+                                    host =
+                                        serverAggiornato.host
+
+                                    porta =
+                                        serverAggiornato.porta
+
+                                    username =
+                                        serverAggiornato.username
+
+                                    password =
+                                        serverAggiornato.password
+
+                                    preferences.edit()
+                                        .putString(
+                                            "nome_server",
+                                            serverAggiornato.nome
+                                        )
+                                        .putString(
+                                            "host",
+                                            serverAggiornato.host
+                                        )
+                                        .putString(
+                                            "porta",
+                                            serverAggiornato.porta
+                                        )
+                                        .putString(
+                                            "username",
+                                            serverAggiornato.username
+                                        )
+                                        .putString(
+                                            "password",
+                                            serverAggiornato.password
+                                        )
+                                        .apply()
+                                }
+
+                                stato =
+                                    "Server ${serverAggiornato.nome} modificato"
+                            }
+
+                            serverDaModificare = null
+                        }
+                    }
+                ) {
+                    Text("Salva")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        serverDaModificare = null
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    serverDaEliminare?.let { serverOriginale ->
+        AlertDialog(
+            onDismissRequest = {
+                serverDaEliminare = null
+            },
+            title = {
+                Text("Eliminare server?")
+            },
+            text = {
+                Text(
+                    "Vuoi eliminare definitivamente " +
+                            "\"${serverOriginale.nome}\"?"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val indice =
+                            serverSalvati.indexOf(
+                                serverOriginale
+                            )
+
+                        if (indice >= 0) {
+                            val eraSelezionato =
+                                host.trim() == serverOriginale.host &&
+                                        porta.trim() == serverOriginale.porta
+
+                            val nuovaLista =
+                                serverSalvati.toMutableList()
+
+                            nuovaLista.removeAt(indice)
+
+                            serverSalvati =
+                                nuovaLista
+
+                            salvaServerSalvati(
+                                preferences = preferences,
+                                server = serverSalvati
+                            )
+
+                            if (eraSelezionato) {
+                                val nuovoSelezionato =
+                                    serverSalvati.firstOrNull()
+
+                                if (nuovoSelezionato != null) {
+                                    host =
+                                        nuovoSelezionato.host
+
+                                    porta =
+                                        nuovoSelezionato.porta
+
+                                    username =
+                                        nuovoSelezionato.username
+
+                                    password =
+                                        nuovoSelezionato.password
+
+                                    preferences.edit()
+                                        .putString(
+                                            "nome_server",
+                                            nuovoSelezionato.nome
+                                        )
+                                        .putString(
+                                            "host",
+                                            nuovoSelezionato.host
+                                        )
+                                        .putString(
+                                            "porta",
+                                            nuovoSelezionato.porta
+                                        )
+                                        .putString(
+                                            "username",
+                                            nuovoSelezionato.username
+                                        )
+                                        .putString(
+                                            "password",
+                                            nuovoSelezionato.password
+                                        )
+                                        .apply()
+                                } else {
+                                    host = ""
+                                    porta = ""
+                                    username = ""
+                                    password = ""
+
+                                    preferences.edit()
+                                        .remove("nome_server")
+                                        .remove("host")
+                                        .remove("porta")
+                                        .remove("username")
+                                        .remove("password")
+                                        .apply()
+                                }
+                            }
+
+                            stato =
+                                "Server ${serverOriginale.nome} eliminato"
+                        }
+
+                        serverDaEliminare = null
+                    }
+                ) {
+                    Text("Elimina")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        serverDaEliminare = null
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    // La dashboard resta sempre composta anche mentre WebIF o Live Log sono aperti.
+    // In questo modo, alla chiusura torna immediatamente completa con gli ultimi dati.
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(
+                    horizontal = if (schermoCompatto) 12.dp else 16.dp,
+                    vertical = if (schermoCompatto) 10.dp else 16.dp
+                )
+        ) {
+            ExpressiveAppHeader(
+                compatto = schermoCompatto
+            )
+
+            Spacer(
+                modifier = Modifier.height(
+                    if (schermoCompatto) 12.dp else 16.dp
+                )
+            )
+
+            if (mostraConnessione) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    ExpressiveSectionLabel(
+                        titolo = "Server OSCam",
+                        icona = Icons.Default.Storage,
+                        coloreAccento = Color(0xFF4CAF50),
+                        compatto = schermoCompatto,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    OutlinedButton(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            Color(0xFF4CAF50)
+                        ),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFF4CAF50)
+                        ),
+                        onClick = {
+                            nuovoNomeServer = ""
+                            nuovoHostServer = ""
+                            nuovaPortaServer = ""
+                            nuovoUsernameServer = ""
+                            nuovaPasswordServer = ""
+                            mostraPasswordNuovo = false
+                            mostraAggiungiServer = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Aggiungi")
+                    }
+                }
+
+                if (serverSalvati.isEmpty()) {
+                    Text("Nessun server salvato")
+                } else {
+                    serverSalvati.forEach { server ->
+                        val serverSelezionato =
+                            host.trim() == server.host &&
+                                    porta.trim() == server.porta
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    vertical = if (schermoCompatto) 3.dp else 5.dp
+                                ),
+                            shape =
+                                androidx.compose.foundation.shape.RoundedCornerShape(
+                                    if (schermoCompatto) 20.dp else 24.dp
+                                ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                width = if (serverSelezionato) 1.8.dp else 1.1.dp,
+                                color = if (serverSelezionato) {
+                                    if (temaScuro) Color(0xFF4CAF50) else Color(0xFF2E7D32)
+                                } else {
+                                    if (temaScuro) MaterialTheme.colorScheme.outlineVariant else Color(0xFFD7DDD8)
+                                }
+                            ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (temaScuro) {
+                                    if (serverSelezionato) {
+                                        Color(0xFF153A22)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
+                                    }
+                                } else {
+                                    Color.White
+                                }
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = if (temaScuro) {
+                                    if (serverSelezionato) 5.dp else 1.dp
+                                } else {
+                                    1.dp
+                                }
+                            ),
+                            onClick = {
+                                host = server.host
+                                porta = server.porta
+                                username = server.username
+                                password = server.password
+
+                                preferences.edit()
+                                    .putString("nome_server", server.nome)
+                                    .putString("host", server.host)
+                                    .putString("porta", server.porta)
+                                    .putString("username", server.username)
+                                    .putString("password", server.password)
+                                    .apply()
+
+                                stato = "Server ${server.nome} selezionato"
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        if (schermoCompatto) 9.dp else 12.dp
+                                    ),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = server.nome,
+                                        fontSize = if (schermoCompatto) 16.sp else 17.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (serverSelezionato) {
+                                            if (temaScuro) Color.White else Color(0xFF1F2A21)
+                                        } else {
+                                            if (temaScuro) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF303631)
+                                        }
+                                    )
+
+                                    Spacer(modifier = Modifier.height(2.dp))
+
+                                    Text(
+                                        text = "🌐 ${server.host}  •  ${server.porta}",
+                                        fontSize = if (schermoCompatto) 12.sp else 13.sp,
+                                        color = if (serverSelezionato) {
+                                            if (temaScuro) Color(0xFFD6EBDD) else Color(0xFF536057)
+                                        } else {
+                                            if (temaScuro) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF5F6861)
+                                        }
+                                    )
+                                }
+
+                                if (serverSelezionato) {
+                                    androidx.compose.material3.Surface(
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                                        color = if (temaScuro) {
+                                            Color(0xFF66BB6A).copy(alpha = 0.14f)
+                                        } else {
+                                            Color.White
+                                        },
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            if (temaScuro) 0.dp else 1.1.dp,
+                                            if (temaScuro) Color.Transparent else Color(0xFF2E7D32).copy(alpha = 0.55f)
+                                        )
+                                    ) {
+                                        Text(
+                                            text = "● Attivo",
+                                            color = if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = if (schermoCompatto) 11.sp else 12.sp,
+                                            modifier = Modifier.padding(
+                                                horizontal = 9.dp,
+                                                vertical = 5.dp
+                                            )
+                                        )
+                                    }
+                                }
+
+                                TextButton(
+                                    onClick = {
+                                        serverDaModificare =
+                                            server
+
+                                        modificaNomeServer =
+                                            server.nome
+
+                                        modificaHostServer =
+                                            server.host
+
+                                        modificaPortaServer =
+                                            server.porta
+
+                                        modificaUsernameServer =
+                                            server.username
+
+                                        modificaPasswordServer =
+                                            server.password
+
+                                        mostraPasswordModifica =
+                                            false
+                                    }
+                                ) {
+                                    Text(
+                                        text = "✎ Modifica",
+                                        fontSize =
+                                            if (schermoCompatto) 12.sp else 14.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ExpressiveSectionLabel(
+                    titolo = "Connessione",
+                    icona = Icons.Default.Settings,
+                    coloreAccento = Color(0xFF4CAF50),
+                    compatto = schermoCompatto
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val coloriCampoConnessione =
+                    if (temaScuro) {
+                        androidx.compose.material3.OutlinedTextFieldDefaults.colors()
+                    } else {
+                        androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF111411),
+                            unfocusedTextColor = Color(0xFF111411),
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedBorderColor = Color(0xFF2E7D32),
+                            unfocusedBorderColor = Color(0xFF7F9184),
+                            focusedLabelColor = Color(0xFF2E7D32),
+                            unfocusedLabelColor = Color(0xFF3F4A42),
+                            cursorColor = Color(0xFF2E7D32)
+                        )
+                    }
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    value = host,
+                    onValueChange = { host = it },
+                    label = { Text("Host/IP") },
+                    leadingIcon = { Text("🌐") },
+                    colors = coloriCampoConnessione,
+                    singleLine = true
+                )
+
+                Spacer(
+                    modifier = Modifier.height(
+                        if (schermoCompatto) 6.dp else 8.dp
+                    )
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    value = porta,
+                    onValueChange = { porta = it },
+                    label = { Text("Porta") },
+                    leadingIcon = { Text("🔌") },
+                    colors = coloriCampoConnessione,
+                    singleLine = true
+                )
+
+                Spacer(
+                    modifier = Modifier.height(
+                        if (schermoCompatto) 6.dp else 8.dp
+                    )
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    leadingIcon = { Text("👤") },
+                    colors = coloriCampoConnessione,
+                    singleLine = true
+                )
+
+                Spacer(
+                    modifier = Modifier.height(
+                        if (schermoCompatto) 6.dp else 8.dp
+                    )
+                )
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    leadingIcon = { Text("🔒") },
+                    colors = coloriCampoConnessione,
+                    visualTransformation =
+                        if (mostraPasswordConnessione) {
+                            androidx.compose.ui.text.input.VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                    trailingIcon = {
+                        TextButton(
+                            onClick = {
+                                mostraPasswordConnessione =
+                                    !mostraPasswordConnessione
+                            }
+                        ) {
+                            Text("👁")
+                        }
+                    },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(if (schermoCompatto) 58.dp else 56.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2E7D32),
+                        contentColor = Color.White
+                    ),
+                    onClick = {
+                        if (!permessoReteConcesso) {
+                            stato =
+                                "Concedi prima l'accesso alla rete locale"
+                            mostraSpiegazionePermesso = true
+                            return@Button
+                        }
+
+                        if (host.isBlank() || porta.isBlank()) {
+                            stato = "Inserisci Host/IP e Porta"
+                            return@Button
+                        }
+
+                        preferences.edit()
+                            .putString("host", host.trim())
+                            .putString("porta", porta.trim())
+                            .putString("username", username)
+                            .putString("password", password)
+                            .apply()
+
+                        stato = "Connessione..."
+                        versioneOscam = ""
+                        uptime = ""
+                        cpuOscam = ""
+                        ramOscam = ""
+
+                        servers = ""
+                        readers = ""
+                        proxies = ""
+                        clients = ""
+                        users = ""
+
+                        elencoServers = emptyList()
+                        elencoReaders = emptyList()
+                        elencoProxies = emptyList()
+                        elencoClients = emptyList()
+                        elencoUsers = emptyList()
+
+                        mostraServers = true
+                        mostraReaders = true
+                        mostraProxies = true
+                        mostraClients = true
+
+                        coroutineScope.launch {
+                            if (aggiornaDashboardDaOscam()) {
+                                mostraConnessione = false
+                            }
+                        }
+                    }
+                ) {
+                    Text(
+                        text = "●  Connetti",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+            }
+
+            if (mostraConnessione && stato.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            if (stato.isNotBlank()) {
+                val coloreStato = when {
+                    stato.equals("Connesso", ignoreCase = true) ->
+                        if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32)
+
+                    stato.contains("selezionato", ignoreCase = true) ->
+                        if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32)
+
+                    stato.contains("Connessione", ignoreCase = true) ->
+                        if (temaScuro) Color(0xFFFFB74D) else Color(0xFFD96B00)
+
+                    stato.startsWith("ERRORE:", ignoreCase = true) ->
+                        Color(0xFFEF5350)
+
+                    stato.contains("necessario", ignoreCase = true) ->
+                        Color(0xFFEF5350)
+
+                    else ->
+                        MaterialTheme.colorScheme.primary
+                }
+
+                val serverAttivoDashboard =
+                    if (!mostraConnessione) {
+                        serverSalvati.firstOrNull { server ->
+                            server.host.trim() == host.trim() &&
+                                    server.porta.trim() == porta.trim()
+                        }
+                    } else {
+                        null
+                    }
+
+                val nomeServerDashboard =
+                    serverAttivoDashboard?.nome
+                        ?: preferences.getString("nome_server", null)
+                            ?.takeIf { it.isNotBlank() }
+                        ?: host.trim()
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.Surface(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                        color = if (temaScuro) {
+                            coloreStato.copy(alpha = 0.16f)
+                        } else {
+                            Color.White
+                        },
+                        border = androidx.compose.foundation.BorderStroke(
+                            if (temaScuro) 1.dp else 1.4.dp,
+                            coloreStato.copy(alpha = if (temaScuro) 0.70f else 0.85f)
+                        ),
+                        shadowElevation = if (temaScuro) 2.dp else 1.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(
+                                horizontal = 15.dp,
+                                vertical = 9.dp
+                            ),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .size(if (schermoCompatto) 10.dp else 11.dp)
+                                    .background(
+                                        color = coloreStato,
+                                        shape = androidx.compose.foundation.shape.CircleShape
+                                    )
+                            )
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Text(
+                                text = stato,
+                                color = coloreStato,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = if (schermoCompatto) 14.sp else 15.sp
+                            )
+                        }
+                    }
+
+                    if (
+                        !mostraConnessione &&
+                        stato.equals("Connesso", ignoreCase = true) &&
+                        host.isNotBlank()
+                    ) {
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            color = if (temaScuro) {
+                                coloreStato.copy(alpha = 0.10f)
+                            } else {
+                                Color.White
+                            },
+                            border = androidx.compose.foundation.BorderStroke(
+                                if (temaScuro) 1.dp else 1.2.dp,
+                                coloreStato.copy(alpha = if (temaScuro) 0.42f else 0.60f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(
+                                    horizontal = 11.dp,
+                                    vertical = 7.dp
+                                ),
+                                horizontalAlignment = androidx.compose.ui.Alignment.End
+                            ) {
+                                Text(
+                                    text = nomeServerDashboard,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = coloreStato,
+                                    maxLines = 1
+                                )
+
+                                Text(
+                                    text = "${host.trim()}:${porta.trim()}",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            if (!mostraConnessione) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outline
+                    ),
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    onClick = {
+                        mostraConnessione = true
+                        stato = ""
+                        versioneOscam = ""
+                        uptime = ""
+                        cpuOscam = ""
+                        ramOscam = ""
+
+                        servers = ""
+                        readers = ""
+                        proxies = ""
+                        clients = ""
+                        users = ""
+
+                        elencoServers = emptyList()
+                        elencoReaders = emptyList()
+                        elencoProxies = emptyList()
+                        elencoClients = emptyList()
+                        elencoUsers = emptyList()
+
+                        mostraServers = true
+                        mostraReaders = true
+                        mostraProxies = true
+                        mostraClients = true
+                    }
+                ) {
+                    Text("⚙  Impostazioni")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        Color(0xFF29B6F6)
+                    ),
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFF29B6F6)
+                    ),
+                    onClick = {
+                        mostraWebIf = true
+                    }
+                ) {
+                    Text("🌐  Apri WebIF")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.primary
+                    ),
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    onClick = {
+                        mostraLiveLog = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ReceiptLong,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Live Log")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        Color(0xFFFFB300)
+                    ),
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFFB300)
+                    ),
+                    onClick = {
+                        mostraStrumenti = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Build,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Strumenti")
+                }
+            }
+
+            if (
+                versioneOscam.isNotBlank() ||
+                uptime.isNotBlank() ||
+                cpuOscam.isNotBlank() ||
+                ramOscam.isNotBlank()
+            ) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                ExpressiveOscamInfoCard(
+                    versione = versioneOscam,
+                    uptime = uptime,
+                    cpu = cpuOscam,
+                    ram = ramOscam,
+                    compatto = schermoCompatto,
+                    riavvioInCorso = riavvioInCorso,
+                    onRiavviaClick = {
+                        if (host.isBlank() || porta.isBlank()) {
+                            stato = "Inserisci prima Host/IP e Porta"
+                        } else {
+                            mostraConfermaRiavvio = true
+                        }
+                    }
+                )
+            }
+
+            if (mostraConnessione) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(
+                            id = if (temaScuro) {
+                                R.drawable.mr_unix_footer
+                            } else {
+                                R.drawable.mr_unix_footer_light
+                            }
+                        ),
+                        contentDescription = "mr-unix",
+                        modifier = Modifier.height(56.dp)
+                    )
+                }
+            } else if (ultimoAggiornamento.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    if (refreshManualeInCorso) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF66BB6A)
+                        )
+                    } else {
+                        androidx.compose.material3.Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Aggiorna dashboard",
+                            tint = Color(0xFF66BB6A),
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable {
+                                    if (!refreshManualeInCorso) {
+                                        refreshManualeInCorso = true
+                    
+                                        coroutineScope.launch {
+                                            try {
+                                                aggiornaDashboardDaOscam(
+                                                    mostraErroreSubito = true
+                                                )
+                                            } finally {
+                                                refreshManualeInCorso = false
+                                            }
+                                        }
+                                    }
+                                }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.padding(horizontal = 3.dp))
+
+                    Text(
+                        text = "Aggiornato alle $ultimoAggiornamento",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (
+                servers.isNotBlank() ||
+                readers.isNotBlank() ||
+                proxies.isNotBlank() ||
+                clients.isNotBlank() ||
+                users.isNotBlank()
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement =
+                        Arrangement.spacedBy(
+                            if (schermoCompatto) 6.dp else 8.dp
+                        )
+                ) {
+                    DashboardCard(
+                        titolo = "Server",
+                        compatto = schermoCompatto,
+                        valore = servers,
+                        icona = Icons.Default.Storage,
+                        coloreAccento = Color(0xFF42A5F5),
+                        aperta = mostraServers,
+                        onClick = {
+                            mostraServers = !mostraServers
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    DashboardCard(
+                        titolo = "Readers",
+                        compatto = schermoCompatto,
+                        valore = readers,
+                        icona = Icons.Default.CreditCard,
+                        coloreAccento = Color(0xFF66BB6A),
+                        aperta = mostraReaders,
+                        onClick = {
+                            mostraReaders = !mostraReaders
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement =
+                        Arrangement.spacedBy(
+                            if (schermoCompatto) 6.dp else 8.dp
+                        )
+                ) {
+                    DashboardCard(
+                        titolo = "Proxies",
+                        compatto = schermoCompatto,
+                        valore = proxies,
+                        icona = Icons.Default.SwapHoriz,
+                        coloreAccento = Color(0xFFAB47BC),
+                        aperta = mostraProxies,
+                        onClick = {
+                            mostraProxies = !mostraProxies
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    DashboardCard(
+                        titolo = "Users / Clients",
+                        compatto = schermoCompatto,
+                        valore =
+                            if (users.isNotBlank()) {
+                                "$users / $clients"
+                            } else {
+                                clients
+                            },
+                        icona = Icons.Default.Devices,
+                        coloreAccento = Color(0xFFFFA726),
+                        aperta = mostraClients,
+                        onClick = {
+                            mostraClients = !mostraClients
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            if (mostraServers && elencoServers.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(18.dp))
+
+                TitoloSezioneDashboard(
+                    titolo = "Servizi OSCam",
+                    icona = Icons.Default.Storage,
+                    coloreAccento = Color(0xFF42A5F5),
+                    compatto = schermoCompatto
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                elencoServers.forEachIndexed { indice, server ->
+                    VoceStatoCard(
+                        testo = server,
+                        icona = if (indice == 0) {
+                            Icons.Default.Storage
+                        } else {
+                            Icons.Default.Language
+                        },
+                        coloreAccento = Color(0xFF42A5F5),
+                        compatto = schermoCompatto
+                    )
+
+                    if (indice < elencoServers.lastIndex) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+            }
+
+            if (mostraReaders && elencoReaders.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(18.dp))
+
+                TitoloSezioneDashboard(
+                    titolo = "Elenco reader",
+                    icona = Icons.Default.CreditCard,
+                    coloreAccento = Color(0xFF66BB6A),
+                    compatto = schermoCompatto
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                elencoReaders.forEachIndexed { indice, reader ->
+                    VoceStatoCard(
+                        testo = reader,
+                        icona = Icons.Default.CreditCard,
+                        coloreAccento = Color(0xFF66BB6A),
+                        compatto = schermoCompatto,
+                        mostraToggleReader = true,
+                        readerAbilitato = readerAbilitati[
+                            reader.substringBeforeLast("—", reader).trim()
+                        ] ?: true,
+                        toggleReaderInCorso =
+                            reader.substringBeforeLast("—", reader).trim() in
+                                toggleReadersInCorso,
+                        onToggleReader = {
+                            val nomeReader =
+                                reader.substringBeforeLast("—", reader).trim()
+
+                            val attualmenteAbilitato =
+                                readerAbilitati[nomeReader] ?: true
+
+                            toggleReadersInCorso =
+                                toggleReadersInCorso + nomeReader
+
+                            coroutineScope.launch {
+                                val esito =
+                                    withContext(Dispatchers.IO) {
+                                        api.impostaReaderAbilitato(
+                                            host = host.trim(),
+                                            porta = porta.trim(),
+                                            username = username,
+                                            password = password,
+                                            nomeReader = nomeReader,
+                                            abilita = !attualmenteAbilitato
+                                        )
+                                    }
+
+                                if (!esito.startsWith("ERRORE:")) {
+                                    val nuovoStato =
+                                        !attualmenteAbilitato
+
+                                    readerAbilitati =
+                                        readerAbilitati +
+                                                (nomeReader to nuovoStato)
+
+                                    elencoReaders =
+                                        elencoReaders.map { voce ->
+                                            val nome =
+                                                voce.substringBeforeLast(
+                                                    "—",
+                                                    voce
+                                                ).trim()
+
+                                            if (nome == nomeReader) {
+                                                "$nomeReader — " +
+                                                    if (nuovoStato)
+                                                        "OFFLINE"
+                                                    else
+                                                        "DISABILITATO"
+                                            } else {
+                                                voce
+                                            }
+                                        }
+
+                                    kotlinx.coroutines.delay(400)
+
+                                    aggiornaDashboardDaOscam(
+                                        mostraErroreSubito = false
+                                    )
+                                }
+
+                                toggleReadersInCorso =
+                                    toggleReadersInCorso - nomeReader
+                            }
+                        }
+                    )
+
+                    if (indice < elencoReaders.lastIndex) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+            }
+
+            if (mostraProxies && elencoProxies.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(18.dp))
+
+                TitoloSezioneDashboard(
+                    titolo = "Elenco proxy",
+                    icona = Icons.Default.SwapHoriz,
+                    coloreAccento = Color(0xFFAB47BC),
+                    compatto = schermoCompatto
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                elencoProxies.forEachIndexed { indice, proxy ->
+                    VoceStatoCard(
+                        testo = proxy,
+                        icona = Icons.Default.SwapHoriz,
+                        coloreAccento = Color(0xFFAB47BC),
+                        compatto = schermoCompatto,
+                        mostraToggleReader = true,
+                        readerAbilitato = readerAbilitati[
+                            proxy.substringBeforeLast("—", proxy).trim()
+                        ] ?: true,
+                        toggleReaderInCorso =
+                            proxy.substringBeforeLast("—", proxy).trim() in
+                                toggleProxiesInCorso,
+                        onToggleReader = {
+                            val nomeProxy =
+                                proxy.substringBeforeLast("—", proxy).trim()
+
+                            val attualmenteAbilitato =
+                                readerAbilitati[nomeProxy] ?: true
+
+                            toggleProxiesInCorso =
+                                toggleProxiesInCorso + nomeProxy
+
+                            coroutineScope.launch {
+                                val esito =
+                                    withContext(Dispatchers.IO) {
+                                        api.impostaReaderAbilitato(
+                                            host = host.trim(),
+                                            porta = porta.trim(),
+                                            username = username,
+                                            password = password,
+                                            nomeReader = nomeProxy,
+                                            abilita = !attualmenteAbilitato
+                                        )
+                                    }
+
+                                if (!esito.startsWith("ERRORE:")) {
+                                    val nuovoStato =
+                                        !attualmenteAbilitato
+
+                                    readerAbilitati =
+                                        readerAbilitati +
+                                                (nomeProxy to nuovoStato)
+
+                                    elencoProxies =
+                                        elencoProxies.map { voce ->
+                                            val nome =
+                                                voce.substringBeforeLast(
+                                                    "—",
+                                                    voce
+                                                ).trim()
+
+                                            if (nome == nomeProxy) {
+                                                "$nomeProxy — " +
+                                                    if (nuovoStato)
+                                                        "OFFLINE"
+                                                    else
+                                                        "DISABILITATO"
+                                            } else {
+                                                voce
+                                            }
+                                        }
+
+                                    kotlinx.coroutines.delay(400)
+
+                                    aggiornaDashboardDaOscam(
+                                        mostraErroreSubito = false
+                                    )
+                                }
+
+                                toggleProxiesInCorso =
+                                    toggleProxiesInCorso - nomeProxy
+                            }
+                        }
+                    )
+
+                    if (indice < elencoProxies.lastIndex) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+            }
+
+            if (mostraClients && elencoUsers.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(18.dp))
+
+                TitoloSezioneDashboard(
+                    titolo = "Users",
+                    icona = Icons.Default.Devices,
+                    coloreAccento = Color(0xFFFFA726),
+                    compatto = schermoCompatto
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                elencoUsers.forEachIndexed { indice, user ->
+                    ClientInfoCard(
+                        testo = user,
+                        compatto = schermoCompatto,
+                        mostraToggleUser = true,
+                        userAbilitato = userAbilitati[
+                            user.lineSequence()
+                                .firstOrNull()
+                                ?.substringBeforeLast("—")
+                                ?.trim()
+                                .orEmpty()
+                        ] ?: true,
+                        toggleUserInCorso =
+                            user.lineSequence()
+                                .firstOrNull()
+                                ?.substringBeforeLast("—")
+                                ?.trim()
+                                .orEmpty() in toggleUsersInCorso,
+                        onToggleUser = {
+                            val nomeUser =
+                                user.lineSequence()
+                                    .firstOrNull()
+                                    ?.substringBeforeLast("—")
+                                    ?.trim()
+                                    .orEmpty()
+
+                            val attualmenteAbilitato =
+                                userAbilitati[nomeUser] ?: true
+
+                            toggleUsersInCorso =
+                                toggleUsersInCorso + nomeUser
+
+                            coroutineScope.launch {
+                                val esito =
+                                    withContext(Dispatchers.IO) {
+                                        api.impostaUserAbilitato(
+                                            host = host.trim(),
+                                            porta = porta.trim(),
+                                            username = username,
+                                            password = password,
+                                            nomeUser = nomeUser,
+                                            abilita = !attualmenteAbilitato
+                                        )
+                                    }
+
+                                if (!esito.startsWith("ERRORE:")) {
+                                    userAbilitati =
+                                        userAbilitati +
+                                                (
+                                                    nomeUser to
+                                                        !attualmenteAbilitato
+                                                )
+
+                                    kotlinx.coroutines.delay(1500)
+
+                                    aggiornaDashboardDaOscam(
+                                        mostraErroreSubito = false
+                                    )
+                                }
+
+                                toggleUsersInCorso =
+                                    toggleUsersInCorso - nomeUser
+                            }
+                        }
+                    )
+
+                    if (indice < elencoUsers.lastIndex) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            }
+
+            if (mostraClients && elencoClients.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(18.dp))
+
+                TitoloSezioneDashboard(
+                    titolo = "Client connessi",
+                    icona = Icons.Default.Devices,
+                    coloreAccento = Color(0xFFFFA726),
+                    compatto = schermoCompatto
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                elencoClients.forEachIndexed { indice, client ->
+                    ClientInfoCard(
+                        testo = client,
+                        compatto = schermoCompatto
+                    )
+
+                    if (indice < elencoClients.lastIndex) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            }
+        }
+
+        if (mostraWebIf) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                WebIfScreen(
+                    host = host,
+                    porta = porta,
+                    username = username,
+                    password = password,
+                    onClose = {
+                        mostraWebIf = false
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        } else if (mostraLiveLog) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                LiveLogScreen(
+                    host = host,
+                    porta = porta,
+                    username = username,
+                    password = password,
+                    onClose = {
+                        mostraLiveLog = false
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        } else if (mostraStrumenti) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                val serverTerminale =
+                    serverSalvati.firstOrNull {
+                        it.host.trim() == host.trim() &&
+                        it.porta.trim() == porta.trim()
+                    }
+
+                TerminalToolsScreen(
+                    serverKey = "${host.trim()}_${porta.trim()}",
+                    serverName = serverTerminale?.nome ?: host.trim(),
+                    defaultHost = host.trim(),
+                    onClose = {
+                        mostraStrumenti = false
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun ExpressiveAppHeader(
+    compatto: Boolean
+) {
+    val temaScuroHeader = androidx.compose.foundation.isSystemInDarkTheme()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 24.dp else 28.dp
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            if (temaScuroHeader) 1.dp else 1.1.dp,
+            if (temaScuroHeader) {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
+            } else {
+                Color(0xFFD8DED8)
+            }
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (temaScuroHeader) {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
+            } else {
+                Color(0xFFF8F9F8)
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroHeader) 3.dp else 1.5.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = if (compatto) 16.dp else 20.dp,
+                    vertical = if (compatto) 15.dp else 18.dp
+                ),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                    if (compatto) 18.dp else 20.dp
+                ),
+                color = if (temaScuroHeader) {
+                    Color(0xFF4CAF50).copy(alpha = 0.16f)
+                } else {
+                    Color(0xFF4CAF50).copy(alpha = 0.12f)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null,
+                    tint = if (temaScuroHeader) Color(0xFF4CAF50) else Color(0xFF2E7D32),
+                    modifier = Modifier
+                        .padding(if (compatto) 11.dp else 13.dp)
+                        .size(if (compatto) 24.dp else 28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(if (compatto) 12.dp else 16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "OSCam",
+                        fontSize = if (compatto) 25.sp else 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (temaScuroHeader) MaterialTheme.colorScheme.onSurface else Color(0xFF1F2320)
+                    )
+
+                    Spacer(modifier = Modifier.width(7.dp))
+
+                    Text(
+                        text = "Live Monitor",
+                        fontSize = if (compatto) 25.sp else 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (temaScuroHeader) Color(0xFF4CAF50) else Color(0xFF2E7D32)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                Text(
+                    text = "Real-time OSCam Dashboard",
+                    fontSize = if (compatto) 13.sp else 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (temaScuroHeader) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF5E6760)
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun ExpressiveSectionLabel(
+    titolo: String,
+    icona: androidx.compose.ui.graphics.vector.ImageVector,
+    coloreAccento: Color,
+    compatto: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        androidx.compose.material3.Surface(
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+            color = coloreAccento.copy(alpha = 0.14f)
+        ) {
+            Icon(
+                imageVector = icona,
+                contentDescription = null,
+                tint = coloreAccento,
+                modifier = Modifier
+                    .padding(if (compatto) 7.dp else 8.dp)
+                    .size(if (compatto) 18.dp else 20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(9.dp))
+
+        Text(
+            text = titolo,
+            fontSize = if (compatto) 18.sp else 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
+}
+
+@Composable
+fun ExpressiveActiveServerCard(
+    nome: String,
+    host: String,
+    porta: String,
+    compatto: Boolean
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 20.dp else 24.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF4CAF50).copy(alpha = 0.10f)
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Color(0xFF4CAF50).copy(alpha = 0.30f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = if (compatto) 14.dp else 18.dp,
+                    vertical = if (compatto) 12.dp else 15.dp
+                ),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                color = Color(0xFF4CAF50).copy(alpha = 0.16f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null,
+                    tint = Color(0xFF4CAF50),
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(if (compatto) 20.dp else 23.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = nome,
+                    fontSize = if (compatto) 17.sp else 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (host.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text =
+                            if (porta.isNotBlank()) "$host:$porta" else host,
+                        fontSize = if (compatto) 12.sp else 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                color = Color(0xFF66BB6A).copy(alpha = 0.15f)
+            ) {
+                Text(
+                    text = "LIVE",
+                    color = Color(0xFF66BB6A),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = if (compatto) 10.sp else 11.sp,
+                    modifier = Modifier.padding(
+                        horizontal = 9.dp,
+                        vertical = 5.dp
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ExpressiveMiniInfo(
+    etichetta: String,
+    valore: String,
+    compatto: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val temaScuroMini = androidx.compose.foundation.isSystemInDarkTheme()
+
+    androidx.compose.material3.Surface(
+        modifier = modifier,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        color = if (temaScuroMini) {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
+        } else {
+            Color.White
+        },
+        border = androidx.compose.foundation.BorderStroke(
+            if (temaScuroMini) 1.dp else 1.1.dp,
+            if (temaScuroMini) {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            } else {
+                Color(0xFFD5DDD5)
+            }
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = if (compatto) 10.dp else 12.dp,
+                vertical = if (compatto) 8.dp else 10.dp
+            )
+        ) {
+            Text(
+                text = etichetta,
+                fontSize = if (compatto) 10.sp else 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = valore.ifBlank { "N/A" },
+                fontSize = if (compatto) 12.sp else 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+
+@Composable
+fun ExpressiveOscamInfoCard(
+    versione: String,
+    uptime: String,
+    cpu: String,
+    ram: String,
+    compatto: Boolean,
+    riavvioInCorso: Boolean,
+    onRiavviaClick: () -> Unit
+) {
+    val temaScuroCard = androidx.compose.foundation.isSystemInDarkTheme()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 20.dp else 24.dp
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            if (temaScuroCard) 0.dp else 1.1.dp,
+            if (temaScuroCard) Color.Transparent else Color(0xFFD8DDD8)
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (temaScuroCard) {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.62f)
+            } else {
+                Color(0xFFF8F9F8)
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroCard) 2.dp else 1.5.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                if (compatto) 13.dp else 16.dp
+            )
+        ) {
+            Row(
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    color = Color(0xFF42A5F5).copy(alpha = if (temaScuroCard) 0.14f else 0.10f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Storage,
+                        contentDescription = null,
+                        tint = Color(0xFF42A5F5),
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(if (compatto) 19.dp else 21.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column {
+                    Text(
+                        text = if (versione.isNotBlank()) "OSCam $versione" else "OSCam",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = if (compatto) 15.sp else 17.sp
+                    )
+
+                    if (uptime.isNotBlank()) {
+                        Text(
+                            text = "Uptime: $uptime",
+                            fontSize = if (compatto) 11.sp else 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            if (cpu.isNotBlank() || ram.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (cpu.isNotBlank()) {
+                        ExpressiveMiniInfo(
+                            etichetta = "CPU OSCam",
+                            valore = cpu,
+                            compatto = compatto,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    if (ram.isNotBlank()) {
+                        ExpressiveMiniInfo(
+                            etichetta = "RAM OSCam",
+                            valore = ram,
+                            compatto = compatto,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(if (compatto) 42.dp else 46.dp),
+                enabled = !riavvioInCorso,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.2.dp,
+                    Color(0xFFFF7043)
+                ),
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color(0xFFFF7043)
+                ),
+                onClick = onRiavviaClick
+            ) {
+                Text(
+                    if (riavvioInCorso) {
+                        "↻ Riavvio..."
+                    } else {
+                        "↻ Riavvia OSCam"
+                    },
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun TitoloSezioneDashboard(
+    titolo: String,
+    icona: androidx.compose.ui.graphics.vector.ImageVector,
+    coloreAccento: Color,
+    compatto: Boolean
+) {
+    Row(
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        androidx.compose.material3.Surface(
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+            color = coloreAccento.copy(alpha = 0.14f)
+        ) {
+            Icon(
+                imageVector = icona,
+                contentDescription = null,
+                tint = coloreAccento,
+                modifier = Modifier
+                    .padding(if (compatto) 7.dp else 8.dp)
+                    .size(if (compatto) 18.dp else 20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(9.dp))
+
+        Text(
+            text = titolo,
+            fontWeight = FontWeight.Bold,
+            fontSize = if (compatto) 17.sp else 19.sp,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
+}
+
+@Composable
+fun coloreStatoDashboard(stato: String): Color {
+    return when {
+        stato.contains("NOT FOUND", ignoreCase = true) ||
+                stato.contains("NOT OK", ignoreCase = true) ||
+                stato.contains("ERROR", ignoreCase = true) ||
+                stato.contains("OFFLINE", ignoreCase = true) ||
+                stato.contains("DISABLED", ignoreCase = true) ||
+                stato.contains("DISABILITATO", ignoreCase = true) ->
+            Color(0xFFF44336)
+
+        stato.contains("TIMEOUT", ignoreCase = true) ->
+            Color(0xFFFF9800)
+
+        stato.contains("CARDOK", ignoreCase = true) ||
+                stato.contains("CONNECTED", ignoreCase = true) ||
+                stato.contains("CONNESSO", ignoreCase = true) ||
+                stato.contains("ONLINE", ignoreCase = true) ||
+                stato.equals("OK", ignoreCase = true) ||
+                stato.contains("ACTIVE", ignoreCase = true) ||
+                stato.contains("ATTIVO", ignoreCase = true) ->
+            Color(0xFF4CAF50)
+
+        else ->
+            MaterialTheme.colorScheme.onSurfaceVariant
+    }
+}
+
+@Composable
+fun BadgeStatoDashboard(
+    stato: String,
+    compatto: Boolean
+) {
+    val statoVisualizzato =
+        when (stato.trim().uppercase()) {
+            "CONNECTED" -> "CONNESSO"
+            "ACTIVE" -> "ATTIVO"
+            "DISABLED" -> "DISABILITATO"
+            else -> stato
+        }
+
+    val colore = coloreStatoDashboard(statoVisualizzato)
+    val temaScuroBadge = androidx.compose.foundation.isSystemInDarkTheme()
+
+    androidx.compose.material3.Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+        color = if (temaScuroBadge) {
+            colore.copy(alpha = 0.13f)
+        } else {
+            Color.White
+        },
+        border = androidx.compose.foundation.BorderStroke(
+            if (temaScuroBadge) 1.dp else 1.1.dp,
+            colore.copy(alpha = if (temaScuroBadge) 0.38f else 0.48f)
+        )
+    ) {
+        Text(
+            text = statoVisualizzato.ifBlank { "—" },
+            color = colore,
+            fontWeight = FontWeight.Bold,
+            fontSize = if (compatto) 10.sp else 11.sp,
+            modifier = Modifier.padding(
+                horizontal = if (compatto) 8.dp else 10.dp,
+                vertical = if (compatto) 4.dp else 5.dp
+            )
+        )
+    }
+}
+
+
+@Composable
+fun VoceStatoCard(
+    testo: String,
+    icona: androidx.compose.ui.graphics.vector.ImageVector,
+    coloreAccento: Color,
+    compatto: Boolean,
+    mostraToggleReader: Boolean = false,
+    readerAbilitato: Boolean = true,
+    toggleReaderInCorso: Boolean = false,
+    onToggleReader: (() -> Unit)? = null
+) {
+    val temaScuroVoce = androidx.compose.foundation.isSystemInDarkTheme()
+
+    val nome = testo
+        .substringBeforeLast("—", testo)
+        .trim()
+
+    val stato = testo
+        .substringAfterLast("—", "")
+        .trim()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 20.dp else 24.dp
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            if (temaScuroVoce) 1.dp else 1.1.dp,
+            coloreAccento.copy(alpha = if (temaScuroVoce) 0.22f else 0.34f)
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (temaScuroVoce) {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+            } else {
+                Color.White
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroVoce) 1.dp else 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = if (compatto) 11.dp else 14.dp,
+                    vertical = if (compatto) 10.dp else 12.dp
+                ),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                color = coloreAccento.copy(alpha = if (temaScuroVoce) 0.14f else 0.10f)
+            ) {
+                Icon(
+                    imageVector = icona,
+                    contentDescription = null,
+                    tint = coloreAccento,
+                    modifier = Modifier
+                        .padding(if (compatto) 7.dp else 8.dp)
+                        .size(if (compatto) 18.dp else 20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text(
+                text = nome,
+                modifier = Modifier.weight(1f),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = if (compatto) 14.sp else 16.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(
+                horizontalAlignment = androidx.compose.ui.Alignment.End
+            ) {
+                BadgeStatoDashboard(
+                    stato = stato,
+                    compatto = compatto
+                )
+
+                if (mostraToggleReader) {
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    IconButton(
+                        onClick = { onToggleReader?.invoke() },
+                        enabled = !toggleReaderInCorso,
+                        modifier = Modifier.size(if (compatto) 28.dp else 32.dp)
+                    ) {
+                        if (toggleReaderInCorso) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(if (compatto) 18.dp else 20.dp),
+                                strokeWidth = 2.dp,
+                                color = if (readerAbilitato)
+                                    Color(0xFFE53935)
+                                else
+                                    Color(0xFF43A047)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.PowerSettingsNew,
+                                contentDescription = "Abilita/disabilita reader",
+                                tint = if (readerAbilitato)
+                                    Color(0xFFE53935)
+                                else
+                                    Color(0xFF43A047),
+                                modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun RigaDettaglioClient(
+    etichetta: String,
+    valore: String,
+    compatto: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = androidx.compose.ui.Alignment.Top
+    ) {
+        Text(
+            text = etichetta,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = if (compatto) 12.sp else 13.sp,
+            modifier = Modifier.width(
+                if (compatto) 72.dp else 90.dp
+            )
+        )
+
+        Text(
+            text = valore,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Medium,
+            fontSize = if (compatto) 13.sp else 14.sp,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+fun MiniDatoClient(
+    etichetta: String,
+    valore: String,
+    compatto: Boolean,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.material3.Surface(
+        modifier = modifier,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.52f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = if (compatto) 9.dp else 11.dp,
+                vertical = if (compatto) 7.dp else 8.dp
+            )
+        ) {
+            Text(
+                text = etichetta,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = if (compatto) 10.sp else 11.sp
+            )
+
+            Spacer(modifier = Modifier.height(1.dp))
+
+            Text(
+                text = valore,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                fontSize = if (compatto) 13.sp else 14.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun ClientInfoCard(
+    testo: String,
+    compatto: Boolean,
+    mostraToggleUser: Boolean = false,
+    userAbilitato: Boolean = true,
+    toggleUserInCorso: Boolean = false,
+    onToggleUser: (() -> Unit)? = null
+) {
+    val righe = testo
+        .lines()
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+
+    val intestazione = righe.firstOrNull().orEmpty()
+
+    val nome = intestazione
+        .substringBeforeLast("—", intestazione)
+        .trim()
+
+    val stato = intestazione
+        .substringAfterLast("—", "")
+        .trim()
+
+    val canale = righe
+        .firstOrNull { it.startsWith("Canale:", ignoreCase = true) }
+        ?.substringAfter(":")
+        ?.trim()
+
+    val provider = righe
+        .firstOrNull { it.startsWith("Provider:", ignoreCase = true) }
+        ?.substringAfter(":")
+        ?.trim()
+
+    val reader = righe
+        .firstOrNull { it.startsWith("Reader:", ignoreCase = true) }
+        ?.substringAfter(":")
+        ?.trim()
+
+    val rigaEcm = righe
+        .firstOrNull {
+            it.startsWith("CAID ", ignoreCase = true) ||
+                    it.startsWith("ECM ", ignoreCase = true)
+        }
+        .orEmpty()
+
+    val caid = rigaEcm
+        .split("•")
+        .map { it.trim() }
+        .firstOrNull { it.startsWith("CAID ", ignoreCase = true) }
+        ?.substringAfter(" ")
+        ?.trim()
+
+    val ecm = rigaEcm
+        .split("•")
+        .map { it.trim() }
+        .firstOrNull { it.startsWith("ECM ", ignoreCase = true) }
+        ?.substringAfter(" ")
+        ?.trim()
+
+    val temaScuroClient = androidx.compose.foundation.isSystemInDarkTheme()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 22.dp else 26.dp
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            if (temaScuroClient) 1.dp else 1.1.dp,
+            Color(0xFFFFA726).copy(alpha = if (temaScuroClient) 0.30f else 0.36f)
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor =
+                if (temaScuroClient) {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.60f)
+                } else {
+                    Color.White
+                }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroClient) 2.dp else 1.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                if (compatto) 12.dp else 15.dp
+            )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    color = Color(0xFFFFA726).copy(alpha = if (temaScuroClient) 0.15f else 0.10f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Devices,
+                        contentDescription = null,
+                        tint = Color(0xFFFFA726),
+                        modifier = Modifier
+                            .padding(if (compatto) 7.dp else 8.dp)
+                            .size(if (compatto) 19.dp else 21.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Text(
+                    text = nome.ifBlank { "Client" },
+                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = if (compatto) 15.sp else 17.sp
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Column(
+                    horizontalAlignment = androidx.compose.ui.Alignment.End
+                ) {
+                    BadgeStatoDashboard(
+                        stato = stato,
+                        compatto = compatto
+                    )
+
+                    if (mostraToggleUser) {
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        IconButton(
+                            onClick = { onToggleUser?.invoke() },
+                            enabled = !toggleUserInCorso,
+                            modifier = Modifier.size(if (compatto) 28.dp else 32.dp)
+                        ) {
+                            if (toggleUserInCorso) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(if (compatto) 18.dp else 20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = if (userAbilitato)
+                                        Color(0xFFE53935)
+                                    else
+                                        Color(0xFF43A047)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.PowerSettingsNew,
+                                    contentDescription = "Abilita/disabilita user",
+                                    tint = if (userAbilitato)
+                                        Color(0xFFE53935)
+                                    else
+                                        Color(0xFF43A047),
+                                    modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (
+                !canale.isNullOrBlank() ||
+                !provider.isNullOrBlank() ||
+                !caid.isNullOrBlank() ||
+                !ecm.isNullOrBlank() ||
+                !reader.isNullOrBlank()
+            ) {
+                Spacer(modifier = Modifier.height(11.dp))
+
+                HorizontalDivider(
+                    color =
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            if (!canale.isNullOrBlank()) {
+                RigaDettaglioClient(
+                    etichetta = "Canale",
+                    valore = canale,
+                    compatto = compatto
+                )
+            }
+
+            if (!provider.isNullOrBlank()) {
+                if (!canale.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(7.dp))
+                }
+
+                RigaDettaglioClient(
+                    etichetta = "Provider",
+                    valore = provider,
+                    compatto = compatto
+                )
+            }
+
+            if (!caid.isNullOrBlank() || !ecm.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (!caid.isNullOrBlank()) {
+                        MiniDatoClient(
+                            etichetta = "CAID",
+                            valore = caid,
+                            compatto = compatto,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    if (!ecm.isNullOrBlank()) {
+                        MiniDatoClient(
+                            etichetta = "ECM",
+                            valore = ecm,
+                            compatto = compatto,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            if (!reader.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(9.dp))
+
+                RigaDettaglioClient(
+                    etichetta = "Reader",
+                    valore = reader,
+                    compatto = compatto
+                )
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun LiveLogScreen(
+    host: String,
+    porta: String,
+    username: String,
+    password: String,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.activity.compose.BackHandler {
+        onClose()
+    }
+
+    val api = remember { OscamApi() }
+    var righeLog by remember(host, porta, username, password) {
+        mutableStateOf(emptyList<String>())
+    }
+    var ultimoId by remember(host, porta, username, password) {
+        mutableStateOf("start")
+    }
+    var inPausa by remember { mutableStateOf(false) }
+    var erroreLiveLog by remember { mutableStateOf("") }
+    var erroriLiveLogConsecutivi by remember { mutableStateOf(0) }
+    var riconnessioneLiveLog by remember { mutableStateOf(false) }
+    var primaRichiestaCompletata by remember { mutableStateOf(false) }
+
+    val scrollVerticale = rememberScrollState()
+    val scrollOrizzontale = rememberScrollState()
+
+    LaunchedEffect(
+        host,
+        porta,
+        username,
+        password,
+        inPausa
+    ) {
+        if (!inPausa) {
+            while (true) {
+                val risposta = withContext(Dispatchers.IO) {
+                    api.scaricaLiveLog(
+                        host = host,
+                        porta = porta,
+                        username = username,
+                        password = password,
+                        lastId = ultimoId
+                    )
+                }
+
+                primaRichiestaCompletata = true
+
+                if (risposta.startsWith("ERRORE:")) {
+                    erroriLiveLogConsecutivi += 1
+
+                    if (erroriLiveLogConsecutivi >= 3) {
+                        riconnessioneLiveLog = false
+                        erroreLiveLog = risposta
+                    } else {
+                        // Un singolo errore di rete può capitare quando Android
+                        // riprende l'app dal background. Non lampeggiamo subito
+                        // in rosso: tentiamo automaticamente la riconnessione.
+                        riconnessioneLiveLog = true
+                        erroreLiveLog = ""
+                    }
+                } else {
+                    val risultato = api.estraiLiveLog(risposta)
+
+                    if (!risultato.valido) {
+                        erroriLiveLogConsecutivi = 3
+                        riconnessioneLiveLog = false
+                        erroreLiveLog =
+                            "Live Log non disponibile su questo server"
+                    } else {
+                        erroriLiveLogConsecutivi = 0
+                        riconnessioneLiveLog = false
+                        erroreLiveLog = ""
+
+                        if (risultato.ultimoId.isNotBlank()) {
+                            ultimoId = risultato.ultimoId
+                        }
+
+                        if (risultato.righe.isNotEmpty()) {
+                            righeLog =
+                                (righeLog + risultato.righe)
+                                    .takeLast(300)
+                        }
+                    }
+                }
+
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+    }
+
+    LaunchedEffect(righeLog.size, inPausa) {
+        if (!inPausa && righeLog.isNotEmpty()) {
+            kotlinx.coroutines.delay(40)
+            scrollVerticale.scrollTo(
+                scrollVerticale.maxValue
+            )
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        androidx.compose.material3.Surface(
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+            tonalElevation = 3.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                FilledTonalButton(
+                    onClick = onClose,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    contentPadding = PaddingValues(
+                        horizontal = 12.dp,
+                        vertical = 8.dp
+                    )
+                ) {
+                    Text("❌  Chiudi")
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = "Live Log",
+                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            FilledTonalButton(
+                modifier = Modifier.weight(1f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                onClick = {
+                    inPausa = !inPausa
+                }
+            ) {
+                Text(
+                    if (inPausa) {
+                        "▶  Riprendi"
+                    } else {
+                        "⏸  Pausa"
+                    }
+                )
+            }
+
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                onClick = {
+                    righeLog = emptyList()
+                }
+            ) {
+                Text("⌫  Pulisci")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            val coloreLive =
+                if (inPausa) {
+                    Color(0xFFFFB74D)
+                } else if (erroreLiveLog.isNotBlank()) {
+                    Color(0xFFEF5350)
+                } else if (riconnessioneLiveLog) {
+                    Color(0xFFFFB74D)
+                } else {
+                    Color(0xFF66BB6A)
+                }
+
+            Text(
+                text = when {
+                    inPausa -> "●  In pausa"
+                    erroreLiveLog.isNotBlank() -> "●  Errore"
+                    riconnessioneLiveLog -> "●  Riconnessione..."
+                    primaRichiestaCompletata -> "●  Live"
+                    else -> "●  Connessione..."
+                },
+                color = coloreLive,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text(
+                text = "${host.trim()}:${porta.trim()}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                modifier = Modifier.weight(1f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.End
+            )
+        }
+
+        if (erroreLiveLog.isNotBlank()) {
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = erroreLiveLog,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 12.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        androidx.compose.material3.Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp)
+                    .verticalScroll(scrollVerticale)
+                    .horizontalScroll(scrollOrizzontale)
+            ) {
+                Text(
+                    text = when {
+                        righeLog.isNotEmpty() ->
+                            righeLog.joinToString("\n")
+
+                        erroreLiveLog.isNotBlank() ->
+                            "Nessun dato Live Log"
+
+                        else ->
+                            "In attesa delle righe OSCam..."
+                    },
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    softWrap = false
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+fun WebIfScreen(
+    host: String,
+    porta: String,
+    username: String,
+    password: String,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.activity.compose.BackHandler {
+        onClose()
+    }
+
+    val urlWebIf = "http://${host.trim()}:${porta.trim()}"
+
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        androidx.compose.material3.Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+            tonalElevation = 3.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                FilledTonalButton(
+                    onClick = onClose,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text("✕  Chiudi")
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "WebIF OSCam",
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${host.trim()}:${porta.trim()}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        androidx.compose.ui.viewinterop.AndroidView(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            factory = { webContext ->
+                android.webkit.WebView(webContext).apply {
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.builtInZoomControls = true
+                    settings.displayZoomControls = false
+                    settings.setSupportZoom(true)
+                    settings.useWideViewPort = true
+                    settings.loadWithOverviewMode = true
+
+                    webChromeClient = android.webkit.WebChromeClient()
+
+                    webViewClient =
+                        object : android.webkit.WebViewClient() {
+                            private var tentativiRiconnessione = 0
+                            private var riconnessioneProgrammata = false
+                            private var errorePaginaCorrente = false
+                            private val massimoTentativi = 3
+
+                            private fun paginaRiconnessione(tentativo: Int): String =
+                                """
+                                <!doctype html>
+                                <html>
+                                <head>
+                                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                                    <style>
+                                        body {
+                                            margin: 0;
+                                            background: #121212;
+                                            color: #e8e8e8;
+                                            font-family: sans-serif;
+                                            display: flex;
+                                            min-height: 100vh;
+                                            align-items: center;
+                                            justify-content: center;
+                                            text-align: center;
+                                        }
+                                        .box { padding: 28px; }
+                                        .title {
+                                            color: #4CAF50;
+                                            font-size: 22px;
+                                            font-weight: 700;
+                                            margin-bottom: 12px;
+                                        }
+                                        .text { font-size: 16px; line-height: 1.5; }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class="box">
+                                        <div class="title">Riconnessione WebIF…</div>
+                                        <div class="text">Tentativo $tentativo di $massimoTentativi</div>
+                                    </div>
+                                </body>
+                                </html>
+                                """.trimIndent()
+
+                            private fun paginaRiprova(): String =
+                                """
+                                <!doctype html>
+                                <html>
+                                <head>
+                                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                                    <style>
+                                        body {
+                                            margin: 0;
+                                            background: #121212;
+                                            color: #e8e8e8;
+                                            font-family: sans-serif;
+                                            display: flex;
+                                            min-height: 100vh;
+                                            align-items: center;
+                                            justify-content: center;
+                                            text-align: center;
+                                        }
+                                        .box { padding: 28px; }
+                                        .title {
+                                            color: #ff7043;
+                                            font-size: 22px;
+                                            font-weight: 700;
+                                            margin-bottom: 12px;
+                                        }
+                                        .text {
+                                            font-size: 16px;
+                                            line-height: 1.5;
+                                            margin-bottom: 24px;
+                                        }
+                                        .button {
+                                            display: inline-block;
+                                            padding: 12px 24px;
+                                            border: 1px solid #4CAF50;
+                                            border-radius: 14px;
+                                            color: #4CAF50;
+                                            text-decoration: none;
+                                            font-size: 17px;
+                                            font-weight: 700;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class="box">
+                                        <div class="title">WebIF non raggiungibile</div>
+                                        <div class="text">
+                                            La connessione è stata interrotta.<br>
+                                            OSCam Live Monitor ha già provato a riconnettersi.
+                                        </div>
+                                        <a class="button" href="oscampulse://retry">Riprova</a>
+                                    </div>
+                                </body>
+                                </html>
+                                """.trimIndent()
+
+                            private fun gestisciErrorePrincipale(
+                                view: android.webkit.WebView?
+                            ) {
+                                if (view == null || riconnessioneProgrammata) {
+                                    return
+                                }
+
+                                errorePaginaCorrente = true
+                                view.stopLoading()
+
+                                if (tentativiRiconnessione < massimoTentativi) {
+                                    tentativiRiconnessione++
+                                    riconnessioneProgrammata = true
+
+                                    view.loadDataWithBaseURL(
+                                        null,
+                                        paginaRiconnessione(tentativiRiconnessione),
+                                        "text/html",
+                                        "UTF-8",
+                                        null
+                                    )
+
+                                    view.postDelayed({
+                                        riconnessioneProgrammata = false
+                                        view.loadUrl(urlWebIf)
+                                    }, 2500L)
+                                } else {
+                                    view.loadDataWithBaseURL(
+                                        null,
+                                        paginaRiprova(),
+                                        "text/html",
+                                        "UTF-8",
+                                        null
+                                    )
+                                }
+                            }
+
+                            private fun riprovaManuale(
+                                view: android.webkit.WebView?
+                            ) {
+                                if (view == null) {
+                                    return
+                                }
+
+                                tentativiRiconnessione = 0
+                                riconnessioneProgrammata = false
+                                errorePaginaCorrente = false
+                                view.loadUrl(urlWebIf)
+                            }
+
+                            override fun onPageStarted(
+                                view: android.webkit.WebView?,
+                                url: String?,
+                                favicon: android.graphics.Bitmap?
+                            ) {
+                                if (url?.startsWith("http://") == true ||
+                                    url?.startsWith("https://") == true
+                                ) {
+                                    errorePaginaCorrente = false
+                                }
+
+                                super.onPageStarted(view, url, favicon)
+                            }
+
+                            override fun onPageFinished(
+                                view: android.webkit.WebView?,
+                                url: String?
+                            ) {
+                                super.onPageFinished(view, url)
+
+                                if (!errorePaginaCorrente &&
+                                    (url?.startsWith("http://") == true ||
+                                            url?.startsWith("https://") == true)
+                                ) {
+                                    tentativiRiconnessione = 0
+                                    riconnessioneProgrammata = false
+                                }
+                            }
+
+                            override fun onReceivedError(
+                                view: android.webkit.WebView?,
+                                request: android.webkit.WebResourceRequest?,
+                                error: android.webkit.WebResourceError?
+                            ) {
+                                if (request?.isForMainFrame == true) {
+                                    gestisciErrorePrincipale(view)
+                                } else {
+                                    super.onReceivedError(view, request, error)
+                                }
+                            }
+
+                            @Suppress("DEPRECATION")
+                            override fun onReceivedError(
+                                view: android.webkit.WebView?,
+                                errorCode: Int,
+                                description: String?,
+                                failingUrl: String?
+                            ) {
+                                if (android.os.Build.VERSION.SDK_INT <
+                                    android.os.Build.VERSION_CODES.M
+                                ) {
+                                    gestisciErrorePrincipale(view)
+                                } else {
+                                    super.onReceivedError(
+                                        view,
+                                        errorCode,
+                                        description,
+                                        failingUrl
+                                    )
+                                }
+                            }
+
+                            override fun shouldOverrideUrlLoading(
+                                view: android.webkit.WebView?,
+                                request: android.webkit.WebResourceRequest?
+                            ): Boolean {
+                                if (request?.url?.scheme == "oscampulse") {
+                                    riprovaManuale(view)
+                                    return true
+                                }
+
+                                return false
+                            }
+
+                            @Suppress("DEPRECATION")
+                            override fun shouldOverrideUrlLoading(
+                                view: android.webkit.WebView?,
+                                url: String?
+                            ): Boolean {
+                                if (url?.startsWith("oscampulse://") == true) {
+                                    riprovaManuale(view)
+                                    return true
+                                }
+
+                                return false
+                            }
+
+                            override fun onReceivedHttpAuthRequest(
+                                view: android.webkit.WebView?,
+                                handler: android.webkit.HttpAuthHandler?,
+                                hostRichiesto: String?,
+                                realm: String?
+                            ) {
+                                if (
+                                    username.isNotBlank() ||
+                                    password.isNotBlank()
+                                ) {
+                                    handler?.proceed(
+                                        username,
+                                        password
+                                    )
+                                } else {
+                                    super.onReceivedHttpAuthRequest(
+                                        view,
+                                        handler,
+                                        hostRichiesto,
+                                        realm
+                                    )
+                                }
+                            }
+                        }
+
+                    loadUrl(urlWebIf)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun StatoColorato(
+    testo: String
+) {
+    val colore = when {
+        testo.contains("NOT FOUND", ignoreCase = true) ->
+            Color(0xFFF44336)
+
+        testo.contains("ERROR", ignoreCase = true) ->
+            Color(0xFFF44336)
+
+        testo.contains("OFFLINE", ignoreCase = true) ->
+            Color(0xFFF44336)
+
+        testo.contains("DISABLED", ignoreCase = true) ->
+            Color(0xFFF44336)
+
+        testo.contains("TIMEOUT", ignoreCase = true) ->
+            Color(0xFFFF9800)
+
+        testo.contains("CARDOK", ignoreCase = true) ->
+            Color(0xFF4CAF50)
+
+        testo.contains("CONNECTED", ignoreCase = true) ->
+            Color(0xFF4CAF50)
+
+        testo.contains("OK", ignoreCase = true) ->
+            Color(0xFF4CAF50)
+
+        else ->
+            MaterialTheme.colorScheme.onBackground
+    }
+
+    Text(
+            text = testo,
+            color = colore,
+            fontWeight = FontWeight.SemiBold
+        )
+}
+
+@Composable
+fun DashboardCard(
+    titolo: String,
+    compatto: Boolean,
+    valore: String,
+    icona: androidx.compose.ui.graphics.vector.ImageVector,
+    coloreAccento: Color,
+    aperta: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val temaScuroCard = androidx.compose.foundation.isSystemInDarkTheme()
+
+    Card(
+        modifier = modifier,
+        onClick = onClick,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 20.dp else 24.dp
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            if (temaScuroCard) 1.dp else 1.2.dp,
+            coloreAccento.copy(alpha = if (temaScuroCard) 0.35f else 0.46f)
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (temaScuroCard) {
+                if (aperta) {
+                    coloreAccento.copy(alpha = 0.11f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+                }
+            } else {
+                Color.White
+            }
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (temaScuroCard) {
+                if (aperta) 4.dp else 1.dp
+            } else {
+                1.dp
+            }
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                if (compatto) 10.dp else 14.dp
+            )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    color = coloreAccento.copy(alpha = if (temaScuroCard) 0.14f else 0.10f)
+                ) {
+                    androidx.compose.material3.Icon(
+                        imageVector = icona,
+                        contentDescription = null,
+                        tint = coloreAccento,
+                        modifier = Modifier.padding(if (compatto) 5.dp else 7.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+
+                Text(
+                    text = titolo,
+                    fontSize = if (compatto) 12.sp else 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                androidx.compose.material3.Icon(
+                    imageVector = if (aperta) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (aperta) "Nascondi $titolo" else "Mostra $titolo",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                )
+            }
+
+            Spacer(modifier = Modifier.height(if (compatto) 6.dp else 10.dp))
+
+            Text(
+                text = valore,
+                fontSize = if (compatto) 25.sp else 29.sp,
+                fontWeight = FontWeight.Bold,
+                color = coloreAccento
+            )
+        }
+    }
+}
+
+private fun caricaServerSalvati(
+    preferences: android.content.SharedPreferences
+): List<OscamServer> {
+    val risultato = mutableListOf<OscamServer>()
+
+    val jsonSalvato =
+        preferences.getString("server_salvati", "") ?: ""
+
+    if (jsonSalvato.isNotBlank()) {
+        try {
+            val array = org.json.JSONArray(jsonSalvato)
+
+            for (indice in 0 until array.length()) {
+                val oggetto = array.getJSONObject(indice)
+
+                risultato.add(
+                    OscamServer(
+                        nome = oggetto.optString("nome", "Server"),
+                        host = oggetto.optString("host", ""),
+                        porta = oggetto.optString("porta", ""),
+                        username = oggetto.optString("username", ""),
+                        password = oggetto.optString("password", "")
+                    )
+                )
+            }
+        } catch (_: Exception) {
+            risultato.clear()
+        }
+    }
+
+    if (risultato.isEmpty()) {
+        val hostEsistente =
+            preferences.getString("host", "") ?: ""
+
+        val portaEsistente =
+            preferences.getString("porta", "") ?: ""
+
+        if (
+            hostEsistente.isNotBlank() &&
+            portaEsistente.isNotBlank()
+        ) {
+            risultato.add(
+                OscamServer(
+                    nome =
+                        preferences.getString(
+                            "nome_server",
+                            "Server principale"
+                        ) ?: "Server principale",
+                    host = hostEsistente,
+                    porta = portaEsistente,
+                    username =
+                        preferences.getString(
+                            "username",
+                            ""
+                        ) ?: "",
+                    password =
+                        preferences.getString(
+                            "password",
+                            ""
+                        ) ?: ""
+                )
+            )
+        }
+    }
+
+    return risultato
+}
+
+private fun salvaServerSalvati(
+    preferences: android.content.SharedPreferences,
+    server: List<OscamServer>
+) {
+    val array = org.json.JSONArray()
+
+    server.forEach { elemento ->
+        val oggetto = org.json.JSONObject()
+
+        oggetto.put("nome", elemento.nome)
+        oggetto.put("host", elemento.host)
+        oggetto.put("porta", elemento.porta)
+        oggetto.put("username", elemento.username)
+        oggetto.put("password", elemento.password)
+
+        array.put(oggetto)
+    }
+
+    preferences.edit()
+        .putString("server_salvati", array.toString())
+        .apply()
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    OscamLiveMonitorTheme {
+        Greeting("OSCam Live Monitor")
+    }
+}
+

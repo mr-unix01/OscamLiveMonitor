@@ -207,6 +207,8 @@ fun TerminalToolsScreen(
                 selection = TextRange(testoCompleto.length)
             )
 
+        androidx.compose.runtime.withFrameNanos { }
+
         terminalScroll.scrollTo(
             terminalScroll.maxValue
         )

@@ -1874,10 +1874,11 @@ fun Greeting(
             }
 
             if (
-                versioneOscam.isNotBlank() ||
+                !mostraConnessione &&
+                (versioneOscam.isNotBlank() ||
                 uptime.isNotBlank() ||
                 cpuOscam.isNotBlank() ||
-                ramOscam.isNotBlank()
+                ramOscam.isNotBlank())
             ) {
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -1965,11 +1966,12 @@ fun Greeting(
             }
 
             if (
-                servers.isNotBlank() ||
+                !mostraConnessione &&
+                (servers.isNotBlank() ||
                 readers.isNotBlank() ||
                 proxies.isNotBlank() ||
                 clients.isNotBlank() ||
-                users.isNotBlank()
+                users.isNotBlank())
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -2049,7 +2051,7 @@ fun Greeting(
                 }
             }
 
-            if (mostraServers && elencoServers.isNotEmpty()) {
+            if (!mostraConnessione && mostraServers && elencoServers.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(18.dp))
 
                 TitoloSezioneDashboard(
@@ -2079,7 +2081,7 @@ fun Greeting(
                 }
             }
 
-            if (mostraReaders && elencoReaders.isNotEmpty()) {
+            if (!mostraConnessione && mostraReaders && elencoReaders.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(18.dp))
 
                 TitoloSezioneDashboard(
@@ -2173,7 +2175,7 @@ fun Greeting(
                 }
             }
 
-            if (mostraProxies && elencoProxies.isNotEmpty()) {
+            if (!mostraConnessione && mostraProxies && elencoProxies.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(18.dp))
 
                 TitoloSezioneDashboard(
@@ -2267,7 +2269,7 @@ fun Greeting(
                 }
             }
 
-            if (mostraClients && elencoUsers.isNotEmpty()) {
+            if (!mostraConnessione && mostraClients && elencoUsers.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(18.dp))
 
                 TitoloSezioneDashboard(
@@ -2351,7 +2353,7 @@ fun Greeting(
                 }
             }
 
-            if (mostraClients && elencoClients.isNotEmpty()) {
+            if (!mostraConnessione && mostraClients && elencoClients.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(18.dp))
 
                 TitoloSezioneDashboard(

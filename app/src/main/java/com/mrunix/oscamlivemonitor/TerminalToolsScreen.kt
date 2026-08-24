@@ -236,7 +236,7 @@ fun TerminalToolsScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Torna alla Dashboard"
+                        contentDescription = "Torna alla selezione box"
                     )
                 }
 
@@ -604,7 +604,7 @@ fun TerminalToolsScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription =
-                                "Torna alla Dashboard"
+                                "Torna alla selezione box"
                         )
                     }
 

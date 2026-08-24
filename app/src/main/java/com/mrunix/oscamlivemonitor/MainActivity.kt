@@ -1553,6 +1553,10 @@ fun Greeting(
                         .fillMaxWidth()
                         .height(if (schermoCompatto) 58.dp else 56.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        Color(0xFF66BB6A)
+                    ),
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF2E7D32),
                         contentColor = Color.White
@@ -1611,6 +1615,34 @@ fun Greeting(
                         text = "●  Connetti",
                         fontWeight = FontWeight.Bold
                     )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        Color(0xFFFFB300)
+                    ),
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFFB300)
+                    ),
+                    enabled = host.isNotBlank(),
+                    onClick = {
+                        mostraStrumenti = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Build,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Strumenti")
                 }
 
             }
@@ -1839,32 +1871,6 @@ fun Greeting(
                     Text("Live Log")
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        Color(0xFFFFB300)
-                    ),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFFFB300)
-                    ),
-                    onClick = {
-                        mostraStrumenti = true
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Build,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Strumenti")
-                }
             }
 
             if (
@@ -2419,6 +2425,7 @@ fun Greeting(
                     defaultHost = host.trim(),
                     onClose = {
                         mostraStrumenti = false
+                        mostraConnessione = true
                     },
                     modifier = Modifier.fillMaxSize()
                 )

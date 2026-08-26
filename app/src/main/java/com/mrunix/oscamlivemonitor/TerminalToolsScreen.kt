@@ -1,7 +1,12 @@
 package com.mrunix.oscamlivemonitor
 
 import android.content.res.Configuration
+import android.provider.OpenableColumns
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -10,6 +15,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -51,6 +61,8 @@ fun TerminalToolsScreen(
 
     val scope = rememberCoroutineScope()
     val client = remember { TerminalClient() }
+    val fileClient = remember { FileTransferClient() }
+    val ftpClient = remember { FtpTransferClient() }
 
     val safeKey = remember(serverKey) {
         serverKey.replace(
@@ -123,6 +135,659 @@ fun TerminalToolsScreen(
         mutableStateOf(false)
     }
 
+    var mostraFile by remember {
+        mutableStateOf(false)
+    }
+
+    var fileSftp by remember {
+        mutableStateOf(true)
+    }
+
+    var fileHost by remember {
+        mutableStateOf(defaultHost)
+    }
+
+    var filePort by remember {
+        mutableStateOf("22")
+    }
+
+    var fileUsername by remember {
+        mutableStateOf(username)
+    }
+
+    var filePassword by remember {
+        mutableStateOf(password)
+    }
+
+    var mostraFilePassword by remember {
+        mutableStateOf(false)
+    }
+
+    var fileStatus by remember {
+        mutableStateOf("Non connesso")
+    }
+
+    var fileConnected by remember {
+        mutableStateOf(false)
+    }
+
+    var filePath by remember {
+        mutableStateOf("")
+    }
+
+    var fileEntries by remember {
+        mutableStateOf(emptyList<RemoteFile>())
+    }
+
+    var uploadInCorso by remember {
+        mutableStateOf(false)
+    }
+
+    
+
+    var downloadInCorso by remember {
+        mutableStateOf(false)
+    }
+
+    var downloadNome by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var fileMenuEntry by remember {
+        mutableStateOf<RemoteFile?>(null)
+    }
+
+    var permissionsEntry by remember {
+        mutableStateOf<RemoteFile?>(null)
+    }
+
+    var permissionsValue by remember {
+        mutableStateOf("")
+    }
+
+    var editorEntry by remember {
+        mutableStateOf<RemoteFile?>(null)
+    }
+
+    var editorText by remember {
+        mutableStateOf("")
+    }
+
+    var editorOriginalText by remember {
+        mutableStateOf("")
+    }
+
+    var editorBusy by remember {
+        mutableStateOf(false)
+    }
+val filePickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri ->
+            if (
+                uri != null &&
+                fileConnected &&
+                !uploadInCorso
+            ) {
+                val nomeFile =
+                    runCatching {
+                        context.contentResolver.query(
+                            uri,
+                            arrayOf(OpenableColumns.DISPLAY_NAME),
+                            null,
+                            null,
+                            null
+                        )?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                cursor.getString(0)
+                            } else {
+                                null
+                            }
+                        }
+                    }.getOrNull()
+                        ?.takeIf { it.isNotBlank() }
+                        ?: uri.lastPathSegment
+                            ?.substringAfterLast('/')
+                            ?.takeIf { it.isNotBlank() }
+                        ?: "file"
+
+                uploadInCorso = true
+                fileStatus = "Upload $nomeFile..."
+
+                scope.launch {
+                    val streamResult =
+                        withContext(Dispatchers.IO) {
+                            runCatching {
+                                context.contentResolver
+                                    .openInputStream(uri)
+                                    ?: error(
+                                        "Impossibile aprire il file"
+                                    )
+                            }
+                        }
+
+                    if (streamResult.isFailure) {
+                        uploadInCorso = false
+                        fileStatus =
+                            "Errore apertura file: " +
+                            (
+                                streamResult.exceptionOrNull()
+                                    ?.message
+                                    ?: "errore"
+                            )
+                        return@launch
+                    }
+
+                    val inputStream =
+                        streamResult.getOrThrow()
+
+                    val risultato =
+                        if (fileSftp) {
+                            fileClient.uploadFile(
+                                name = nomeFile,
+                                inputStream = inputStream
+                            )
+                        } else {
+                            ftpClient.uploadFile(
+                                name = nomeFile,
+                                inputStream = inputStream
+                            )
+                        }
+
+                    if (risultato.isSuccess) {
+                        val directory =
+                            if (fileSftp) {
+                                fileClient.openDirectory(filePath)
+                            } else {
+                                ftpClient.openDirectory(filePath)
+                            }
+
+                        if (directory.isSuccess) {
+                            val remoto =
+                                directory.getOrThrow()
+
+                            filePath = remoto.path
+                            fileEntries = remoto.entries
+                        }
+
+                        fileStatus =
+                            "Upload completato: $nomeFile"
+                    } else {
+                        fileStatus =
+                            "Errore upload: " +
+                            (
+                                risultato.exceptionOrNull()
+                                    ?.message
+                                    ?: "errore"
+                            )
+                    }
+
+                    uploadInCorso = false
+                }
+            }
+        }
+
+
+    val saveFileLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("*/*")
+        ) { uri ->
+            val nomeFile = downloadNome
+
+            if (
+                uri != null &&
+                nomeFile != null &&
+                fileConnected &&
+                !downloadInCorso
+            ) {
+                downloadInCorso = true
+                fileStatus = "Download $nomeFile..."
+
+                scope.launch {
+                    val streamResult =
+                        withContext(Dispatchers.IO) {
+                            runCatching {
+                                context.contentResolver
+                                    .openOutputStream(uri, "w")
+                                    ?: error("Impossibile creare il file")
+                            }
+                        }
+
+                    if (streamResult.isFailure) {
+                        downloadInCorso = false
+                        downloadNome = null
+                        fileStatus =
+                            "Errore apertura destinazione: " +
+                                (
+                                    streamResult.exceptionOrNull()
+                                        ?.message
+                                        ?: "errore"
+                                )
+                        return@launch
+                    }
+
+                    val outputStream =
+                        streamResult.getOrThrow()
+
+                    val risultato =
+                        if (fileSftp) {
+                            fileClient.downloadFile(
+                                name = nomeFile,
+                                outputStream = outputStream
+                            )
+                        } else {
+                            ftpClient.downloadFile(
+                                name = nomeFile,
+                                outputStream = outputStream
+                            )
+                        }
+
+                    fileStatus =
+                        if (risultato.isSuccess) {
+                            "Download completato: $nomeFile"
+                        } else {
+                            "Errore download: " +
+                                (
+                                    risultato.exceptionOrNull()
+                                        ?.message
+                                        ?: "errore"
+                                )
+                        }
+
+                    downloadInCorso = false
+                    downloadNome = null
+                }
+            } else {
+                downloadNome = null
+            }
+        }
+
+
+    fileMenuEntry?.let { entry ->
+        AlertDialog(
+            onDismissRequest = {
+                fileMenuEntry = null
+            },
+            title = {
+                Text(entry.name)
+            },
+            text = {
+                Column(
+                    verticalArrangement =
+                        Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Scegli operazione")
+
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            fileMenuEntry = null
+                            editorBusy = true
+                            fileStatus = "Apertura ${entry.name}..."
+
+                            scope.launch {
+                                val buffer =
+                                    java.io.ByteArrayOutputStream()
+
+                                val risultato =
+                                    if (fileSftp) {
+                                        fileClient.downloadFile(
+                                            entry.name,
+                                            buffer
+                                        )
+                                    } else {
+                                        ftpClient.downloadFile(
+                                            entry.name,
+                                            buffer
+                                        )
+                                    }
+
+                                if (risultato.isSuccess) {
+                                    val bytes = buffer.toByteArray()
+
+                                    if (bytes.size > 2 * 1024 * 1024) {
+                                        fileStatus =
+                                            "File troppo grande per l'editor"
+                                    } else if (
+                                        bytes.take(1024)
+                                            .any { it == 0.toByte() }
+                                    ) {
+                                        fileStatus =
+                                            "File binario: modifica non disponibile"
+                                    } else {
+                                        val testo =
+                                            bytes.toString(Charsets.UTF_8)
+
+                                        editorOriginalText = testo
+                                        editorText = testo
+                                        editorEntry = entry
+                                        fileStatus =
+                                            "File aperto: ${entry.name}"
+                                    }
+                                } else {
+                                    fileStatus =
+                                        "Errore apertura: " +
+                                            (
+                                                risultato.exceptionOrNull()
+                                                    ?.message
+                                                    ?: "errore"
+                                            )
+                                }
+
+                                editorBusy = false
+                            }
+                        }
+                    ) {
+                        Text("Modifica")
+                    }
+
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            permissionsValue =
+                                entry.permissions
+                                    .toString(8)
+                                    .padStart(3, '0')
+
+                            permissionsEntry = entry
+                            fileMenuEntry = null
+                        }
+                    ) {
+                        Text("Permessi")
+                    }
+
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            downloadNome = entry.name
+                            fileMenuEntry = null
+                            saveFileLauncher.launch(entry.name)
+                        }
+                    ) {
+                        Text("Scarica")
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        fileMenuEntry = null
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    permissionsEntry?.let { entry ->
+        AlertDialog(
+            onDismissRequest = {
+                permissionsEntry = null
+            },
+            title = {
+                Text("Permessi — ${entry.name}")
+            },
+            text = {
+                OutlinedTextField(
+                    value = permissionsValue,
+                    onValueChange = { value ->
+                        if (
+                            value.length <= 4 &&
+                            value.all { it in '0'..'7' }
+                        ) {
+                            permissionsValue = value
+                        }
+                    },
+                    label = {
+                        Text("Permessi (es. 600, 644, 755)")
+                    },
+                    singleLine = true,
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val mode =
+                            permissionsValue.toIntOrNull(8)
+
+                        if (mode == null) {
+                            fileStatus = "Permessi non validi"
+                        } else {
+                            permissionsEntry = null
+
+                            scope.launch {
+                                val risultato =
+                                    if (fileSftp) {
+                                        fileClient.changePermissions(
+                                            entry.name,
+                                            mode
+                                        )
+                                    } else {
+                                        ftpClient.changePermissions(
+                                            entry.name,
+                                            mode
+                                        )
+                                    }
+
+                                if (risultato.isSuccess) {
+                                    val directory =
+                                        if (fileSftp) {
+                                            fileClient.openDirectory(filePath)
+                                        } else {
+                                            ftpClient.openDirectory(filePath)
+                                        }
+
+                                    if (directory.isSuccess) {
+                                        val remoto =
+                                            directory.getOrThrow()
+
+                                        filePath = remoto.path
+                                        fileEntries = remoto.entries
+                                    }
+
+                                    fileStatus =
+                                        "Permessi modificati: ${entry.name}"
+                                } else {
+                                    fileStatus =
+                                        "Errore permessi: " +
+                                            (
+                                                risultato.exceptionOrNull()
+                                                    ?.message
+                                                    ?: "errore"
+                                            )
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text("Applica")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        permissionsEntry = null
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    val currentEditorEntry = editorEntry
+
+    if (currentEditorEntry != null) {
+        BackHandler(
+            enabled = !editorBusy
+        ) {
+            editorEntry = null
+        }
+
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .imePadding()
+                .padding(
+                    horizontal =
+                        if (landscape) 16.dp else 12.dp,
+                    vertical = 8.dp
+                )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                IconButton(
+                    enabled = !editorBusy,
+                    onClick = {
+                        editorEntry = null
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Torna al File Manager"
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = currentEditorEntry.name,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+
+                    Text(
+                        text =
+                            if (fileSftp) {
+                                "SFTP • ${fileHost.trim()}"
+                            } else {
+                                "FTP • ${fileHost.trim()}"
+                            },
+                        fontSize = 11.sp,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                TextButton(
+                    enabled =
+                        !editorBusy &&
+                        editorText != editorOriginalText,
+                    onClick = {
+                        editorText = editorOriginalText
+                    }
+                ) {
+                    Text(
+                        text = "Annulla modifiche",
+                        fontSize = 12.sp,
+                        maxLines = 1
+                    )
+                }
+
+                TextButton(
+                    enabled = !editorBusy,
+                    onClick = {
+                        editorBusy = true
+                        fileStatus =
+                            "Salvataggio ${currentEditorEntry.name}..."
+
+                        scope.launch {
+                            val input =
+                                java.io.ByteArrayInputStream(
+                                    editorText.toByteArray(
+                                        Charsets.UTF_8
+                                    )
+                                )
+
+                            val risultato =
+                                if (fileSftp) {
+                                    fileClient.uploadFile(
+                                        currentEditorEntry.name,
+                                        input
+                                    )
+                                } else {
+                                    ftpClient.uploadFile(
+                                        currentEditorEntry.name,
+                                        input
+                                    )
+                                }
+
+                            if (risultato.isSuccess) {
+                                fileStatus =
+                                    "Salvato: ${currentEditorEntry.name}"
+
+                                editorOriginalText = editorText
+                            } else {
+                                fileStatus =
+                                    "Errore salvataggio: " +
+                                        (
+                                            risultato.exceptionOrNull()
+                                                ?.message
+                                                ?: "errore"
+                                        )
+                            }
+
+                            editorBusy = false
+                        }
+                    }
+                ) {
+                    Text(
+                        text = "Salva",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
+
+            OutlinedTextField(
+                value = editorText,
+                onValueChange = {
+                    editorText = it
+                },
+                enabled = !editorBusy,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                textStyle =
+                    androidx.compose.ui.text.TextStyle(
+                        fontFamily = FontFamily.Monospace,
+                        fontSize =
+                            if (landscape) 14.sp else 13.sp,
+                        lineHeight =
+                            if (landscape) 19.sp else 18.sp
+                    )
+            )
+
+            if (editorBusy) {
+                Spacer(
+                    modifier = Modifier.height(6.dp)
+                )
+
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        return
+    }
+
     val fullscreenTerminale =
         connected && landscape
 
@@ -191,6 +856,8 @@ fun TerminalToolsScreen(
     DisposableEffect(Unit) {
         onDispose {
             client.disconnect()
+            fileClient.disconnect()
+            ftpClient.disconnect()
         }
     }
 
@@ -261,9 +928,52 @@ fun TerminalToolsScreen(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
+
+            if (!connected) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        modifier = Modifier.weight(1f),
+                        selected = !mostraFile,
+                        onClick = {
+                            mostraFile = false
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Terminal,
+                                contentDescription = null
+                            )
+                        },
+                        label = {
+                            Text("Terminale")
+                        }
+                    )
+
+                    FilterChip(
+                        modifier = Modifier.weight(1f),
+                        selected = mostraFile,
+                        onClick = {
+                            mostraFile = true
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Folder,
+                                contentDescription = null
+                            )
+                        },
+                        label = {
+                            Text("File")
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+            }
         }
 
-        if (!fullscreenTerminale) {
+        if (!fullscreenTerminale && !mostraFile) {
         Card(
             modifier =
                 if (!connected) {
@@ -585,7 +1295,7 @@ fun TerminalToolsScreen(
         }
         }
 
-        if (connected) {
+        if (connected && !mostraFile) {
 
             if (fullscreenTerminale) {
 
@@ -810,6 +1520,639 @@ fun TerminalToolsScreen(
             }
         }
 
+        }
+
+        if (!fullscreenTerminale && mostraFile) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                shape =
+                    androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment =
+                            androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Folder,
+                            contentDescription = null,
+                            tint = Color(0xFFFFB300)
+                        )
+
+                        Spacer(modifier = Modifier.width(9.dp))
+
+                        Text(
+                            text = "File Manager",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (!fileConnected) {
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            modifier = Modifier.weight(1f),
+                            selected = fileSftp,
+                            onClick = {
+                                val vecchiaPorta =
+                                    if (fileSftp) "22" else "21"
+
+                                fileSftp = true
+
+                                if (filePort == vecchiaPorta) {
+                                    filePort = "22"
+                                }
+                            },
+                            label = {
+                                Text("SFTP")
+                            }
+                        )
+
+                        FilterChip(
+                            modifier = Modifier.weight(1f),
+                            selected = !fileSftp,
+                            onClick = {
+                                val vecchiaPorta =
+                                    if (fileSftp) "22" else "21"
+
+                                fileSftp = false
+
+                                if (filePort == vecchiaPorta) {
+                                    filePort = "21"
+                                }
+                            },
+                            label = {
+                                Text("FTP")
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = fileHost,
+                        onValueChange = {
+                            fileHost = it
+                        },
+                        label = {
+                            Text("Host/IP")
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(7.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = filePort,
+                        onValueChange = {
+                            filePort = it
+                        },
+                        label = {
+                            Text("Porta")
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(7.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = fileUsername,
+                        onValueChange = {
+                            fileUsername = it
+                        },
+                        label = {
+                            Text("Username")
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(7.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = filePassword,
+                        onValueChange = {
+                            filePassword = it
+                        },
+                        label = {
+                            Text("Password")
+                        },
+                        visualTransformation =
+                            if (mostraFilePassword) {
+                                VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    mostraFilePassword =
+                                        !mostraFilePassword
+                                }
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        if (mostraFilePassword) {
+                                            Icons.Default.VisibilityOff
+                                        } else {
+                                            Icons.Default.Visibility
+                                        },
+                                    contentDescription =
+                                        if (mostraFilePassword) {
+                                            "Nascondi password"
+                                        } else {
+                                            "Mostra password"
+                                        }
+                                )
+                            }
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            val parsedPort =
+                                filePort.trim().toIntOrNull()
+
+                            if (
+                                fileHost.isBlank() ||
+                                parsedPort == null ||
+                                fileUsername.isBlank()
+                            ) {
+                                fileStatus =
+                                    "Inserisci Host/IP, porta e username"
+                                return@Button
+                            }
+
+                            fileStatus =
+                                if (fileSftp) {
+                                    "Connessione SFTP..."
+                                } else {
+                                    "Connessione FTP..."
+                                }
+
+                            scope.launch {
+                                if (fileSftp) {
+                                    ftpClient.disconnect()
+
+                                    val connessione =
+                                        fileClient.connectSftp(
+                                            host = fileHost.trim(),
+                                            port = parsedPort,
+                                            username = fileUsername,
+                                            password = filePassword
+                                        )
+
+                                    if (connessione.isSuccess) {
+                                        val directory =
+                                            fileClient.openDirectory("/")
+
+                                        if (directory.isSuccess) {
+                                            val remoto = directory.getOrThrow()
+                                            filePath = remoto.path
+                                            fileEntries = remoto.entries
+                                            fileConnected = true
+                                            fileStatus = "Connesso via SFTP"
+                                        } else {
+                                            fileConnected = false
+                                            fileStatus =
+                                                "Errore directory SFTP: " +
+                                                (directory.exceptionOrNull()?.message ?: "errore")
+                                        }
+                                    } else {
+                                        fileConnected = false
+                                        fileStatus =
+                                            "Errore SFTP: " +
+                                            (connessione.exceptionOrNull()?.message ?: "connessione fallita")
+                                    }
+                                } else {
+                                    fileClient.disconnect()
+
+                                    val connessione =
+                                        ftpClient.connect(
+                                            host = fileHost.trim(),
+                                            port = parsedPort,
+                                            username = fileUsername,
+                                            password = filePassword
+                                        )
+
+                                    if (connessione.isSuccess) {
+                                        val directory =
+                                            ftpClient.openDirectory("/")
+
+                                        if (directory.isSuccess) {
+                                            val remoto = directory.getOrThrow()
+                                            filePath = remoto.path
+                                            fileEntries = remoto.entries
+                                            fileConnected = true
+                                            fileStatus = "Connesso via FTP"
+                                        } else {
+                                            ftpClient.disconnect()
+                                            fileConnected = false
+                                            fileStatus =
+                                                "Errore directory FTP: " +
+                                                (directory.exceptionOrNull()?.message ?: "errore")
+                                        }
+                                    } else {
+                                        fileConnected = false
+                                        fileStatus =
+                                            "Errore FTP: " +
+                                            (connessione.exceptionOrNull()?.message ?: "connessione fallita")
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Text(
+                            text =
+                                if (fileSftp) {
+                                    "Connetti SFTP"
+                                } else {
+                                    "Connetti FTP"
+                                },
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(7.dp))
+
+                    Text(
+                        text = fileStatus,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                    } else {
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment =
+                                androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text =
+                                    (if (fileSftp) "SFTP" else "FTP") +
+                                    "  •  ${fileHost.trim()}",
+                                color = Color(0xFF66BB6A),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            IconButton(
+                                enabled = filePath != "/",
+                                onClick = {
+                                    scope.launch {
+                                        val percorsoSuperiore =
+                                            filePath
+                                                .trimEnd('/')
+                                                .substringBeforeLast(
+                                                    "/",
+                                                    ""
+                                                )
+                                                .ifBlank { "/" }
+
+                                        val directory =
+                                            if (fileSftp) {
+                                                fileClient.openDirectory(
+                                                    percorsoSuperiore
+                                                )
+                                            } else {
+                                                ftpClient.openDirectory(
+                                                    percorsoSuperiore
+                                                )
+                                            }
+
+                                        if (directory.isSuccess) {
+                                            val remoto =
+                                                directory.getOrThrow()
+
+                                            filePath = remoto.path
+                                            fileEntries = remoto.entries
+                                            fileStatus =
+                                                if (fileSftp) {
+                                                    "Connesso via SFTP"
+                                                } else {
+                                                    "Connesso via FTP"
+                                                }
+                                        } else {
+                                            fileStatus =
+                                                "Errore cartella superiore: " +
+                                                (
+                                                    directory.exceptionOrNull()
+                                                        ?.message
+                                                        ?: "errore"
+                                                )
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowUpward,
+                                    contentDescription = "Cartella superiore",
+                                    tint =
+                                        if (filePath != "/") {
+                                            Color(0xFF66BB6A)
+                                        } else {
+                                            MaterialTheme.colorScheme
+                                                .onSurfaceVariant
+                                                .copy(alpha = 0.35f)
+                                        }
+                                )
+                            }
+
+                            Button(
+                                enabled = !uploadInCorso,
+                                onClick = {
+                                    filePickerLauncher.launch("*/*")
+                                },
+                                modifier = Modifier.height(40.dp),
+                                contentPadding = PaddingValues(
+                                    horizontal = 10.dp,
+                                    vertical = 4.dp
+                                ),
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF1976D2)
+                                    )
+                            ) {
+                                if (uploadInCorso) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color.White
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector =
+                                            Icons.Default.PhoneAndroid,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(19.dp)
+                                    )
+
+                                    Icon(
+                                        imageVector =
+                                            Icons.Default.ArrowUpward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+
+                                    Spacer(
+                                        modifier = Modifier.width(5.dp)
+                                    )
+
+                                    Text(
+                                        text = "Upload",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    scope.launch {
+                                        val directory =
+                                            if (fileSftp) {
+                                                fileClient.openDirectory(
+                                                    filePath
+                                                )
+                                            } else {
+                                                ftpClient.openDirectory(
+                                                    filePath
+                                                )
+                                            }
+
+                                        if (directory.isSuccess) {
+                                            val remoto =
+                                                directory.getOrThrow()
+
+                                            filePath = remoto.path
+                                            fileEntries = remoto.entries
+                                            fileStatus =
+                                                if (fileSftp) {
+                                                    "Connesso via SFTP"
+                                                } else {
+                                                    "Connesso via FTP"
+                                                }
+                                        } else {
+                                            fileStatus =
+                                                "Errore aggiornamento: " +
+                                                (
+                                                    directory.exceptionOrNull()
+                                                        ?.message
+                                                        ?: "errore"
+                                                )
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Aggiorna directory",
+                                    tint = Color(0xFF66BB6A)
+                                )
+                            }
+                        }
+
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape =
+                                androidx.compose.foundation.shape.RoundedCornerShape(
+                                    12.dp
+                                ),
+                            color =
+                                MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                text = filePath.ifBlank { "/" },
+                                modifier = Modifier.padding(
+                                    horizontal = 12.dp,
+                                    vertical = 9.dp
+                                ),
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            fileEntries.forEach { entry ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .then(
+                                            if (entry.isDirectory) {
+                                                Modifier.clickable {
+                                                    scope.launch {
+                                                        val destinazione =
+                                                            if (entry.name == "..") {
+                                                                if (filePath == "/") {
+                                                                    "/"
+                                                                } else {
+                                                                    filePath
+                                                                        .trimEnd('/')
+                                                                        .substringBeforeLast(
+                                                                            "/",
+                                                                            ""
+                                                                        )
+                                                                        .ifBlank { "/" }
+                                                                }
+                                                            } else {
+                                                                if (filePath == "/") {
+                                                                    "/${entry.name}"
+                                                                } else {
+                                                                    "${filePath.trimEnd('/')}/${entry.name}"
+                                                                }
+                                                            }
+
+                                                        val directory =
+                                                            if (fileSftp) {
+                                                                fileClient.openDirectory(
+                                                                    destinazione
+                                                                )
+                                                            } else {
+                                                                ftpClient.openDirectory(
+                                                                    destinazione
+                                                                )
+                                                            }
+
+                                                        if (directory.isSuccess) {
+                                                            val remoto =
+                                                                directory.getOrThrow()
+
+                                                            filePath = remoto.path
+                                                            fileEntries = remoto.entries
+                                                            fileStatus =
+                                                                if (fileSftp) {
+                                                                    "Connesso via SFTP"
+                                                                } else {
+                                                                    "Connesso via FTP"
+                                                                }
+                                                        } else {
+                                                            fileStatus =
+                                                                "Errore directory " +
+                                                                (if (fileSftp) "SFTP: " else "FTP: ") +
+                                                                (
+                                                                    directory.exceptionOrNull()
+                                                                        ?.message
+                                                                        ?: "errore"
+                                                                )
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                              Modifier.clickable(
+                                                  enabled = !downloadInCorso
+                                              ) {
+                                                  fileMenuEntry = entry
+                                              }
+                                          }
+                                      )
+                                      .padding(
+                                            horizontal = 6.dp,
+                                            vertical = 9.dp
+                                        ),
+                                    verticalAlignment =
+                                        androidx.compose.ui.Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector =
+                                            if (entry.isDirectory) {
+                                                Icons.Default.Folder
+                                            } else {
+                                                Icons.Default.Description
+                                            },
+                                        contentDescription = null,
+                                        tint =
+                                            if (entry.isDirectory) {
+                                                Color(0xFFFFB300)
+                                            } else {
+                                                MaterialTheme.colorScheme
+                                                    .onSurfaceVariant
+                                            },
+                                        modifier = Modifier.size(24.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    Text(
+                                        text = entry.name,
+                                        modifier = Modifier.weight(1f),
+                                        fontSize = 14.sp,
+                                        maxLines = 1
+                                    )
+
+                                    Text(
+                                        text =
+                                            entry.permissions.toString(8)
+                                                .padStart(3, '0'),
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color =
+                                            MaterialTheme.colorScheme
+                                                .onSurfaceVariant
+                                    )
+                                }
+
+                                HorizontalDivider()
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                fileClient.disconnect()
+                                fileConnected = false
+                                fileEntries = emptyList()
+                                filePath = ""
+                                fileStatus = "Disconnesso"
+                            }
+                        ) {
+                            Text("Disconnetti")
+                        }
+
+                        Spacer(modifier = Modifier.height(5.dp))
+
+                        Text(
+                            text = fileStatus,
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
         }
             }
 }

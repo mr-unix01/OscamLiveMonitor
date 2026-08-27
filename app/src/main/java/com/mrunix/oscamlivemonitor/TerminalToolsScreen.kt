@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -203,6 +205,34 @@ fun TerminalToolsScreen(
 
     var permissionsValue by remember {
         mutableStateOf("")
+    }
+
+    var renameTarget by remember {
+        mutableStateOf<RemoteFile?>(null)
+    }
+
+    var renameValue by remember {
+        mutableStateOf("")
+    }
+
+    var deleteTarget by remember {
+        mutableStateOf<RemoteFile?>(null)
+    }
+
+    var createDirectoryOpen by remember {
+        mutableStateOf(false)
+    }
+
+    var createDirectoryValue by remember {
+        mutableStateOf("")
+    }
+
+    var propertiesData by remember {
+        mutableStateOf<RemoteProperties?>(null)
+    }
+
+    var propertiesBusy by remember {
+        mutableStateOf(false)
     }
 
     var editorEntry by remember {
@@ -416,69 +446,146 @@ val filePickerLauncher =
                     verticalArrangement =
                         Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Scegli operazione")
+                    Text(
+                        if (entry.isDirectory) {
+                            "Gestisci cartella"
+                        } else {
+                            "Gestisci file"
+                        }
+                    )
+
+                    if (!entry.isDirectory) {
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                fileMenuEntry = null
+                                editorBusy = true
+                                fileStatus =
+                                    "Apertura ${entry.name}..."
+
+                                scope.launch {
+                                    val buffer =
+                                        java.io.ByteArrayOutputStream()
+
+                                    val risultato =
+                                        if (fileSftp) {
+                                            fileClient.downloadFile(
+                                                entry.name,
+                                                buffer
+                                            )
+                                        } else {
+                                            ftpClient.downloadFile(
+                                                entry.name,
+                                                buffer
+                                            )
+                                        }
+
+                                    if (risultato.isSuccess) {
+                                        val bytes =
+                                            buffer.toByteArray()
+
+                                        if (
+                                            bytes.size >
+                                            2 * 1024 * 1024
+                                        ) {
+                                            fileStatus =
+                                                "File troppo grande per l'editor"
+                                        } else if (
+                                            bytes.take(1024)
+                                                .any {
+                                                    it == 0.toByte()
+                                                }
+                                        ) {
+                                            fileStatus =
+                                                "File binario: modifica non disponibile"
+                                        } else {
+                                            val testo =
+                                                bytes.toString(
+                                                    Charsets.UTF_8
+                                                )
+
+                                            editorOriginalText =
+                                                testo
+                                            editorText = testo
+                                            editorEntry = entry
+
+                                            fileStatus =
+                                                "File aperto: ${entry.name}"
+                                        }
+                                    } else {
+                                        fileStatus =
+                                            "Errore apertura: " +
+                                            (
+                                                risultato
+                                                    .exceptionOrNull()
+                                                    ?.message
+                                                    ?: "errore"
+                                            )
+                                    }
+
+                                    editorBusy = false
+                                }
+                            }
+                        ) {
+                            Text("Modifica")
+                        }
+                    }
 
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             fileMenuEntry = null
-                            editorBusy = true
-                            fileStatus = "Apertura ${entry.name}..."
+                            propertiesBusy = true
+                            propertiesData = null
+
+                            fileStatus =
+                                "Lettura proprietà ${entry.name}..."
 
                             scope.launch {
-                                val buffer =
-                                    java.io.ByteArrayOutputStream()
-
                                 val risultato =
                                     if (fileSftp) {
-                                        fileClient.downloadFile(
-                                            entry.name,
-                                            buffer
+                                        fileClient.getProperties(
+                                            entry.name
                                         )
                                     } else {
-                                        ftpClient.downloadFile(
-                                            entry.name,
-                                            buffer
+                                        ftpClient.getProperties(
+                                            entry.name
                                         )
                                     }
 
                                 if (risultato.isSuccess) {
-                                    val bytes = buffer.toByteArray()
+                                    propertiesData =
+                                        risultato.getOrThrow()
 
-                                    if (bytes.size > 2 * 1024 * 1024) {
-                                        fileStatus =
-                                            "File troppo grande per l'editor"
-                                    } else if (
-                                        bytes.take(1024)
-                                            .any { it == 0.toByte() }
-                                    ) {
-                                        fileStatus =
-                                            "File binario: modifica non disponibile"
-                                    } else {
-                                        val testo =
-                                            bytes.toString(Charsets.UTF_8)
-
-                                        editorOriginalText = testo
-                                        editorText = testo
-                                        editorEntry = entry
-                                        fileStatus =
-                                            "File aperto: ${entry.name}"
-                                    }
+                                    fileStatus =
+                                        "Proprietà: ${entry.name}"
                                 } else {
                                     fileStatus =
-                                        "Errore apertura: " +
-                                            (
-                                                risultato.exceptionOrNull()
-                                                    ?.message
-                                                    ?: "errore"
-                                            )
+                                        "Errore proprietà: " +
+                                        (
+                                            risultato
+                                                .exceptionOrNull()
+                                                ?.message
+                                                ?: "errore"
+                                        )
                                 }
 
-                                editorBusy = false
+                                propertiesBusy = false
                             }
                         }
                     ) {
-                        Text("Modifica")
+                        Text("Proprietà")
+                    }
+
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            renameValue = entry.name
+                            renameTarget = entry
+                            fileMenuEntry = null
+                        }
+                    ) {
+                        Text("Rinomina")
                     }
 
                     OutlinedButton(
@@ -496,15 +603,30 @@ val filePickerLauncher =
                         Text("Permessi")
                     }
 
+                    if (!entry.isDirectory) {
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                downloadNome = entry.name
+                                fileMenuEntry = null
+
+                                saveFileLauncher.launch(
+                                    entry.name
+                                )
+                            }
+                        ) {
+                            Text("Scarica")
+                        }
+                    }
+
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
-                            downloadNome = entry.name
+                            deleteTarget = entry
                             fileMenuEntry = null
-                            saveFileLauncher.launch(entry.name)
                         }
                     ) {
-                        Text("Scarica")
+                        Text("Elimina")
                     }
                 }
             },
@@ -520,6 +642,505 @@ val filePickerLauncher =
             }
         )
     }
+
+
+    renameTarget?.let { entry ->
+        AlertDialog(
+            onDismissRequest = {
+                renameTarget = null
+            },
+            title = {
+                Text(
+                    if (entry.isDirectory) {
+                        "Rinomina cartella"
+                    } else {
+                        "Rinomina file"
+                    }
+                )
+            },
+            text = {
+                OutlinedTextField(
+                    value = renameValue,
+                    onValueChange = {
+                        renameValue = it
+                    },
+                    label = {
+                        Text("Nuovo nome")
+                    },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val nuovoNome =
+                            renameValue.trim()
+
+                        if (
+                            nuovoNome.isBlank() ||
+                            nuovoNome == "." ||
+                            nuovoNome == ".." ||
+                            nuovoNome.contains("/")
+                        ) {
+                            fileStatus =
+                                "Nome non valido"
+                        } else {
+                            renameTarget = null
+
+                            scope.launch {
+                                val risultato =
+                                    if (fileSftp) {
+                                        fileClient.renameEntry(
+                                            entry.name,
+                                            nuovoNome
+                                        )
+                                    } else {
+                                        ftpClient.renameEntry(
+                                            entry.name,
+                                            nuovoNome
+                                        )
+                                    }
+
+                                if (risultato.isSuccess) {
+                                    val directory =
+                                        if (fileSftp) {
+                                            fileClient.openDirectory(
+                                                filePath
+                                            )
+                                        } else {
+                                            ftpClient.openDirectory(
+                                                filePath
+                                            )
+                                        }
+
+                                    if (directory.isSuccess) {
+                                        val remoto =
+                                            directory.getOrThrow()
+
+                                        filePath = remoto.path
+                                        fileEntries =
+                                            remoto.entries
+                                    }
+
+                                    fileStatus =
+                                        "Rinominato: ${entry.name} → $nuovoNome"
+                                } else {
+                                    fileStatus =
+                                        "Errore rinomina: " +
+                                        (
+                                            risultato
+                                                .exceptionOrNull()
+                                                ?.message
+                                                ?: "errore"
+                                        )
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text("Rinomina")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        renameTarget = null
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+
+    deleteTarget?.let { entry ->
+        AlertDialog(
+            onDismissRequest = {
+                deleteTarget = null
+            },
+            title = {
+                Text(
+                    if (entry.isDirectory) {
+                        "Elimina cartella?"
+                    } else {
+                        "Elimina file?"
+                    }
+                )
+            },
+            text = {
+                Text(
+                    if (entry.isDirectory) {
+                        "La cartella \"${entry.name}\" e tutto il suo contenuto verranno eliminati definitivamente."
+                    } else {
+                        "Il file \"${entry.name}\" verrà eliminato definitivamente."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        deleteTarget = null
+
+                        scope.launch {
+                            val risultato =
+                                if (fileSftp) {
+                                    if (entry.isDirectory) {
+                                        fileClient
+                                            .deleteDirectory(
+                                                entry.name
+                                            )
+                                    } else {
+                                        fileClient
+                                            .deleteFile(
+                                                entry.name
+                                            )
+                                    }
+                                } else {
+                                    if (entry.isDirectory) {
+                                        ftpClient
+                                            .deleteDirectory(
+                                                entry.name
+                                            )
+                                    } else {
+                                        ftpClient
+                                            .deleteFile(
+                                                entry.name
+                                            )
+                                    }
+                                }
+
+                            if (risultato.isSuccess) {
+                                val directory =
+                                    if (fileSftp) {
+                                        fileClient.openDirectory(
+                                            filePath
+                                        )
+                                    } else {
+                                        ftpClient.openDirectory(
+                                            filePath
+                                        )
+                                    }
+
+                                if (directory.isSuccess) {
+                                    val remoto =
+                                        directory.getOrThrow()
+
+                                    filePath = remoto.path
+                                    fileEntries =
+                                        remoto.entries
+                                }
+
+                                fileStatus =
+                                    "Eliminato: ${entry.name}"
+                            } else {
+                                fileStatus =
+                                    "Errore eliminazione: " +
+                                    (
+                                        risultato
+                                            .exceptionOrNull()
+                                            ?.message
+                                            ?: "errore"
+                                    )
+                            }
+                        }
+                    }
+                ) {
+                    Text("Elimina")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        deleteTarget = null
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+
+    if (createDirectoryOpen) {
+        AlertDialog(
+            onDismissRequest = {
+                createDirectoryOpen = false
+            },
+            title = {
+                Text("Nuova cartella")
+            },
+            text = {
+                OutlinedTextField(
+                    value = createDirectoryValue,
+                    onValueChange = {
+                        createDirectoryValue = it
+                    },
+                    label = {
+                        Text("Nome cartella")
+                    },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val nome =
+                            createDirectoryValue.trim()
+
+                        if (
+                            nome.isBlank() ||
+                            nome == "." ||
+                            nome == ".." ||
+                            nome.contains("/")
+                        ) {
+                            fileStatus =
+                                "Nome cartella non valido"
+                        } else {
+                            createDirectoryOpen = false
+
+                            scope.launch {
+                                val risultato =
+                                    if (fileSftp) {
+                                        fileClient
+                                            .createDirectory(
+                                                nome
+                                            )
+                                    } else {
+                                        ftpClient
+                                            .createDirectory(
+                                                nome
+                                            )
+                                    }
+
+                                if (risultato.isSuccess) {
+                                    val directory =
+                                        if (fileSftp) {
+                                            fileClient
+                                                .openDirectory(
+                                                    filePath
+                                                )
+                                        } else {
+                                            ftpClient
+                                                .openDirectory(
+                                                    filePath
+                                                )
+                                        }
+
+                                    if (directory.isSuccess) {
+                                        val remoto =
+                                            directory.getOrThrow()
+
+                                        filePath = remoto.path
+                                        fileEntries =
+                                            remoto.entries
+                                    }
+
+                                    fileStatus =
+                                        "Cartella creata: $nome"
+                                } else {
+                                    fileStatus =
+                                        "Errore creazione cartella: " +
+                                        (
+                                            risultato
+                                                .exceptionOrNull()
+                                                ?.message
+                                                ?: "errore"
+                                        )
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text("Crea")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        createDirectoryOpen = false
+                    }
+                ) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+
+    if (propertiesBusy) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = {
+                Text("Proprietà")
+            },
+            text = {
+                Row(
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically,
+                    horizontalArrangement =
+                        Arrangement.spacedBy(12.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+
+                    Text(
+                        "Lettura proprietà..."
+                    )
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+
+    propertiesData?.let { info ->
+
+        val dimensione =
+            when {
+                info.size >= 1024L * 1024L * 1024L ->
+                    String.format(
+                        java.util.Locale.getDefault(),
+                        "%.2f GiB",
+                        info.size.toDouble() /
+                            (1024.0 * 1024.0 * 1024.0)
+                    )
+
+                info.size >= 1024L * 1024L ->
+                    String.format(
+                        java.util.Locale.getDefault(),
+                        "%.2f MiB",
+                        info.size.toDouble() /
+                            (1024.0 * 1024.0)
+                    )
+
+                info.size >= 1024L ->
+                    String.format(
+                        java.util.Locale.getDefault(),
+                        "%.2f KiB",
+                        info.size.toDouble() /
+                            1024.0
+                    )
+
+                else ->
+                    "${info.size} byte"
+            }
+
+        val dataModifica =
+            info.modifiedTimeMillis
+                ?.let { millis ->
+                    java.text.SimpleDateFormat(
+                        "dd.MM.yyyy HH:mm:ss",
+                        java.util.Locale.getDefault()
+                    ).format(
+                        java.util.Date(millis)
+                    )
+                }
+                ?: "Non disponibile"
+
+        AlertDialog(
+            onDismissRequest = {
+                propertiesData = null
+            },
+            title = {
+                Text(
+                    "Proprietà — ${info.name}"
+                )
+            },
+            text = {
+                SelectionContainer {
+                    Column(
+                        verticalArrangement =
+                            Arrangement.spacedBy(7.dp)
+                    ) {
+                        Text(
+                            "Nome: ${info.name}"
+                        )
+
+                        Text(
+                            "Tipo: ${info.type}"
+                        )
+
+                        Text(
+                            "Percorso: ${info.path}"
+                        )
+
+                        Text(
+                            "Dimensione: $dimensione"
+                        )
+
+                        if (info.size >= 1024L) {
+                            Text(
+                                "Byte: ${info.size}"
+                            )
+                        }
+
+                        Text(
+                            "Permessi: " +
+                            info.permissions
+                                .toString(8)
+                                .padStart(3, '0') +
+                            "  (${info.permissionsText})"
+                        )
+
+                        Text(
+                            "Proprietario: " +
+                            (
+                                info.owner
+                                    ?.takeIf {
+                                        it.isNotBlank()
+                                    }
+                                    ?: "Non disponibile"
+                            )
+                        )
+
+                        Text(
+                            "Gruppo: " +
+                            (
+                                info.group
+                                    ?.takeIf {
+                                        it.isNotBlank()
+                                    }
+                                    ?: "Non disponibile"
+                            )
+                        )
+
+                        Text(
+                            "Ultima modifica: $dataModifica"
+                        )
+
+                        if (
+                            info.fileCount != null
+                        ) {
+                            Text(
+                                "File: ${info.fileCount}"
+                            )
+                        }
+
+                        if (
+                            info.directoryCount != null
+                        ) {
+                            Text(
+                                "Cartelle: ${info.directoryCount}"
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        propertiesData = null
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
 
     permissionsEntry?.let { entry ->
         AlertDialog(
@@ -1881,6 +2502,21 @@ val filePickerLauncher =
                                 )
                             }
 
+                            IconButton(
+                                onClick = {
+                                    createDirectoryValue = ""
+                                    createDirectoryOpen = true
+                                }
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        Icons.Default.CreateNewFolder,
+                                    contentDescription =
+                                        "Nuova cartella",
+                                    tint = Color(0xFF66BB6A)
+                                )
+                            }
+
                             Button(
                                 enabled = !uploadInCorso,
                                 onClick = {
@@ -2121,6 +2757,24 @@ val filePickerLauncher =
                                             MaterialTheme.colorScheme
                                                 .onSurfaceVariant
                                     )
+
+                                    if (entry.name != "..") {
+                                        IconButton(
+                                            modifier =
+                                                Modifier.size(36.dp),
+                                            onClick = {
+                                                fileMenuEntry =
+                                                    entry
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector =
+                                                    Icons.Default.MoreVert,
+                                                contentDescription =
+                                                    "Gestisci ${entry.name}"
+                                            )
+                                        }
+                                    }
                                 }
 
                                 HorizontalDivider()

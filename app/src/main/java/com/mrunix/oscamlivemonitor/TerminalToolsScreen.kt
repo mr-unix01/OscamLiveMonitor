@@ -2352,7 +2352,8 @@ val filePickerLauncher =
                                             filePath = remoto.path
                                             fileEntries = remoto.entries
                                             fileConnected = true
-                                            fileStatus = "Connesso via SFTP"
+                                            fileStatus =
+                                                "Connesso via SFTP"
                                         } else {
                                             fileConnected = false
                                             fileStatus =
@@ -2385,7 +2386,8 @@ val filePickerLauncher =
                                             filePath = remoto.path
                                             fileEntries = remoto.entries
                                             fileConnected = true
-                                            fileStatus = "Connesso via FTP"
+                                            fileStatus =
+                                                "Connesso via FTP"
                                         } else {
                                             ftpClient.disconnect()
                                             fileConnected = false
@@ -2645,7 +2647,10 @@ val filePickerLauncher =
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .then(
-                                            if (entry.isDirectory) {
+                                            if (
+                                                entry.isDirectory ||
+                                                entry.isSymbolicLink
+                                            ) {
                                                 Modifier.clickable {
                                                     scope.launch {
                                                         val destinazione =
@@ -2692,6 +2697,12 @@ val filePickerLauncher =
                                                                 } else {
                                                                     "Connesso via FTP"
                                                                 }
+                                                        } else if (
+                                                            entry.isSymbolicLink
+                                                        ) {
+                                                            fileMenuEntry = entry
+                                                            fileStatus =
+                                                                "Collegamento simbolico: ${entry.name}"
                                                         } else {
                                                             fileStatus =
                                                                 "Errore directory " +

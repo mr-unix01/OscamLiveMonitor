@@ -21,7 +21,44 @@ class FtpTransferClient {
     private var lastPassword: String = ""
     private var currentPath: String = "/"
 
+    private var lastActivityElapsed: Long = 0L
+
     private val mutex = Mutex()
+
+    private val directoryCache =
+        mutableMapOf<String, RemoteDirectory>()
+
+    private fun currentEntryPath(
+        name: String
+    ): String {
+        val base =
+            currentPath
+                .trimEnd('/')
+                .ifBlank { "/" }
+
+        return if (base == "/") {
+            "/$name"
+        } else {
+            "$base/$name"
+        }
+    }
+
+    private fun resolveDirectoryPath(
+        path: String
+    ): String {
+        if (path == "/") {
+            return "/"
+        }
+
+        if (path.startsWith("/")) {
+            return path.trimEnd('/')
+                .ifBlank { "/" }
+        }
+
+        return currentEntryPath(
+            path.trim('/')
+        )
+    }
 
     val connected: Boolean
         get() = client?.isConnected == true
@@ -40,20 +77,20 @@ class FtpTransferClient {
                     lastUsername = username
                     lastPassword = password
                     currentPath = "/"
+                    directoryCache.clear()
 
                     disconnectInternal()
 
                     val ftp = FTPClient()
-
                     ftp.connect(host, port)
-
                     if (!FTPReply.isPositiveCompletion(ftp.replyCode)) {
                         error(
                             "Server FTP: ${ftp.replyString.trim()}"
                         )
                     }
-
-                    if (!ftp.login(username, password)) {
+                    val loginOk =
+                        ftp.login(username, password)
+                    if (!loginOk) {
                         error(
                             "Login FTP fallito: ${ftp.replyString.trim()}"
                         )
@@ -61,8 +98,9 @@ class FtpTransferClient {
 
                     ftp.enterLocalPassiveMode()
                     ftp.setFileType(FTP.BINARY_FILE_TYPE)
-
                     client = ftp
+                    lastActivityElapsed =
+                        android.os.SystemClock.elapsedRealtime()
                 }
             }
         }
@@ -73,27 +111,28 @@ class FtpTransferClient {
         withContext(Dispatchers.IO) {
             mutex.withLock {
                 runCatching {
-                    val ftp =
-                        connectedClient()
+                    val realPath =
+                        resolveDirectoryPath(path)
 
-                    if (!ftp.changeWorkingDirectory(path)) {
-                        error(
-                            ftp.replyString.trim()
-                                .ifBlank {
-                                    "Directory non disponibile"
-                                }
-                        )
+                    /*
+                     * Se torniamo in una directory già visitata,
+                     * mostriamo subito la copia locale.
+                     *
+                     * Se si apre la directory corrente
+                     * (pulsante Refresh), leggiamo il server.
+                     */
+                    if (realPath != currentPath) {
+                        directoryCache[realPath]
+                            ?.let { cached ->
+                                currentPath = realPath
+                                return@runCatching cached
+                            }
                     }
 
-                    val realPath =
-                        ftp.printWorkingDirectory()
-                            ?: path
-
-                    currentPath = realPath
-
+                    val ftp =
+                        connectedClient()
                     val files =
-                        ftp.listFiles(".")
-
+                        ftp.listFiles(realPath)
                     val entries =
                         files
                             .filter {
@@ -103,23 +142,14 @@ class FtpTransferClient {
                                 RemoteFile(
                                     name = file.name,
                                     isDirectory =
-                                      file.isDirectory ||
-                                          (file.isSymbolicLink &&
-                                          run {
-                                              val entered =
-                                                  ftp.changeWorkingDirectory(file.name)
-
-                                              if (entered) {
-                                                  ftp.changeWorkingDirectory(realPath)
-                                              }
-
-                                              entered
-                                          }),
+                                        file.isDirectory,
                                     size = file.size,
                                     permissions =
                                         permissionsToInt(file),
                                     permissionsText =
-                                        permissionsToText(file)
+                                        permissionsToText(file),
+                                    isSymbolicLink =
+                                        file.isSymbolicLink
                                 )
                             }
                             .sortedWith(
@@ -130,10 +160,16 @@ class FtpTransferClient {
                                 }
                             )
 
-                    RemoteDirectory(
-                        path = realPath,
-                        entries = entries
-                    )
+                    val directory =
+                        RemoteDirectory(
+                            path = realPath,
+                            entries = entries
+                        )
+
+                    currentPath = realPath
+                    directoryCache[realPath] = directory
+
+                    directory
                 }
             }
         }
@@ -148,9 +184,11 @@ class FtpTransferClient {
                     val ftp =
                         connectedClient()
 
+                    directoryCache.clear()
+
                     val ok =
                         inputStream.use {
-                            ftp.storeFile(name, it)
+                            ftp.storeFile(currentEntryPath(name), it)
                         }
 
                     if (!ok) {
@@ -178,7 +216,7 @@ class FtpTransferClient {
 
                     val ok =
                         outputStream.use {
-                            ftp.retrieveFile(name, it)
+                            ftp.retrieveFile(currentEntryPath(name), it)
                         }
 
                     if (!ok) {
@@ -204,12 +242,14 @@ class FtpTransferClient {
                     val ftp =
                         connectedClient()
 
+                    directoryCache.clear()
+
                     val mode =
                         permissions.toString(8)
 
                     val ok =
                         ftp.sendSiteCommand(
-                            "CHMOD $mode $name"
+                            "CHMOD $mode ${currentEntryPath(name)}"
                         )
 
                     if (!ok) {
@@ -234,10 +274,9 @@ class FtpTransferClient {
                         connectedClient()
 
                     val base =
-                        ftp.printWorkingDirectory()
-                            ?.trimEnd('/')
-                            ?.ifBlank { "/" }
-                            ?: "/"
+                        currentPath
+                            .trimEnd('/')
+                            .ifBlank { "/" }
 
                     val fullPath =
                         if (base == "/") {
@@ -247,7 +286,7 @@ class FtpTransferClient {
                         }
 
                     val file =
-                        ftp.listFiles(".")
+                        ftp.listFiles(base)
                             .firstOrNull {
                                 it.name == name
                             }
@@ -384,10 +423,12 @@ class FtpTransferClient {
                     val ftp =
                         connectedClient()
 
+                    directoryCache.clear()
+
                     if (
                         !ftp.rename(
-                            oldName,
-                            newName
+                            currentEntryPath(oldName),
+                            currentEntryPath(newName)
                         )
                     ) {
                         error(
@@ -412,7 +453,9 @@ class FtpTransferClient {
                     val ftp =
                         connectedClient()
 
-                    if (!ftp.deleteFile(name)) {
+                    directoryCache.clear()
+
+                    if (!ftp.deleteFile(currentEntryPath(name))) {
                         error(
                             ftp.replyString.trim()
                                 .ifBlank {
@@ -435,11 +478,12 @@ class FtpTransferClient {
                     val ftp =
                         connectedClient()
 
+                    directoryCache.clear()
+
                     val base =
-                        ftp.printWorkingDirectory()
-                            ?.trimEnd('/')
-                            ?.ifBlank { "/" }
-                            ?: "/"
+                        currentPath
+                            .trimEnd('/')
+                            .ifBlank { "/" }
 
                     val path =
                         if (base == "/") {
@@ -475,7 +519,9 @@ class FtpTransferClient {
                     val ftp =
                         connectedClient()
 
-                    if (!ftp.makeDirectory(name)) {
+                    directoryCache.clear()
+
+                    if (!ftp.makeDirectory(currentEntryPath(name))) {
                         error(
                             ftp.replyString.trim()
                                 .ifBlank {
@@ -560,6 +606,7 @@ class FtpTransferClient {
     fun disconnect() {
         lastHost = null
         currentPath = "/"
+        directoryCache.clear()
         disconnectInternal()
     }
 
@@ -570,12 +617,32 @@ class FtpTransferClient {
             ftp != null &&
             ftp.isConnected
         ) {
+            val now =
+                android.os.SystemClock.elapsedRealtime()
+
+            /*
+             * Durante l'uso continuo evitiamo un NOOP
+             * prima di ogni comando FTP.
+             *
+             * Dopo almeno 30 secondi di inattività
+             * verifichiamo invece che il server sia
+             * ancora raggiungibile.
+             */
+            if (
+                lastActivityElapsed != 0L &&
+                now - lastActivityElapsed < 30_000L
+            ) {
+                lastActivityElapsed = now
+                return ftp
+            }
             val alive =
                 runCatching {
                     ftp.sendNoOp()
                 }.getOrDefault(false)
-
             if (alive) {
+                lastActivityElapsed =
+                    android.os.SystemClock.elapsedRealtime()
+
                 return ftp
             }
         }
@@ -631,17 +698,8 @@ class FtpTransferClient {
         )
 
         client = newFtp
-
-        if (currentPath != "/") {
-            if (
-                !newFtp.changeWorkingDirectory(
-                    currentPath
-                )
-            ) {
-                newFtp.changeWorkingDirectory("/")
-                currentPath = "/"
-            }
-        }
+        lastActivityElapsed =
+            android.os.SystemClock.elapsedRealtime()
 
         return newFtp
     }
@@ -664,6 +722,7 @@ class FtpTransferClient {
         }
 
         client = null
+        lastActivityElapsed = 0L
     }
 
     private fun permissionsToInt(

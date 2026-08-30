@@ -15,7 +15,8 @@ data class RemoteFile(
     val isDirectory: Boolean,
     val size: Long,
     val permissions: Int,
-    val permissionsText: String
+    val permissionsText: String,
+    val isSymbolicLink: Boolean = false
 )
 
 data class RemoteDirectory(
@@ -50,6 +51,40 @@ class FileTransferClient {
 
     private val sftpMutex = Mutex()
 
+    private val directoryCache =
+        mutableMapOf<String, RemoteDirectory>()
+
+    private fun currentEntryPath(
+        name: String
+    ): String {
+        val base =
+            currentPath
+                .trimEnd('/')
+                .ifBlank { "/" }
+
+        return if (base == "/") {
+            "/$name"
+        } else {
+            "$base/$name"
+        }
+    }
+
+    private fun resolveDirectoryPath(
+        path: String
+    ): String {
+        if (path == "/") {
+            return "/"
+        }
+
+        if (path.startsWith("/")) {
+            return path.trimEnd('/')
+        }
+
+        return currentEntryPath(
+            path.trim('/')
+        )
+    }
+
     val connected: Boolean
         get() =
             sftpSession?.isConnected == true &&
@@ -68,6 +103,7 @@ class FileTransferClient {
                 lastUsername = username
                 lastPassword = password
                 currentPath = "/"
+                directoryCache.clear()
 
                 disconnectInternal()
 
@@ -92,14 +128,10 @@ class FileTransferClient {
 
                 session.setServerAliveInterval(30_000)
                 session.setServerAliveCountMax(3)
-
                 session.connect(10_000)
-
                 val channel =
                     session.openChannel("sftp") as ChannelSftp
-
                 channel.connect(10_000)
-
                 sftpSession = session
                 sftpChannel = channel
             }
@@ -112,19 +144,31 @@ class FileTransferClient {
         withContext(Dispatchers.IO) {
             sftpMutex.withLock {
                 runCatching {
+                    val realPath =
+                        resolveDirectoryPath(path)
+
+                    /*
+                     * Se stiamo andando in una directory diversa
+                     * da quella corrente e l'abbiamo già visitata,
+                     * usiamo la cache.
+                     *
+                     * Se path == currentPath (es. pulsante Refresh),
+                     * leggiamo invece sempre il server.
+                     */
+                    if (realPath != currentPath) {
+                        directoryCache[realPath]
+                            ?.let { cached ->
+                                currentPath = realPath
+                                return@runCatching cached
+                            }
+                    }
+
                     val channel =
                         connectedChannel()
-
-                    channel.cd(path)
-
-                    val realPath = channel.pwd()
-                    currentPath = realPath
-
                     @Suppress("UNCHECKED_CAST")
                     val rawEntries =
-                        channel.ls(".")
+                        channel.ls(realPath)
                             as java.util.Vector<ChannelSftp.LsEntry>
-
                     val entries =
                         rawEntries
                             .filter {
@@ -134,20 +178,14 @@ class FileTransferClient {
                                 RemoteFile(
                                     name = entry.filename,
                                     isDirectory =
-                                        entry.attrs.isDir ||
-                                        (
-                                            entry.attrs.isLink &&
-                                            runCatching {
-                                                channel.stat(
-                                                    entry.filename
-                                                ).isDir
-                                            }.getOrDefault(false)
-                                        ),
+                                        entry.attrs.isDir,
                                     size = entry.attrs.size,
                                     permissions =
                                         entry.attrs.permissions and 0x1FF,
                                     permissionsText =
-                                        entry.attrs.permissionsString
+                                        entry.attrs.permissionsString,
+                                    isSymbolicLink =
+                                        entry.attrs.isLink
                                 )
                             }
                             .sortedWith(
@@ -158,10 +196,16 @@ class FileTransferClient {
                                 }
                             )
 
-                    RemoteDirectory(
-                        path = realPath,
-                        entries = entries
-                    )
+                    val directory =
+                        RemoteDirectory(
+                            path = realPath,
+                            entries = entries
+                        )
+
+                    currentPath = realPath
+                    directoryCache[realPath] = directory
+
+                    directory
                 }
             }
         }
@@ -237,10 +281,14 @@ class FileTransferClient {
                     inputStream.use {
                         channel.put(
                             it,
-                            name,
+                            currentEntryPath(name),
                             ChannelSftp.OVERWRITE
                         )
                     }
+
+                    directoryCache.clear()
+
+                    Unit
                 }
             }
         }
@@ -257,7 +305,10 @@ class FileTransferClient {
                         connectedChannel()
 
                     outputStream.use {
-                        channel.get(name, it)
+                        channel.get(
+                            currentEntryPath(name),
+                            it
+                        )
                     }
                 }
             }
@@ -276,8 +327,12 @@ class FileTransferClient {
 
                     channel.chmod(
                         permissions,
-                        name
+                        currentEntryPath(name)
                     )
+
+                    directoryCache.clear()
+
+                    Unit
                 }
             }
         }
@@ -291,7 +346,7 @@ class FileTransferClient {
                     val channel = connectedChannel()
 
                     val base =
-                        channel.pwd()
+                        currentPath
                             .trimEnd('/')
                             .ifBlank { "/" }
 
@@ -433,9 +488,13 @@ class FileTransferClient {
                     val channel = connectedChannel()
 
                     channel.rename(
-                        oldName,
-                        newName
+                        currentEntryPath(oldName),
+                        currentEntryPath(newName)
                     )
+
+                    directoryCache.clear()
+
+                    Unit
                 }
             }
         }
@@ -449,7 +508,13 @@ class FileTransferClient {
                     validateEntryName(name)
 
                     val channel = connectedChannel()
-                    channel.rm(name)
+                    channel.rm(
+                        currentEntryPath(name)
+                    )
+
+                    directoryCache.clear()
+
+                    Unit
                 }
             }
         }
@@ -465,7 +530,7 @@ class FileTransferClient {
                     val channel = connectedChannel()
 
                     val base =
-                        channel.pwd()
+                        currentPath
                             .trimEnd('/')
                             .ifBlank { "/" }
 
@@ -487,6 +552,10 @@ class FileTransferClient {
                             path
                         )
                     }
+
+                    directoryCache.clear()
+
+                    Unit
                 }
             }
         }
@@ -500,7 +569,13 @@ class FileTransferClient {
                     validateEntryName(name)
 
                     val channel = connectedChannel()
-                    channel.mkdir(name)
+                    channel.mkdir(
+                        currentEntryPath(name)
+                    )
+
+                    directoryCache.clear()
+
+                    Unit
                 }
             }
         }
@@ -555,6 +630,7 @@ class FileTransferClient {
     }
 
     fun disconnect() {
+        directoryCache.clear()
         disconnectInternal()
     }
 
@@ -607,18 +683,6 @@ class FileTransferClient {
 
         sftpSession = newSession
         sftpChannel = newChannel
-
-        if (currentPath != "/") {
-            val ripristinata =
-                runCatching {
-                    newChannel.cd(currentPath)
-                }.isSuccess
-
-            if (!ripristinata) {
-                newChannel.cd("/")
-                currentPath = "/"
-            }
-        }
 
         return newChannel
     }

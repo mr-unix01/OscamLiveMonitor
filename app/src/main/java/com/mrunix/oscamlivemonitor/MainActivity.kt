@@ -1640,97 +1640,64 @@ fun Greeting(
 
 
             if (!mostraConnessione) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline
-                    ),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    onClick = {
-                        mostraConnessione = true
-                        stato = ""
-                        versioneOscam = ""
-                        uptime = ""
-                        cpuOscam = ""
-                        ramOscam = ""
-
-                        servers = ""
-                        readers = ""
-                        proxies = ""
-                        clients = ""
-                        users = ""
-
-                        elencoServers = emptyList()
-                        elencoReaders = emptyList()
-                        elencoProxies = emptyList()
-                        elencoClients = emptyList()
-                        elencoUsers = emptyList()
-
-                        mostraServers = true
-                        mostraReaders = true
-                        mostraProxies = true
-                        mostraClients = true
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("⚙  Impostazioni")
-                }
+                    DashboardQuickAction(
+                        titolo = "Impostazioni",
+                        icona = Icons.Default.Settings,
+                        coloreAccento = Color(0xFF66BB6A),
+                        onClick = {
+                            mostraConnessione = true
+                            stato = ""
+                            versioneOscam = ""
+                            uptime = ""
+                            cpuOscam = ""
+                            ramOscam = ""
 
-                Spacer(modifier = Modifier.height(8.dp))
+                            servers = ""
+                            readers = ""
+                            proxies = ""
+                            clients = ""
+                            users = ""
 
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        Color(0xFF29B6F6)
-                    ),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFF29B6F6)
-                    ),
-                    onClick = {
-                        mostraWebIf = true
-                    }
-                ) {
-                    Text("🌐  Apri WebIF")
-                }
+                            elencoServers = emptyList()
+                            elencoReaders = emptyList()
+                            elencoProxies = emptyList()
+                            elencoClients = emptyList()
+                            elencoUsers = emptyList()
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.primary
-                    ),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary
-                    ),
-                    onClick = {
-                        mostraLiveLog = true
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ReceiptLong,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                            mostraServers = true
+                            mostraReaders = true
+                            mostraProxies = true
+                            mostraClients = true
+                        },
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Live Log")
-                }
 
+                    DashboardQuickAction(
+                        titolo = "WebIF",
+                        icona = Icons.Default.Language,
+                        coloreAccento = Color(0xFF29B6F6),
+                        onClick = {
+                            mostraWebIf = true
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    DashboardQuickAction(
+                        titolo = "Live Log",
+                        icona = Icons.Default.ReceiptLong,
+                        coloreAccento = Color(0xFFFFB74D),
+                        onClick = {
+                            mostraLiveLog = true
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             if (
@@ -2573,69 +2540,104 @@ fun ExpressiveOscamInfoCard(
     riavvioInCorso: Boolean,
     onRiavviaClick: () -> Unit
 ) {
-    val temaScuroCard = androidx.compose.foundation.isSystemInDarkTheme()
+    val temaScuroCard =
+        androidx.compose.foundation.isSystemInDarkTheme()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            if (compatto) 20.dp else 24.dp
-        ),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
         border = androidx.compose.foundation.BorderStroke(
-            if (temaScuroCard) 0.dp else 1.1.dp,
-            if (temaScuroCard) Color.Transparent else Color(0xFFD8DDD8)
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (temaScuroCard) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.62f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f)
             } else {
-                Color(0xFFF8F9F8)
+                MaterialTheme.colorScheme.surface
             }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroCard) 2.dp else 1.5.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
     ) {
         Column(
             modifier = Modifier.padding(
-                if (compatto) 13.dp else 16.dp
+                horizontal = 14.dp,
+                vertical = 13.dp
             )
         ) {
             Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
             ) {
                 androidx.compose.material3.Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    color = Color(0xFF42A5F5).copy(alpha = if (temaScuroCard) 0.14f else 0.10f)
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    color = Color(0xFF29B6F6).copy(alpha = 0.13f)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Storage,
                         contentDescription = null,
-                        tint = Color(0xFF42A5F5),
+                        tint = Color(0xFF29B6F6),
                         modifier = Modifier
-                            .padding(8.dp)
-                            .size(if (compatto) 19.dp else 21.dp)
+                            .padding(9.dp)
+                            .size(21.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(11.dp))
 
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
-                        text = if (versione.isNotBlank()) "OSCam $versione" else "OSCam",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = if (compatto) 15.sp else 17.sp
+                        text =
+                            if (versione.isNotBlank())
+                                "OSCam $versione"
+                            else
+                                "OSCam",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
                     if (uptime.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+
                         Text(
-                            text = "Uptime: $uptime",
-                            fontSize = if (compatto) 11.sp else 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Uptime  $uptime",
+                            fontSize = 12.sp,
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+
+                androidx.compose.material3.Surface(
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(50),
+                    color = Color(0xFF4CAF50).copy(alpha = 0.13f),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        Color(0xFF4CAF50).copy(alpha = 0.45f)
+                    )
+                ) {
+                    Text(
+                        text = "● LIVE",
+                        color = Color(0xFF66BB6A),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 4.dp
+                        )
+                    )
                 }
             }
 
             if (cpu.isNotBlank() || ram.isNotBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(11.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -2643,7 +2645,7 @@ fun ExpressiveOscamInfoCard(
                 ) {
                     if (cpu.isNotBlank()) {
                         ExpressiveMiniInfo(
-                            etichetta = "CPU OSCam",
+                            etichetta = "CPU",
                             valore = cpu,
                             compatto = compatto,
                             modifier = Modifier.weight(1f)
@@ -2652,7 +2654,7 @@ fun ExpressiveOscamInfoCard(
 
                     if (ram.isNotBlank()) {
                         ExpressiveMiniInfo(
-                            etichetta = "RAM OSCam",
+                            etichetta = "RAM",
                             valore = ram,
                             compatto = compatto,
                             modifier = Modifier.weight(1f)
@@ -2666,24 +2668,27 @@ fun ExpressiveOscamInfoCard(
             OutlinedButton(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (compatto) 42.dp else 46.dp),
+                    .height(44.dp),
                 enabled = !riavvioInCorso,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                shape =
+                    androidx.compose.foundation.shape.RoundedCornerShape(15.dp),
                 border = androidx.compose.foundation.BorderStroke(
-                    1.2.dp,
-                    Color(0xFFFF7043)
+                    1.dp,
+                    Color(0xFFFF7043).copy(alpha = 0.85f)
                 ),
-                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFFFF7043)
-                ),
+                colors =
+                    androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFF7043)
+                    ),
                 onClick = onRiavviaClick
             ) {
                 Text(
-                    if (riavvioInCorso) {
-                        "↻ Riavvio..."
-                    } else {
-                        "↻ Riavvia OSCam"
-                    },
+                    text =
+                        if (riavvioInCorso)
+                            "↻  Riavvio..."
+                        else
+                            "↻  Riavvia OSCam",
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }

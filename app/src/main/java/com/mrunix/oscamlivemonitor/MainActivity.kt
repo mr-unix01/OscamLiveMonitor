@@ -3260,12 +3260,15 @@ fun LiveLogScreen(
     }
 
     val api = remember { OscamApi() }
+
     var righeLog by remember(host, porta, username, password) {
         mutableStateOf(emptyList<String>())
     }
+
     var ultimoId by remember(host, porta, username, password) {
         mutableStateOf("start")
     }
+
     var inPausa by remember { mutableStateOf(false) }
     var erroreLiveLog by remember { mutableStateOf("") }
     var erroriLiveLogConsecutivi by remember { mutableStateOf(0) }
@@ -3303,9 +3306,6 @@ fun LiveLogScreen(
                         riconnessioneLiveLog = false
                         erroreLiveLog = risposta
                     } else {
-                        // Un singolo errore di rete può capitare quando Android
-                        // riprende l'app dal background. Non lampeggiamo subito
-                        // in rosso: tentiamo automaticamente la riconnessione.
                         riconnessioneLiveLog = true
                         erroreLiveLog = ""
                     }
@@ -3342,82 +3342,259 @@ fun LiveLogScreen(
     LaunchedEffect(righeLog.size, inPausa) {
         if (!inPausa && righeLog.isNotEmpty()) {
             kotlinx.coroutines.delay(40)
+
             scrollVerticale.scrollTo(
                 scrollVerticale.maxValue
             )
         }
     }
 
+    val temaScuroLive =
+        androidx.compose.foundation.isSystemInDarkTheme()
+
+    val coloreLive =
+        when {
+            inPausa ->
+                Color(0xFFFFB74D)
+
+            erroreLiveLog.isNotBlank() ->
+                Color(0xFFEF5350)
+
+            riconnessioneLiveLog ->
+                Color(0xFFFFB74D)
+
+            else ->
+                Color(0xFF66BB6A)
+        }
+
+    val statoLive =
+        when {
+            inPausa ->
+                "PAUSA"
+
+            erroreLiveLog.isNotBlank() ->
+                "ERRORE"
+
+            riconnessioneLiveLog ->
+                "RICONNESSIONE"
+
+            primaRichiestaCompletata ->
+                "LIVE"
+
+            else ->
+                "CONNESSIONE"
+        }
+
+    val coloreNormaleLog =
+        if (temaScuroLive) {
+            Color(0xFFD7E0D8)
+        } else {
+            Color(0xFF263229)
+        }
+
+    val testoLogColorato =
+        remember(
+            righeLog,
+            erroreLiveLog,
+            temaScuroLive
+        ) {
+            androidx.compose.ui.text.buildAnnotatedString {
+                if (righeLog.isNotEmpty()) {
+                    righeLog.forEachIndexed { indice, riga ->
+                        val colore =
+                            when {
+                                riga.contains(
+                                    "ERROR",
+                                    ignoreCase = true
+                                ) ||
+                                riga.contains(
+                                    "FAIL",
+                                    ignoreCase = true
+                                ) ||
+                                riga.contains(
+                                    "NOT FOUND",
+                                    ignoreCase = true
+                                ) ||
+                                riga.contains(
+                                    "REJECTED",
+                                    ignoreCase = true
+                                ) ->
+                                    Color(0xFFEF5350)
+
+                                riga.contains(
+                                    "WARN",
+                                    ignoreCase = true
+                                ) ||
+                                riga.contains(
+                                    "TIMEOUT",
+                                    ignoreCase = true
+                                ) ->
+                                    Color(0xFFFFB74D)
+
+                                riga.contains(
+                                    "EMM",
+                                    ignoreCase = true
+                                ) ->
+                                    Color(0xFF42A5F5)
+
+                                riga.contains(
+                                    "ECM",
+                                    ignoreCase = true
+                                ) ||
+                                riga.contains(
+                                    "FOUND",
+                                    ignoreCase = true
+                                ) ||
+                                riga.contains(
+                                    "CARDOK",
+                                    ignoreCase = true
+                                ) ||
+                                riga.contains(
+                                    "CONNECTED",
+                                    ignoreCase = true
+                                ) ->
+                                    Color(0xFF66BB6A)
+
+                                else ->
+                                    coloreNormaleLog
+                            }
+
+                        pushStyle(
+                            androidx.compose.ui.text.SpanStyle(
+                                color = colore
+                            )
+                        )
+
+                        append(riga)
+
+                        pop()
+
+                        if (indice < righeLog.lastIndex) {
+                            append("\n")
+                        }
+                    }
+                } else {
+                    pushStyle(
+                        androidx.compose.ui.text.SpanStyle(
+                            color = coloreNormaleLog
+                        )
+                    )
+
+                    append(
+                        if (erroreLiveLog.isNotBlank()) {
+                            "Nessun dato Live Log"
+                        } else {
+                            "In attesa delle righe OSCam..."
+                        }
+                    )
+
+                    pop()
+                }
+            }
+        }
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(
+                horizontal = 10.dp,
+                vertical = 8.dp
+            )
     ) {
         androidx.compose.material3.Surface(
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
-            tonalElevation = 3.dp
+            shape =
+                androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            color =
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            border =
+                androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(
+                        alpha = 0.55f
+                    )
+                )
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    .padding(
+                        horizontal = 10.dp,
+                        vertical = 9.dp
+                    ),
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
             ) {
                 FilledTonalButton(
                     onClick = onClose,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                    contentPadding = PaddingValues(
-                        horizontal = 12.dp,
-                        vertical = 8.dp
-                    )
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(
+                            14.dp
+                        ),
+                    contentPadding =
+                        PaddingValues(
+                            horizontal = 10.dp,
+                            vertical = 7.dp
+                        )
                 ) {
-                    Text("❌  Chiudi")
+                    Text("✕")
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
-                Text(
-                    text = "Live Log",
-                    modifier = Modifier.weight(1f),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.End
-                )
-            }
-        }
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Live Log",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-        ) {
-            FilledTonalButton(
-                modifier = Modifier.weight(1f),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                onClick = {
-                    inPausa = !inPausa
+                    Text(
+                        text = "${host.trim()}:${porta.trim()}",
+                        fontSize = 11.sp,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            ) {
-                Text(
-                    if (inPausa) {
-                        "▶  Riprendi"
-                    } else {
-                        "⏸  Pausa"
+
+                androidx.compose.material3.Surface(
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(
+                            50
+                        ),
+                    color = coloreLive.copy(alpha = 0.12f),
+                    border =
+                        androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            coloreLive.copy(alpha = 0.45f)
+                        )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 5.dp
+                        ),
+                        verticalAlignment =
+                            androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier.size(7.dp),
+                            shape =
+                                androidx.compose.foundation.shape.CircleShape,
+                            color = coloreLive
+                        ) {}
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            text = statoLive,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = coloreLive
+                        )
                     }
-                )
-            }
-
-            OutlinedButton(
-                modifier = Modifier.weight(1f),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                onClick = {
-                    righeLog = emptyList()
                 }
-            ) {
-                Text("⌫  Pulisci")
             }
         }
 
@@ -3425,41 +3602,51 @@ fun LiveLogScreen(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            horizontalArrangement =
+                Arrangement.spacedBy(8.dp)
         ) {
-            val coloreLive =
-                if (inPausa) {
-                    Color(0xFFFFB74D)
-                } else if (erroreLiveLog.isNotBlank()) {
-                    Color(0xFFEF5350)
-                } else if (riconnessioneLiveLog) {
-                    Color(0xFFFFB74D)
-                } else {
-                    Color(0xFF66BB6A)
+            FilledTonalButton(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(44.dp),
+                shape =
+                    androidx.compose.foundation.shape.RoundedCornerShape(
+                        15.dp
+                    ),
+                onClick = {
+                    inPausa = !inPausa
                 }
+            ) {
+                Text(
+                    text =
+                        if (inPausa) {
+                            "▶  Riprendi"
+                        } else {
+                            "⏸  Pausa"
+                        },
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
-            Text(
-                text = when {
-                    inPausa -> "●  In pausa"
-                    erroreLiveLog.isNotBlank() -> "●  Errore"
-                    riconnessioneLiveLog -> "●  Riconnessione..."
-                    primaRichiestaCompletata -> "●  Live"
-                    else -> "●  Connessione..."
-                },
-                color = coloreLive,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp
-            )
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Text(
-                text = "${host.trim()}:${porta.trim()}",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                modifier = Modifier.weight(1f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.End
-            )
+            OutlinedButton(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(44.dp),
+                shape =
+                    androidx.compose.foundation.shape.RoundedCornerShape(
+                        15.dp
+                    ),
+                onClick = {
+                    righeLog = emptyList()
+                }
+            ) {
+                Text(
+                    text = "⌫  Pulisci",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
 
         if (erroreLiveLog.isNotBlank()) {
@@ -3468,7 +3655,7 @@ fun LiveLogScreen(
             Text(
                 text = erroreLiveLog,
                 color = MaterialTheme.colorScheme.error,
-                fontSize = 12.sp
+                fontSize = 11.sp
             )
         }
 
@@ -3478,37 +3665,76 @@ fun LiveLogScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
-            )
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp)
-                    .verticalScroll(scrollVerticale)
-                    .horizontalScroll(scrollOrizzontale)
-            ) {
-                Text(
-                    text = when {
-                        righeLog.isNotEmpty() ->
-                            righeLog.joinToString("\n")
-
-                        erroreLiveLog.isNotBlank() ->
-                            "Nessun dato Live Log"
-
-                        else ->
-                            "In attesa delle righe OSCam..."
-                    },
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
-                    softWrap = false
+            shape =
+                androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+            color =
+                if (temaScuroLive) {
+                    Color(0xFF0B0F0C)
+                } else {
+                    Color(0xFFF4F7F4)
+                },
+            border =
+                androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(
+                        alpha = 0.65f
+                    )
                 )
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = 11.dp,
+                            vertical = 7.dp
+                        ),
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "OSCam LOG",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF66BB6A)
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Text(
+                        text = "${righeLog.size}/300 righe",
+                        fontSize = 10.sp,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                HorizontalDivider(
+                    color =
+                        MaterialTheme.colorScheme.outlineVariant.copy(
+                            alpha = 0.45f
+                        )
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(10.dp)
+                        .verticalScroll(scrollVerticale)
+                        .horizontalScroll(scrollOrizzontale)
+                ) {
+                    Text(
+                        text = testoLogColorato,
+                        fontFamily =
+                            androidx.compose.ui.text.font.FontFamily.Monospace,
+                        fontSize = 11.sp,
+                        lineHeight = 16.sp,
+                        softWrap = false
+                    )
+                }
             }
         }
     }

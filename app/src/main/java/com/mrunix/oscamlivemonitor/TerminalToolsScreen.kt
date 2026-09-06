@@ -1511,84 +1511,26 @@ val filePickerLauncher =
             )
     ) {
         if (!fullscreenTerminale) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment =
-                    androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = {
-                        disconnectTerminal()
-                        onClose()
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Torna alla selezione box"
-                    )
+            ToolsHeader(
+                serverName = serverName.ifBlank { defaultHost },
+                onBack = {
+                    disconnectTerminal()
+                    onClose()
                 }
-
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Strumenti",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = serverName.ifBlank {
-                            defaultHost
-                        },
-                        fontSize = 13.sp,
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
             if (!connected) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        selected = !mostraFile,
-                        onClick = {
-                            mostraFile = false
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Terminal,
-                                contentDescription = null
-                            )
-                        },
-                        label = {
-                            Text("Terminale")
-                        }
-                    )
-
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        selected = mostraFile,
-                        onClick = {
-                            mostraFile = true
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Folder,
-                                contentDescription = null
-                            )
-                        },
-                        label = {
-                            Text("File")
-                        }
-                    )
-                }
+                ToolsModeSelector(
+                    fileSelected = mostraFile,
+                    onTerminal = {
+                        mostraFile = false
+                    },
+                    onFile = {
+                        mostraFile = true
+                    }
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -1596,14 +1538,7 @@ val filePickerLauncher =
 
         if (!fullscreenTerminale && !mostraFile) {
         Card(
-            modifier =
-                if (!connected) {
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                } else {
-                    Modifier.fillMaxWidth()
-                },
+            modifier = Modifier.fillMaxWidth(),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
         ) {
             Column(
@@ -1651,64 +1586,49 @@ val filePickerLauncher =
 
                 if (!connected) {
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement =
-                        Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        selected =
-                            protocol == TerminalProtocol.SSH,
-                        onClick = {
-                            if (!connected) {
-                                val oldDefault =
-                                    if (protocol == TerminalProtocol.SSH)
-                                        "22"
-                                    else
-                                        "23"
+                ToolsBinarySelector(
+                    leftTitle = "SSH",
+                    rightTitle = "Telnet",
+                    leftSelected =
+                        protocol == TerminalProtocol.SSH,
+                    accent = Color(0xFF66BB6A),
+                    onLeft = {
+                        if (!connected) {
+                            val oldDefault =
+                                if (protocol == TerminalProtocol.SSH)
+                                    "22"
+                                else
+                                    "23"
 
-                                protocol = TerminalProtocol.SSH
+                            protocol = TerminalProtocol.SSH
 
-                                if (port == oldDefault) {
-                                    port = "22"
-                                }
+                            if (port == oldDefault) {
+                                port = "22"
                             }
-                        },
-                        label = {
-                            Text("SSH")
                         }
-                    )
+                    },
+                    onRight = {
+                        if (!connected) {
+                            val oldDefault =
+                                if (protocol == TerminalProtocol.SSH)
+                                    "22"
+                                else
+                                    "23"
 
-                    FilterChip(
-                        modifier = Modifier.weight(1f),
-                        selected =
-                            protocol == TerminalProtocol.TELNET,
-                        onClick = {
-                            if (!connected) {
-                                val oldDefault =
-                                    if (protocol == TerminalProtocol.SSH)
-                                        "22"
-                                    else
-                                        "23"
+                            protocol = TerminalProtocol.TELNET
 
-                                protocol = TerminalProtocol.TELNET
-
-                                if (port == oldDefault) {
-                                    port = "23"
-                                }
+                            if (port == oldDefault) {
+                                port = "23"
                             }
-                        },
-                        label = {
-                            Text("Telnet")
                         }
-                    )
-                }
+                    }
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     value = host,
                     onValueChange = {
                         if (!connected) host = it
@@ -1724,6 +1644,7 @@ val filePickerLauncher =
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     value = port,
                     onValueChange = {
                         if (!connected) port = it
@@ -1739,6 +1660,7 @@ val filePickerLauncher =
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     value = username,
                     onValueChange = {
                         if (!connected) username = it
@@ -1754,6 +1676,7 @@ val filePickerLauncher =
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     value = password,
                     onValueChange = {
                         if (!connected) password = it
@@ -1797,7 +1720,14 @@ val filePickerLauncher =
 
                 if (!connected) {
                     Button(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32),
+                            contentColor = Color.White
+                        ),
                         onClick = {
                             val parsedPort =
                                 port.trim().toIntOrNull()
@@ -1906,10 +1836,8 @@ val filePickerLauncher =
                 if (!connected) {
                     Spacer(modifier = Modifier.height(7.dp))
 
-                    Text(
-                        text = status,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
+                    ToolsConnectionStatus(
+                        text = status
                     )
                 }
             }
@@ -2145,15 +2073,26 @@ val filePickerLauncher =
 
         if (!fullscreenTerminale && mostraFile) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    if (fileConnected) {
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
+                    modifier =
+                        (
+                            if (fileConnected) {
+                                Modifier.fillMaxSize()
+                            } else {
+                                Modifier.fillMaxWidth()
+                            }
+                        )
                         .padding(14.dp)
                 ) {
                     Row(
@@ -2179,52 +2118,38 @@ val filePickerLauncher =
                     if (!fileConnected) {
                         Spacer(modifier = Modifier.height(14.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement =
-                            Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            modifier = Modifier.weight(1f),
-                            selected = fileSftp,
-                            onClick = {
-                                val vecchiaPorta =
-                                    if (fileSftp) "22" else "21"
+                    ToolsBinarySelector(
+                        leftTitle = "SFTP",
+                        rightTitle = "FTP",
+                        leftSelected = fileSftp,
+                        accent = Color(0xFFFFB300),
+                        onLeft = {
+                            val vecchiaPorta =
+                                if (fileSftp) "22" else "21"
 
-                                fileSftp = true
+                            fileSftp = true
 
-                                if (filePort == vecchiaPorta) {
-                                    filePort = "22"
-                                }
-                            },
-                            label = {
-                                Text("SFTP")
+                            if (filePort == vecchiaPorta) {
+                                filePort = "22"
                             }
-                        )
+                        },
+                        onRight = {
+                            val vecchiaPorta =
+                                if (fileSftp) "22" else "21"
 
-                        FilterChip(
-                            modifier = Modifier.weight(1f),
-                            selected = !fileSftp,
-                            onClick = {
-                                val vecchiaPorta =
-                                    if (fileSftp) "22" else "21"
+                            fileSftp = false
 
-                                fileSftp = false
-
-                                if (filePort == vecchiaPorta) {
-                                    filePort = "21"
-                                }
-                            },
-                            label = {
-                                Text("FTP")
+                            if (filePort == vecchiaPorta) {
+                                filePort = "21"
                             }
-                        )
-                    }
+                        }
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         value = fileHost,
                         onValueChange = {
                             fileHost = it
@@ -2239,6 +2164,7 @@ val filePickerLauncher =
 
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         value = filePort,
                         onValueChange = {
                             filePort = it
@@ -2253,6 +2179,7 @@ val filePickerLauncher =
 
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         value = fileUsername,
                         onValueChange = {
                             fileUsername = it
@@ -2267,6 +2194,7 @@ val filePickerLauncher =
 
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         value = filePassword,
                         onValueChange = {
                             filePassword = it
@@ -2309,7 +2237,14 @@ val filePickerLauncher =
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Button(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFB300),
+                            contentColor = Color(0xFF211B00)
+                        ),
                         onClick = {
                             val parsedPort =
                                 filePort.trim().toIntOrNull()
@@ -2418,11 +2353,8 @@ val filePickerLauncher =
 
                     Spacer(modifier = Modifier.height(7.dp))
 
-                    Text(
-                        text = fileStatus,
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
+                    ToolsConnectionStatus(
+                        text = fileStatus
                     )
                     } else {
                         Spacer(modifier = Modifier.height(10.dp))
@@ -2432,15 +2364,46 @@ val filePickerLauncher =
                             verticalAlignment =
                                 androidx.compose.ui.Alignment.CenterVertically
                         ) {
-                            Text(
-                                text =
-                                    (if (fileSftp) "SFTP" else "FTP") +
-                                    "  •  ${fileHost.trim()}",
-                                color = Color(0xFF66BB6A),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.weight(1f)
-                            )
+                            Surface(
+                                shape =
+                                    androidx.compose.foundation.shape.RoundedCornerShape(
+                                        50
+                                    ),
+                                color = Color(0xFF66BB6A).copy(alpha = 0.10f),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    Color(0xFF66BB6A).copy(alpha = 0.32f)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(
+                                        horizontal = 9.dp,
+                                        vertical = 5.dp
+                                    ),
+                                    verticalAlignment =
+                                        androidx.compose.ui.Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(7.dp),
+                                        shape =
+                                            androidx.compose.foundation.shape.CircleShape,
+                                        color = Color(0xFF66BB6A)
+                                    ) {}
+
+                                    Spacer(modifier = Modifier.width(6.dp))
+
+                                    Text(
+                                        text =
+                                            (if (fileSftp) "SFTP" else "FTP") +
+                                            " • ${fileHost.trim()}",
+                                        color = Color(0xFF66BB6A),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.weight(1f))
 
                             IconButton(
                                 enabled = filePath != "/",
@@ -2531,7 +2494,8 @@ val filePickerLauncher =
                                 ),
                                 colors =
                                     ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF1976D2)
+                                        containerColor = Color(0xFFFFB300),
+                                        contentColor = Color(0xFF211B00)
                                     )
                             ) {
                                 if (uploadInCorso) {
@@ -2617,21 +2581,43 @@ val filePickerLauncher =
                             modifier = Modifier.fillMaxWidth(),
                             shape =
                                 androidx.compose.foundation.shape.RoundedCornerShape(
-                                    12.dp
+                                    11.dp
                                 ),
                             color =
-                                MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Text(
-                                text = filePath.ifBlank { "/" },
-                                modifier = Modifier.padding(
-                                    horizontal = 12.dp,
-                                    vertical = 9.dp
+                                MaterialTheme.colorScheme.surface.copy(
+                                    alpha = 0.42f
                                 ),
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                Color(0xFFFFB300).copy(alpha = 0.22f)
                             )
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(
+                                    horizontal = 10.dp,
+                                    vertical = 7.dp
+                                ),
+                                verticalAlignment =
+                                    androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "›",
+                                    color = Color(0xFFFFB300),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
+
+                                Spacer(modifier = Modifier.width(6.dp))
+
+                                Text(
+                                    text = filePath.ifBlank { "/" },
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color =
+                                        MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -2642,7 +2628,12 @@ val filePickerLauncher =
                                 .weight(1f)
                                 .verticalScroll(rememberScrollState())
                         ) {
-                            fileEntries.forEach { entry ->
+                            fileEntries
+                                .filterNot { entry ->
+                                    filePath == "/" &&
+                                        entry.name == ".."
+                                }
+                                .forEach { entry ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -2725,7 +2716,7 @@ val filePickerLauncher =
                                       )
                                       .padding(
                                             horizontal = 6.dp,
-                                            vertical = 9.dp
+                                            vertical = 7.dp
                                         ),
                                     verticalAlignment =
                                         androidx.compose.ui.Alignment.CenterVertically
@@ -2745,7 +2736,7 @@ val filePickerLauncher =
                                                 MaterialTheme.colorScheme
                                                     .onSurfaceVariant
                                             },
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(22.dp)
                                     )
 
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -2762,11 +2753,12 @@ val filePickerLauncher =
                                             entry.permissions.toString(8)
                                                 .padStart(3, '0'),
                                         fontFamily = FontFamily.Monospace,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
                                         color =
                                             MaterialTheme.colorScheme
                                                 .onSurfaceVariant
+                                                .copy(alpha = 0.72f)
                                     )
 
                                     if (entry.name != "..") {
@@ -2790,31 +2782,44 @@ val filePickerLauncher =
 
                                 HorizontalDivider()
                             }
+
+                            Spacer(modifier = Modifier.height(10.dp))
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        OutlinedButton(
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                                fileClient.disconnect()
-                                fileConnected = false
-                                fileEntries = emptyList()
-                                filePath = ""
-                                fileStatus = "Disconnesso"
-                            }
+                            verticalAlignment =
+                                androidx.compose.ui.Alignment.CenterVertically
                         ) {
-                            Text("Disconnetti")
+                            ToolsConnectionStatus(
+                                text = fileStatus
+                            )
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            OutlinedButton(
+                                modifier = Modifier.height(40.dp),
+                                shape =
+                                    androidx.compose.foundation.shape.RoundedCornerShape(
+                                        14.dp
+                                    ),
+                                onClick = {
+                                    fileClient.disconnect()
+                                    ftpClient.disconnect()
+                                    fileConnected = false
+                                    fileEntries = emptyList()
+                                    filePath = ""
+                                    fileStatus = "Disconnesso"
+                                }
+                            ) {
+                                Text(
+                                    text = "Disconnetti",
+                                    fontSize = 12.sp
+                                )
+                            }
                         }
-
-                        Spacer(modifier = Modifier.height(5.dp))
-
-                        Text(
-                            text = fileStatus,
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp
-                        )
                     }
                 }
             }

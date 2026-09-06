@@ -65,8 +65,8 @@ fun Greeting(
 ) {
     val context = LocalContext.current
     val temaScuro = androidx.compose.foundation.isSystemInDarkTheme()
-    val schermoCompatto =
-        androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 500
+    // Variante tablet: usa proporzioni compatte anche sul Nexus 7
+    val schermoCompatto = true
 
     val preferences = remember {
         context.getSharedPreferences(
@@ -4245,11 +4245,9 @@ fun DashboardCard(
                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
                 }
             } else {
-                if (aperta) {
-                    coloreAccento.copy(alpha = 0.07f)
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
+                // Tablet/light: fondo uniforme senza il "cornicione"
+                // colorato attorno al contenuto.
+                MaterialTheme.colorScheme.surface
             }
         ),
         elevation = CardDefaults.cardElevation(
@@ -4319,6 +4317,7 @@ fun DashboardCard(
 
             Text(
                 text = valore.ifBlank { "0" },
+                modifier = Modifier.padding(start = 6.dp),
                 fontSize = if (compatto) 27.sp else 31.sp,
                 lineHeight = if (compatto) 29.sp else 33.sp,
                 fontWeight = FontWeight.ExtraBold,

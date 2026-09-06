@@ -3878,87 +3878,119 @@ fun DashboardCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val temaScuroCard = androidx.compose.foundation.isSystemInDarkTheme()
+    val temaScuroCard =
+        androidx.compose.foundation.isSystemInDarkTheme()
 
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .heightIn(min = if (compatto) 104.dp else 118.dp),
         onClick = onClick,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            if (compatto) 20.dp else 24.dp
+            if (compatto) 18.dp else 22.dp
         ),
         border = androidx.compose.foundation.BorderStroke(
-            if (temaScuroCard) 1.dp else 1.2.dp,
-            coloreAccento.copy(alpha = if (temaScuroCard) 0.35f else 0.46f)
+            width = if (aperta) 1.5.dp else 1.dp,
+            color = if (aperta) {
+                coloreAccento.copy(alpha = 0.85f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
+            }
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (temaScuroCard) {
                 if (aperta) {
-                    coloreAccento.copy(alpha = 0.11f)
+                    coloreAccento.copy(alpha = 0.10f)
                 } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
                 }
             } else {
-                Color.White
+                if (aperta) {
+                    coloreAccento.copy(alpha = 0.07f)
+                } else {
+                    MaterialTheme.colorScheme.surface
+                }
             }
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (temaScuroCard) {
-                if (aperta) 4.dp else 1.dp
-            } else {
-                1.dp
-            }
+            defaultElevation = if (aperta) 2.dp else 0.dp
         )
     ) {
         Column(
-            modifier = Modifier.padding(
-                if (compatto) 10.dp else 14.dp
-            )
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = if (compatto) 11.dp else 14.dp,
+                    vertical = if (compatto) 10.dp else 13.dp
+                )
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
             ) {
                 androidx.compose.material3.Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    color = coloreAccento.copy(alpha = if (temaScuroCard) 0.14f else 0.10f)
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    color = coloreAccento.copy(alpha = 0.14f)
                 ) {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = icona,
                         contentDescription = null,
                         tint = coloreAccento,
-                        modifier = Modifier.padding(if (compatto) 5.dp else 7.dp)
+                        modifier = Modifier
+                            .padding(if (compatto) 6.dp else 7.dp)
+                            .size(if (compatto) 18.dp else 20.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
                     text = titolo,
-                    fontSize = if (compatto) 12.sp else 14.sp,
-                    fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontSize = if (compatto) 11.sp else 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
                 )
 
-                androidx.compose.material3.Icon(
-                    imageVector = if (aperta) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (aperta) "Nascondi $titolo" else "Mostra $titolo",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
+                Icon(
+                    imageVector =
+                        if (aperta)
+                            Icons.Default.ExpandLess
+                        else
+                            Icons.Default.ExpandMore,
+                    contentDescription =
+                        if (aperta)
+                            "Nascondi $titolo"
+                        else
+                            "Mostra $titolo",
+                    tint =
+                        if (aperta)
+                            coloreAccento
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(if (compatto) 6.dp else 10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = valore,
-                fontSize = if (compatto) 25.sp else 29.sp,
-                fontWeight = FontWeight.Bold,
-                color = coloreAccento
+                text = valore.ifBlank { "0" },
+                fontSize = if (compatto) 27.sp else 31.sp,
+                lineHeight = if (compatto) 29.sp else 33.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color =
+                    if (aperta)
+                        coloreAccento
+                    else
+                        MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
+
 
 private fun caricaServerSalvati(
     preferences: android.content.SharedPreferences

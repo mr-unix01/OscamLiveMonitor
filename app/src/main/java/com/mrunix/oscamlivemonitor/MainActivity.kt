@@ -1242,92 +1242,32 @@ fun Greeting(
             )
 
             if (mostraConnessione) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    ExpressiveSectionLabel(
-                        titolo = "Server OSCam",
-                        icona = Icons.Default.Storage,
-                        coloreAccento = Color(0xFF4CAF50),
-                        compatto = schermoCompatto,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    OutlinedButton(
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            Color(0xFF4CAF50)
-                        ),
-                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFF4CAF50)
-                        ),
-                        onClick = {
-                            nuovoNomeServer = ""
-                            nuovoHostServer = ""
-                            nuovaPortaServer = ""
-                            nuovoUsernameServer = ""
-                            nuovaPasswordServer = ""
-                            mostraPasswordNuovo = false
-                            mostraAggiungiServer = true
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Aggiungi")
+                ServerSelectionHeader(
+                    onAddServer = {
+                        nuovoNomeServer = ""
+                        nuovoHostServer = ""
+                        nuovaPortaServer = ""
+                        nuovoUsernameServer = ""
+                        nuovaPasswordServer = ""
+                        mostraPasswordNuovo = false
+                        mostraAggiungiServer = true
                     }
-                }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 if (serverSalvati.isEmpty()) {
-                    Text("Nessun server salvato")
+                    EmptyServerState()
                 } else {
                     serverSalvati.forEach { server ->
                         val serverSelezionato =
                             host.trim() == server.host &&
                                     porta.trim() == server.porta
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    vertical = if (schermoCompatto) 3.dp else 5.dp
-                                ),
-                            shape =
-                                androidx.compose.foundation.shape.RoundedCornerShape(
-                                    if (schermoCompatto) 20.dp else 24.dp
-                                ),
-                            border = androidx.compose.foundation.BorderStroke(
-                                width = if (serverSelezionato) 1.8.dp else 1.1.dp,
-                                color = if (serverSelezionato) {
-                                    if (temaScuro) Color(0xFF4CAF50) else Color(0xFF2E7D32)
-                                } else {
-                                    if (temaScuro) MaterialTheme.colorScheme.outlineVariant else Color(0xFFD7DDD8)
-                                }
-                            ),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (temaScuro) {
-                                    if (serverSelezionato) {
-                                        Color(0xFF153A22)
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
-                                    }
-                                } else {
-                                    Color.White
-                                }
-                            ),
-                            elevation = CardDefaults.cardElevation(
-                                defaultElevation = if (temaScuro) {
-                                    if (serverSelezionato) 5.dp else 1.dp
-                                } else {
-                                    1.dp
-                                }
-                            ),
-                            onClick = {
+                        OscamServerCard(
+                            server = server,
+                            selected = serverSelezionato,
+                            onSelect = {
                                 host = server.host
                                 porta = server.porta
                                 username = server.username
@@ -1342,101 +1282,21 @@ fun Greeting(
                                     .apply()
 
                                 stato = "Server ${server.nome} selezionato"
-                            }
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        if (schermoCompatto) 9.dp else 12.dp
-                                    ),
-                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                            ) {
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text(
-                                        text = server.nome,
-                                        fontSize = if (schermoCompatto) 16.sp else 17.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (serverSelezionato) {
-                                            if (temaScuro) Color.White else Color(0xFF1F2A21)
-                                        } else {
-                                            if (temaScuro) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF303631)
-                                        }
-                                    )
-
-                                    Spacer(modifier = Modifier.height(2.dp))
-
-                                    Text(
-                                        text = "🌐 ${server.host}  •  ${server.porta}",
-                                        fontSize = if (schermoCompatto) 12.sp else 13.sp,
-                                        color = if (serverSelezionato) {
-                                            if (temaScuro) Color(0xFFD6EBDD) else Color(0xFF536057)
-                                        } else {
-                                            if (temaScuro) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF5F6861)
-                                        }
-                                    )
-                                }
-
-                                if (serverSelezionato) {
-                                    androidx.compose.material3.Surface(
-                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
-                                        color = if (temaScuro) {
-                                            Color(0xFF66BB6A).copy(alpha = 0.14f)
-                                        } else {
-                                            Color.White
-                                        },
-                                        border = androidx.compose.foundation.BorderStroke(
-                                            if (temaScuro) 0.dp else 1.1.dp,
-                                            if (temaScuro) Color.Transparent else Color(0xFF2E7D32).copy(alpha = 0.55f)
-                                        )
-                                    ) {
-                                        Text(
-                                            text = "● Attivo",
-                                            color = if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32),
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = if (schermoCompatto) 11.sp else 12.sp,
-                                            modifier = Modifier.padding(
-                                                horizontal = 9.dp,
-                                                vertical = 5.dp
-                                            )
-                                        )
-                                    }
-                                }
-
-                                TextButton(
-                                    onClick = {
-                                        serverDaModificare =
-                                            server
-
-                                        modificaNomeServer =
-                                            server.nome
-
-                                        modificaHostServer =
-                                            server.host
-
-                                        modificaPortaServer =
-                                            server.porta
-
-                                        modificaUsernameServer =
-                                            server.username
-
-                                        modificaPasswordServer =
-                                            server.password
-
-                                        mostraPasswordModifica =
-                                            false
-                                    }
-                                ) {
-                                    Text(
-                                        text = "✎ Modifica",
-                                        fontSize =
-                                            if (schermoCompatto) 12.sp else 14.sp
-                                    )
-                                }
-                            }
-                        }
+                            },
+                            onEdit = {
+                                serverDaModificare = server
+                                modificaNomeServer = server.nome
+                                modificaHostServer = server.host
+                                modificaPortaServer = server.porta
+                                modificaUsernameServer = server.username
+                                modificaPasswordServer = server.password
+                                mostraPasswordModifica = false
+                            },
+                            onDelete = {
+                                serverDaEliminare = server
+                            },
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
                     }
                 }
 

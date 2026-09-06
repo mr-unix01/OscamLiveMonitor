@@ -1,0 +1,345 @@
+name: Apply v0.9.16 smartphone UI
+
+on:
+  push:
+    branches:
+      - v0.9.16-ui-smartphone
+
+permissions:
+  contents: write
+
+jobs:
+  apply-ui:
+    if: github.event.head_commit.message != 'Applica restyling selezione server smartphone'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v0.9.16-ui-smartphone
+          fetch-depth: 0
+
+      - name: Restyle server selection
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('app/src/main/java/com/mrunix/oscamlivemonitor/MainActivity.kt')
+          text = path.read_text(encoding='utf-8')
+
+          start_marker = '''            if (mostraConnessione) {
+                Row(
+'''
+          end_marker = '''                Spacer(modifier = Modifier.height(12.dp))
+
+                ExpressiveSectionLabel(
+                    titolo = "Connessione",
+'''
+
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+
+          replacement = '''            if (mostraConnessione) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "I tuoi server",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = "Scegli un server salvato oppure inserisci i dati manualmente.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    FilledTonalButton(
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        onClick = {
+                            nuovoNomeServer = ""
+                            nuovoHostServer = ""
+                            nuovaPortaServer = ""
+                            nuovoUsernameServer = ""
+                            nuovaPasswordServer = ""
+                            mostraPasswordNuovo = false
+                            mostraAggiungiServer = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Aggiungi")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (serverSalvati.isEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Storage,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(34.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "Nessun server salvato",
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            Spacer(modifier = Modifier.height(3.dp))
+
+                            Text(
+                                text = "Aggiungi il tuo primo server OSCam per trovarlo subito qui.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    serverSalvati.forEach { server ->
+                        key(server.nome, server.host, server.porta) {
+                            var mostraMenuServer by remember {
+                                mutableStateOf(false)
+                            }
+
+                            val serverSelezionato =
+                                host.trim() == server.host &&
+                                        porta.trim() == server.porta
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    width = if (serverSelezionato) 1.6.dp else 1.dp,
+                                    color = if (serverSelezionato) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.outlineVariant
+                                    }
+                                ),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (serverSelezionato) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
+                                    }
+                                ),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = if (serverSelezionato) 2.dp else 0.dp
+                                ),
+                                onClick = {
+                                    host = server.host
+                                    porta = server.porta
+                                    username = server.username
+                                    password = server.password
+
+                                    preferences.edit()
+                                        .putString("nome_server", server.nome)
+                                        .putString("host", server.host)
+                                        .putString("porta", server.porta)
+                                        .putString("username", server.username)
+                                        .putString("password", server.password)
+                                        .apply()
+
+                                    stato = "Server ${server.nome} selezionato"
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(
+                                            horizontal = 12.dp,
+                                            vertical = 11.dp
+                                        ),
+                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(46.dp),
+                                        shape = androidx.compose.foundation.shape.CircleShape,
+                                        color = if (serverSelezionato) {
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                                        } else {
+                                            MaterialTheme.colorScheme.surface
+                                        }
+                                    ) {
+                                        Box(
+                                            contentAlignment = androidx.compose.ui.Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Storage,
+                                                contentDescription = null,
+                                                tint = if (serverSelezionato) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                                },
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = server.nome,
+                                                modifier = Modifier.weight(1f, fill = false),
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+
+                                            if (serverSelezionato) {
+                                                Spacer(modifier = Modifier.width(8.dp))
+
+                                                Surface(
+                                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                ) {
+                                                    Text(
+                                                        text = "SELEZIONATO",
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(
+                                                            horizontal = 7.dp,
+                                                            vertical = 3.dp
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        Row(
+                                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Language,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+
+                                            Spacer(modifier = Modifier.width(5.dp))
+
+                                            Text(
+                                                text = "${server.host}:${server.porta}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+
+                                    Box {
+                                        IconButton(
+                                            onClick = {
+                                                mostraMenuServer = true
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.MoreVert,
+                                                contentDescription = "Azioni server"
+                                            )
+                                        }
+
+                                        DropdownMenu(
+                                            expanded = mostraMenuServer,
+                                            onDismissRequest = {
+                                                mostraMenuServer = false
+                                            }
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Modifica") },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Edit,
+                                                        contentDescription = null
+                                                    )
+                                                },
+                                                onClick = {
+                                                    mostraMenuServer = false
+                                                    serverDaModificare = server
+                                                    modificaNomeServer = server.nome
+                                                    modificaHostServer = server.host
+                                                    modificaPortaServer = server.porta
+                                                    modificaUsernameServer = server.username
+                                                    modificaPasswordServer = server.password
+                                                    mostraPasswordModifica = false
+                                                }
+                                            )
+
+                                            DropdownMenuItem(
+                                                text = { Text("Elimina") },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Delete,
+                                                        contentDescription = null
+                                                    )
+                                                },
+                                                onClick = {
+                                                    mostraMenuServer = false
+                                                    serverDaEliminare = server
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+'''
+
+          updated = text[:start] + replacement + text[end:]
+          path.write_text(updated, encoding='utf-8')
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/mrunix/oscamlivemonitor/MainActivity.kt
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Applica restyling selezione server smartphone"
+          git push origin HEAD:v0.9.16-ui-smartphone

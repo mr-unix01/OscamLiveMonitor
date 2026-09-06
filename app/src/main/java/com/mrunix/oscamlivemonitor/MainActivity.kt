@@ -1879,7 +1879,7 @@ fun Greeting(
             }
 
             if (!mostraConnessione && mostraServers && elencoServers.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
                     titolo = "Servizi OSCam",
@@ -1909,7 +1909,7 @@ fun Greeting(
             }
 
             if (!mostraConnessione && mostraReaders && elencoReaders.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
                     titolo = "Elenco reader",
@@ -2003,7 +2003,7 @@ fun Greeting(
             }
 
             if (!mostraConnessione && mostraProxies && elencoProxies.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
                     titolo = "Elenco proxy",
@@ -2097,7 +2097,7 @@ fun Greeting(
             }
 
             if (!mostraConnessione && mostraClients && elencoUsers.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
                     titolo = "Users",
@@ -2181,7 +2181,7 @@ fun Greeting(
             }
 
             if (!mostraConnessione && mostraClients && elencoClients.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
                     titolo = "Client connessi",
@@ -2373,20 +2373,20 @@ fun ExpressiveSectionLabel(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
     ) {
         androidx.compose.material3.Surface(
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-            color = coloreAccento.copy(alpha = 0.14f)
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            color = coloreAccento.copy(alpha = 0.12f)
         ) {
             Icon(
                 imageVector = icona,
                 contentDescription = null,
                 tint = coloreAccento,
                 modifier = Modifier
-                    .padding(if (compatto) 7.dp else 8.dp)
-                    .size(if (compatto) 18.dp else 20.dp)
+                    .padding(if (compatto) 6.dp else 7.dp)
+                    .size(if (compatto) 17.dp else 19.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(9.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Text(
             text = titolo,
@@ -2726,7 +2726,7 @@ fun TitoloSezioneDashboard(
         Text(
             text = titolo,
             fontWeight = FontWeight.Bold,
-            fontSize = if (compatto) 17.sp else 19.sp,
+            fontSize = if (compatto) 16.sp else 18.sp,
             color = MaterialTheme.colorScheme.onBackground
         )
     }

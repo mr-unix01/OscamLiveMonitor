@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -3760,21 +3762,67 @@ fun WebIfScreen(
         modifier = modifier.fillMaxSize()
     ) {
         androidx.compose.material3.Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
-            tonalElevation = 3.dp
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 10.dp,
+                    vertical = 8.dp
+                ),
+            shape =
+                androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            color =
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            border =
+                androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(
+                        alpha = 0.55f
+                    )
+                )
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    .padding(9.dp),
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
             ) {
-                FilledTonalButton(
-                    onClick = onClose,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                androidx.compose.material3.Surface(
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(
+                            14.dp
+                        ),
+                    color =
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
                 ) {
-                    Text("✕  Chiudi")
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Indietro"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                androidx.compose.material3.Surface(
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(
+                            13.dp
+                        ),
+                    color = Color(0xFF29B6F6).copy(alpha = 0.14f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = null,
+                        tint = Color(0xFF29B6F6),
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(20.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
@@ -3784,13 +3832,54 @@ fun WebIfScreen(
                 ) {
                     Text(
                         text = "WebIF OSCam",
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
+
                     Text(
                         text = "${host.trim()}:${porta.trim()}",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+
+                androidx.compose.material3.Surface(
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(
+                            50
+                        ),
+                    color = Color(0xFF4CAF50).copy(alpha = 0.11f),
+                    border =
+                        androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            Color(0xFF4CAF50).copy(alpha = 0.40f)
+                        )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = 8.dp,
+                            vertical = 5.dp
+                        ),
+                        verticalAlignment =
+                            androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier.size(7.dp),
+                            shape =
+                                androidx.compose.foundation.shape.CircleShape,
+                            color = Color(0xFF66BB6A)
+                        ) {}
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            text = "ONLINE",
+                            color = Color(0xFF66BB6A),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

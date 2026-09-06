@@ -1640,7 +1640,7 @@ fun Greeting(
 
 
             if (!mostraConnessione) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -2982,8 +2982,8 @@ fun MiniDatoClient(
     ) {
         Column(
             modifier = Modifier.padding(
-                horizontal = if (compatto) 9.dp else 11.dp,
-                vertical = if (compatto) 7.dp else 8.dp
+                horizontal = if (compatto) 8.dp else 10.dp,
+                vertical = if (compatto) 6.dp else 7.dp
             )
         ) {
             Text(
@@ -3174,14 +3174,14 @@ fun ClientInfoCard(
                 !ecm.isNullOrBlank() ||
                 !reader.isNullOrBlank()
             ) {
-                Spacer(modifier = Modifier.height(11.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 HorizontalDivider(
                     color =
                         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(7.dp))
             }
 
             if (!canale.isNullOrBlank()) {
@@ -3194,7 +3194,7 @@ fun ClientInfoCard(
 
             if (!provider.isNullOrBlank()) {
                 if (!canale.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(7.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
                 }
 
                 RigaDettaglioClient(
@@ -3232,7 +3232,7 @@ fun ClientInfoCard(
             }
 
             if (!reader.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(9.dp))
+                Spacer(modifier = Modifier.height(7.dp))
 
                 RigaDettaglioClient(
                     etichetta = "Reader",

@@ -2813,7 +2813,8 @@ fun VoceStatoCard(
     toggleReaderInCorso: Boolean = false,
     onToggleReader: (() -> Unit)? = null
 ) {
-    val temaScuroVoce = androidx.compose.foundation.isSystemInDarkTheme()
+    val temaScuroVoce =
+        androidx.compose.foundation.isSystemInDarkTheme()
 
     val nome = testo
         .substringBeforeLast("—", testo)
@@ -2826,33 +2827,39 @@ fun VoceStatoCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            if (compatto) 20.dp else 24.dp
+            if (compatto) 18.dp else 22.dp
         ),
         border = androidx.compose.foundation.BorderStroke(
-            if (temaScuroVoce) 1.dp else 1.1.dp,
-            coloreAccento.copy(alpha = if (temaScuroVoce) 0.22f else 0.34f)
+            1.dp,
+            coloreAccento.copy(
+                alpha = if (temaScuroVoce) 0.28f else 0.36f
+            )
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (temaScuroVoce) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f)
             } else {
-                Color.White
+                MaterialTheme.colorScheme.surface
             }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroVoce) 1.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
                     horizontal = if (compatto) 11.dp else 14.dp,
-                    vertical = if (compatto) 10.dp else 12.dp
+                    vertical = if (compatto) 9.dp else 11.dp
                 ),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            verticalAlignment =
+                androidx.compose.ui.Alignment.CenterVertically
         ) {
             androidx.compose.material3.Surface(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                color = coloreAccento.copy(alpha = if (temaScuroVoce) 0.14f else 0.10f)
+                shape =
+                    androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                color = coloreAccento.copy(alpha = 0.14f)
             ) {
                 Icon(
                     imageVector = icona,
@@ -2871,47 +2878,55 @@ fun VoceStatoCard(
                 modifier = Modifier.weight(1f),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = if (compatto) 14.sp else 16.sp,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(7.dp))
 
-            Column(
-                horizontalAlignment = androidx.compose.ui.Alignment.End
-            ) {
-                BadgeStatoDashboard(
-                    stato = stato,
-                    compatto = compatto
-                )
+            BadgeStatoDashboard(
+                stato = stato,
+                compatto = compatto
+            )
 
-                if (mostraToggleReader) {
-                    Spacer(modifier = Modifier.height(3.dp))
+            if (mostraToggleReader) {
+                Spacer(modifier = Modifier.width(4.dp))
 
-                    IconButton(
-                        onClick = { onToggleReader?.invoke() },
-                        enabled = !toggleReaderInCorso,
-                        modifier = Modifier.size(if (compatto) 28.dp else 32.dp)
-                    ) {
-                        if (toggleReaderInCorso) {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                modifier = Modifier.size(if (compatto) 18.dp else 20.dp),
-                                strokeWidth = 2.dp,
-                                color = if (readerAbilitato)
+                IconButton(
+                    onClick = {
+                        onToggleReader?.invoke()
+                    },
+                    enabled = !toggleReaderInCorso,
+                    modifier = Modifier.size(
+                        if (compatto) 32.dp else 36.dp
+                    )
+                ) {
+                    if (toggleReaderInCorso) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(
+                                if (compatto) 17.dp else 19.dp
+                            ),
+                            strokeWidth = 2.dp,
+                            color =
+                                if (readerAbilitato)
                                     Color(0xFFE53935)
                                 else
                                     Color(0xFF43A047)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.PowerSettingsNew,
-                                contentDescription = "Abilita/disabilita reader",
-                                tint = if (readerAbilitato)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.PowerSettingsNew,
+                            contentDescription =
+                                "Abilita/disabilita reader",
+                            tint =
+                                if (readerAbilitato)
                                     Color(0xFFE53935)
                                 else
                                     Color(0xFF43A047),
-                                modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
+                            modifier = Modifier.size(
+                                if (compatto) 18.dp else 20.dp
                             )
-                        }
+                        )
                     }
                 }
             }
@@ -3054,7 +3069,7 @@ fun ClientInfoCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            if (compatto) 22.dp else 26.dp
+            if (compatto) 18.dp else 22.dp
         ),
         border = androidx.compose.foundation.BorderStroke(
             if (temaScuroClient) 1.dp else 1.1.dp,
@@ -3072,7 +3087,8 @@ fun ClientInfoCard(
     ) {
         Column(
             modifier = Modifier.padding(
-                if (compatto) 12.dp else 15.dp
+                horizontal = if (compatto) 11.dp else 14.dp,
+                vertical = if (compatto) 9.dp else 12.dp
             )
         ) {
             Row(
@@ -3105,42 +3121,47 @@ fun ClientInfoCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Column(
-                    horizontalAlignment = androidx.compose.ui.Alignment.End
-                ) {
-                    BadgeStatoDashboard(
-                        stato = stato,
-                        compatto = compatto
-                    )
+                BadgeStatoDashboard(
+                    stato = stato,
+                    compatto = compatto
+                )
 
-                    if (mostraToggleUser) {
-                        Spacer(modifier = Modifier.height(3.dp))
+                if (mostraToggleUser) {
+                    Spacer(modifier = Modifier.width(4.dp))
 
-                        IconButton(
-                            onClick = { onToggleUser?.invoke() },
-                            enabled = !toggleUserInCorso,
-                            modifier = Modifier.size(if (compatto) 28.dp else 32.dp)
-                        ) {
-                            if (toggleUserInCorso) {
-                                androidx.compose.material3.CircularProgressIndicator(
-                                    modifier = Modifier.size(if (compatto) 18.dp else 20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = if (userAbilitato)
+                    IconButton(
+                        onClick = { onToggleUser?.invoke() },
+                        enabled = !toggleUserInCorso,
+                        modifier = Modifier.size(
+                            if (compatto) 32.dp else 36.dp
+                        )
+                    ) {
+                        if (toggleUserInCorso) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(
+                                    if (compatto) 17.dp else 19.dp
+                                ),
+                                strokeWidth = 2.dp,
+                                color =
+                                    if (userAbilitato)
                                         Color(0xFFE53935)
                                     else
                                         Color(0xFF43A047)
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.PowerSettingsNew,
-                                    contentDescription = "Abilita/disabilita user",
-                                    tint = if (userAbilitato)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.PowerSettingsNew,
+                                contentDescription =
+                                    "Abilita/disabilita user",
+                                tint =
+                                    if (userAbilitato)
                                         Color(0xFFE53935)
                                     else
                                         Color(0xFF43A047),
-                                    modifier = Modifier.size(if (compatto) 18.dp else 20.dp)
+                                modifier = Modifier.size(
+                                    if (compatto) 18.dp else 20.dp
                                 )
-                            }
+                            )
                         }
                     }
                 }

@@ -175,6 +175,7 @@ fun Greeting(
     var mostraPasswordModifica by remember { mutableStateOf(false) }
 
     var serverDaEliminare by remember { mutableStateOf<OscamServer?>(null) }
+    var mostraRiordinaServer by remember { mutableStateOf(false) }
 
     var nuovoNomeServer by remember { mutableStateOf("") }
     var nuovoHostServer by remember { mutableStateOf("") }
@@ -1218,6 +1219,74 @@ fun Greeting(
         )
     }
 
+    if (mostraRiordinaServer) {
+        AlertDialog(
+            onDismissRequest = {
+                mostraRiordinaServer = false
+            },
+            title = {
+                Text("Riordina server")
+            },
+            text = {
+                Column {
+                    serverSalvati.forEachIndexed { indice, server ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = server.nome,
+                                modifier = Modifier.weight(1f),
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            IconButton(
+                                enabled = indice > 0,
+                                onClick = {
+                                    val nuovaLista = serverSalvati.toMutableList()
+                                    val elemento = nuovaLista.removeAt(indice)
+                                    nuovaLista.add(indice - 1, elemento)
+                                    serverSalvati = nuovaLista
+                                    salvaServerSalvati(
+                                        preferences = preferences,
+                                        server = serverSalvati
+                                    )
+                                }
+                            ) {
+                                Text("↑", fontSize = 22.sp)
+                            }
+
+                            IconButton(
+                                enabled = indice < serverSalvati.lastIndex,
+                                onClick = {
+                                    val nuovaLista = serverSalvati.toMutableList()
+                                    val elemento = nuovaLista.removeAt(indice)
+                                    nuovaLista.add(indice + 1, elemento)
+                                    serverSalvati = nuovaLista
+                                    salvaServerSalvati(
+                                        preferences = preferences,
+                                        server = serverSalvati
+                                    )
+                                }
+                            ) {
+                                Text("↓", fontSize = 22.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mostraRiordinaServer = false
+                    }
+                ) {
+                    Text("Fine")
+                }
+            }
+        )
+    }
+
     // La dashboard resta sempre composta anche mentre WebIF o Live Log sono aperti.
     // In questo modo, alla chiusura torna immediatamente completa con gli ultimi dati.
     Box(
@@ -1283,7 +1352,7 @@ fun Greeting(
                                     .putString("password", server.password)
                                     .apply()
 
-                                stato = "Server ${server.nome} selezionato"
+                                stato = ""
                             },
                             onEdit = {
                                 serverDaModificare = server
@@ -1293,6 +1362,18 @@ fun Greeting(
                                 modificaUsernameServer = server.username
                                 modificaPasswordServer = server.password
                                 mostraPasswordModifica = false
+                            },
+                            onDuplicate = {
+                                nuovoNomeServer = "${server.nome} copia"
+                                nuovoHostServer = server.host
+                                nuovaPortaServer = server.porta
+                                nuovoUsernameServer = server.username
+                                nuovaPasswordServer = server.password
+                                mostraPasswordNuovo = false
+                                mostraAggiungiServer = true
+                            },
+                            onReorder = {
+                                mostraRiordinaServer = true
                             },
                             onDelete = {
                                 serverDaEliminare = server
@@ -1474,7 +1555,7 @@ fun Greeting(
                     }
                 ) {
                     Text(
-                        text = "●  Connetti",
+                        text = "▶  Connetti",
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -2275,38 +2356,25 @@ fun ExpressiveAppHeader(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            if (compatto) 24.dp else 28.dp
+            if (compatto) 20.dp else 24.dp
         ),
-        border = androidx.compose.foundation.BorderStroke(
-            if (temaScuroHeader) 1.dp else 1.1.dp,
-            if (temaScuroHeader) {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
-            } else {
-                Color(0xFFD8DED8)
-            }
-        ),
+        border = null,
         colors = CardDefaults.cardColors(
-            containerColor = if (temaScuroHeader) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
-            } else {
-                Color(0xFFF8F9F8)
-            }
+            containerColor = Color.Transparent
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (temaScuroHeader) 3.dp else 1.5.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = if (compatto) 16.dp else 20.dp,
-                    vertical = if (compatto) 15.dp else 18.dp
+                    horizontal = if (compatto) 14.dp else 18.dp,
+                    vertical = if (compatto) 11.dp else 14.dp
                 ),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             androidx.compose.material3.Surface(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                    if (compatto) 18.dp else 20.dp
-                ),
+                shape = androidx.compose.foundation.shape.CircleShape,
                 color = if (temaScuroHeader) {
                     Color(0xFF4CAF50).copy(alpha = 0.16f)
                 } else {

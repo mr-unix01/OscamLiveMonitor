@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Reorder
@@ -127,7 +126,6 @@ fun OscamServerCard(
     selected: Boolean,
     onSelect: () -> Unit,
     onEdit: () -> Unit,
-    onDuplicate: () -> Unit,
     onReorder: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
@@ -307,20 +305,6 @@ fun OscamServerCard(
                         onClick = {
                             menuExpanded = false
                             onEdit()
-                        }
-                    )
-
-                    DropdownMenuItem(
-                        text = { Text("Duplica") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = null
-                            )
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onDuplicate()
                         }
                     )
 

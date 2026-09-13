@@ -101,6 +101,7 @@ fun Greeting(
 
     var stato by rememberSaveable { mutableStateOf("") }
     var ultimoAggiornamento by rememberSaveable { mutableStateOf("") }
+    var mostraRepositoryGitHub by rememberSaveable { mutableStateOf(false) }
     var refreshManualeInCorso by remember { mutableStateOf(false) }
     var erroriRefreshConsecutivi by rememberSaveable { mutableStateOf(0) }
 
@@ -728,7 +729,35 @@ fun Greeting(
                 mostraAggiungiServer = false
             },
             title = {
-                Text("Aggiungi server OSCam")
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(34.dp),
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = Color(0xFF4CAF50).copy(alpha = 0.18f)
+                    ) {
+                        Box(
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "Aggiungi server OSCam",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        maxLines = 1
+                    )
+                }
             },
             text = {
                 Column(
@@ -742,6 +771,12 @@ fun Greeting(
                         value = nuovoNomeServer,
                         onValueChange = { nuovoNomeServer = it },
                         label = { Text("Nome server") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Storage,
+                                contentDescription = null
+                            )
+                        },
                         singleLine = true
                     )
 
@@ -753,6 +788,12 @@ fun Greeting(
                         value = nuovoHostServer,
                         onValueChange = { nuovoHostServer = it },
                         label = { Text("Host/IP") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null
+                            )
+                        },
                         singleLine = true
                     )
 
@@ -764,6 +805,12 @@ fun Greeting(
                         value = nuovaPortaServer,
                         onValueChange = { nuovaPortaServer = it },
                         label = { Text("Porta") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = null
+                            )
+                        },
                         singleLine = true
                     )
 
@@ -775,6 +822,12 @@ fun Greeting(
                         value = nuovoUsernameServer,
                         onValueChange = { nuovoUsernameServer = it },
                         label = { Text("Username") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null
+                            )
+                        },
                         singleLine = true
                     )
 
@@ -786,6 +839,12 @@ fun Greeting(
                         value = nuovaPasswordServer,
                         onValueChange = { nuovaPasswordServer = it },
                         label = { Text("Password") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null
+                            )
+                        },
                         visualTransformation =
                             if (mostraPasswordNuovo) {
                                 androidx.compose.ui.text.input.VisualTransformation.None
@@ -793,13 +852,13 @@ fun Greeting(
                                 PasswordVisualTransformation()
                             },
                         trailingIcon = {
-                            TextButton(
-                                onClick = {
-                                    mostraPasswordNuovo =
-                                        !mostraPasswordNuovo
-                                }
+                            IconButton(
+                                onClick = { mostraPasswordNuovo = !mostraPasswordNuovo }
                             ) {
-                                Text("👁")
+                                Icon(
+                                    imageVector = if (mostraPasswordNuovo) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (mostraPasswordNuovo) "Nascondi password" else "Mostra password"
+                                )
                             }
                         },
                         singleLine = true
@@ -807,7 +866,12 @@ fun Greeting(
                 }
             },
             confirmButton = {
-                TextButton(
+                Button(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2E7D32),
+                        contentColor = Color.White
+                    ),
                     onClick = {
                         val nomePulito = nuovoNomeServer.trim()
                         val hostPulito = nuovoHostServer.trim()
@@ -862,7 +926,8 @@ fun Greeting(
                 }
             },
             dismissButton = {
-                TextButton(
+                OutlinedButton(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                     onClick = {
                         mostraAggiungiServer = false
                     }
@@ -879,7 +944,35 @@ fun Greeting(
                 serverDaModificare = null
             },
             title = {
-                Text("Modifica server OSCam")
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(34.dp),
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = Color(0xFF4CAF50).copy(alpha = 0.18f)
+                    ) {
+                        Box(
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "Modifica server OSCam",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        maxLines = 1
+                    )
+                }
             },
             text = {
                 Column(
@@ -897,6 +990,12 @@ fun Greeting(
                         label = {
                             Text("Nome server")
                         },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Storage,
+                                contentDescription = null
+                            )
+                        },
                         singleLine = true
                     )
 
@@ -911,6 +1010,12 @@ fun Greeting(
                         },
                         label = {
                             Text("Host/IP")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null
+                            )
                         },
                         singleLine = true
                     )
@@ -927,6 +1032,12 @@ fun Greeting(
                         label = {
                             Text("Porta")
                         },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = null
+                            )
+                        },
                         singleLine = true
                     )
 
@@ -941,6 +1052,12 @@ fun Greeting(
                         },
                         label = {
                             Text("Username")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null
+                            )
                         },
                         singleLine = true
                     )
@@ -957,6 +1074,12 @@ fun Greeting(
                         label = {
                             Text("Password")
                         },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null
+                            )
+                        },
                         visualTransformation =
                             if (mostraPasswordModifica) {
                                 androidx.compose.ui.text.input.VisualTransformation.None
@@ -964,13 +1087,13 @@ fun Greeting(
                                 PasswordVisualTransformation()
                             },
                         trailingIcon = {
-                            TextButton(
-                                onClick = {
-                                    mostraPasswordModifica =
-                                        !mostraPasswordModifica
-                                }
+                            IconButton(
+                                onClick = { mostraPasswordModifica = !mostraPasswordModifica }
                             ) {
-                                Text("👁")
+                                Icon(
+                                    imageVector = if (mostraPasswordModifica) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (mostraPasswordModifica) "Nascondi password" else "Mostra password"
+                                )
                             }
                         },
                         singleLine = true
@@ -978,19 +1101,49 @@ fun Greeting(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    TextButton(
-                        modifier = Modifier.fillMaxWidth(),
+                    OutlinedButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.55f)
+                        ),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
+                        ),
                         onClick = {
                             serverDaEliminare = serverOriginale
                             serverDaModificare = null
                         }
                     ) {
-                        Text("Elimina server")
+                        Row(
+                          verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                      ) {
+                          Icon(
+                              imageVector = Icons.Default.Delete,
+                              contentDescription = null,
+                              tint = MaterialTheme.colorScheme.error,
+                              modifier = Modifier.size(20.dp)
+                          )
+                          Spacer(modifier = Modifier.width(8.dp))
+                          Text(
+                              text = "Elimina server",
+                              color = MaterialTheme.colorScheme.error
+                          )
+                      }
                     }
                 }
             },
             confirmButton = {
-                TextButton(
+                Button(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2E7D32),
+                        contentColor = Color.White
+                    ),
                     onClick = {
                         val nomePulito =
                             modificaNomeServer.trim()
@@ -1091,7 +1244,8 @@ fun Greeting(
                 }
             },
             dismissButton = {
-                TextButton(
+                OutlinedButton(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                     onClick = {
                         serverDaModificare = null
                     }
@@ -1363,15 +1517,6 @@ fun Greeting(
                                 modificaPasswordServer = server.password
                                 mostraPasswordModifica = false
                             },
-                            onDuplicate = {
-                                nuovoNomeServer = "${server.nome} copia"
-                                nuovoHostServer = server.host
-                                nuovaPortaServer = server.porta
-                                nuovoUsernameServer = server.username
-                                nuovaPasswordServer = server.password
-                                mostraPasswordNuovo = false
-                                mostraAggiungiServer = true
-                            },
                             onReorder = {
                                 mostraRiordinaServer = true
                             },
@@ -1384,112 +1529,6 @@ fun Greeting(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-
-                ExpressiveSectionLabel(
-                    titolo = "Connessione",
-                    icona = Icons.Default.Settings,
-                    coloreAccento = Color(0xFF4CAF50),
-                    compatto = schermoCompatto
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val coloriCampoConnessione =
-                    if (temaScuro) {
-                        androidx.compose.material3.OutlinedTextFieldDefaults.colors()
-                    } else {
-                        androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color(0xFF111411),
-                            unfocusedTextColor = Color(0xFF111411),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedBorderColor = Color(0xFF2E7D32),
-                            unfocusedBorderColor = Color(0xFF7F9184),
-                            focusedLabelColor = Color(0xFF2E7D32),
-                            unfocusedLabelColor = Color(0xFF3F4A42),
-                            cursorColor = Color(0xFF2E7D32)
-                        )
-                    }
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                    value = host,
-                    onValueChange = { host = it },
-                    label = { Text("Host/IP") },
-                    leadingIcon = { Text("🌐") },
-                    colors = coloriCampoConnessione,
-                    singleLine = true
-                )
-
-                Spacer(
-                    modifier = Modifier.height(
-                        if (schermoCompatto) 6.dp else 8.dp
-                    )
-                )
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                    value = porta,
-                    onValueChange = { porta = it },
-                    label = { Text("Porta") },
-                    leadingIcon = { Text("🔌") },
-                    colors = coloriCampoConnessione,
-                    singleLine = true
-                )
-
-                Spacer(
-                    modifier = Modifier.height(
-                        if (schermoCompatto) 6.dp else 8.dp
-                    )
-                )
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    leadingIcon = { Text("👤") },
-                    colors = coloriCampoConnessione,
-                    singleLine = true
-                )
-
-                Spacer(
-                    modifier = Modifier.height(
-                        if (schermoCompatto) 6.dp else 8.dp
-                    )
-                )
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    leadingIcon = { Text("🔒") },
-                    colors = coloriCampoConnessione,
-                    visualTransformation =
-                        if (mostraPasswordConnessione) {
-                            androidx.compose.ui.text.input.VisualTransformation.None
-                        } else {
-                            PasswordVisualTransformation()
-                        },
-                    trailingIcon = {
-                        TextButton(
-                            onClick = {
-                                mostraPasswordConnessione =
-                                    !mostraPasswordConnessione
-                            }
-                        ) {
-                            Text("👁")
-                        }
-                    },
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     modifier = Modifier
@@ -1812,9 +1851,9 @@ fun Greeting(
             if (mostraConnessione) {
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
                 ) {
                     androidx.compose.foundation.Image(
                         painter = androidx.compose.ui.res.painterResource(
@@ -1827,6 +1866,34 @@ fun Greeting(
                         contentDescription = "mr-unix",
                         modifier = Modifier.height(56.dp)
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .clickable {
+                                mostraRepositoryGitHub = true
+                            }
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.Icon(
+                            painter = androidx.compose.ui.res.painterResource(
+                                id = R.drawable.ic_github
+                            ),
+                            contentDescription = "Apri repository GitHub",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(7.dp))
+
+                        Text(
+                            text = "Repository GitHub",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else if (ultimoAggiornamento.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -2288,7 +2355,19 @@ fun Greeting(
             }
         }
 
-        if (mostraWebIf) {
+        if (mostraRepositoryGitHub) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                GitHubRepositoryScreen(
+                    onClose = {
+                        mostraRepositoryGitHub = false
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        } else if (mostraWebIf) {
             androidx.compose.material3.Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
@@ -3805,6 +3884,190 @@ fun LiveLogScreen(
                         softWrap = false
                     )
                 }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun GitHubRepositoryScreen(
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.activity.compose.BackHandler {
+        onClose()
+    }
+
+    var caricamento by remember { mutableStateOf(true) }
+    var erroreCaricamento by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        androidx.compose.material3.Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 10.dp,
+                    vertical = 8.dp
+                ),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(9.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
+                ) {
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Indietro"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                ) {
+                    androidx.compose.material3.Icon(
+                        painter = androidx.compose.ui.res.painterResource(
+                            id = R.drawable.ic_github
+                        ),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "Repository GitHub",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "mr-unix01/OscamLiveMonitor",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            if (!erroreCaricamento) {
+                androidx.compose.ui.viewinterop.AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { webContext ->
+                        android.webkit.WebView(webContext).apply {
+                            settings.javaScriptEnabled = true
+                            settings.domStorageEnabled = true
+
+                            webViewClient =
+                                object : android.webkit.WebViewClient() {
+                                    override fun onPageStarted(
+                                        view: android.webkit.WebView?,
+                                        url: String?,
+                                        favicon: android.graphics.Bitmap?
+                                    ) {
+                                        caricamento = true
+                                        erroreCaricamento = false
+                                    }
+
+                                    override fun onPageFinished(
+                                        view: android.webkit.WebView?,
+                                        url: String?
+                                    ) {
+                                        caricamento = false
+                                    }
+
+                                    override fun onReceivedError(
+                                        view: android.webkit.WebView?,
+                                        request: android.webkit.WebResourceRequest?,
+                                        error: android.webkit.WebResourceError?
+                                    ) {
+                                        if (request?.isForMainFrame == true) {
+                                            caricamento = false
+                                            erroreCaricamento = true
+                                        }
+                                    }
+                                }
+
+                            loadUrl(
+                                "https:" + "//github.com/" +
+                                    "mr-unix01/OscamLiveMonitor"
+                            )
+                        }
+                    }
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    horizontalAlignment =
+                        androidx.compose.ui.Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(36.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Impossibile caricare la repository",
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Controlla la connessione Internet e riprova.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (caricamento && !erroreCaricamento) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(androidx.compose.ui.Alignment.Center)
+                        .size(36.dp),
+                    strokeWidth = 3.dp,
+                    color = Color(0xFF66BB6A)
+                )
             }
         }
     }

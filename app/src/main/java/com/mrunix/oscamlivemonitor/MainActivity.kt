@@ -216,7 +216,24 @@ fun Greeting(
 
     val api = remember { OscamApi() }
     val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val refreshMutex = remember { kotlinx.coroutines.sync.Mutex() }
+
+    fun mostraSnackbar(messaggio: String) {
+        val testo = if (messaggio.startsWith("ERRORE:", ignoreCase = true)) {
+            messaggio.substringAfter(":").trim()
+        } else {
+            messaggio
+        }
+
+        coroutineScope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(
+                message = testo,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
 
     suspend fun aggiornaDashboardDaOscam(mostraErroreSubito: Boolean = true): Boolean {
         refreshMutex.lock()
@@ -234,6 +251,7 @@ fun Greeting(
         if (risultato.startsWith("ERRORE:")) {
             if (mostraErroreSubito) {
                 stato = risultato
+                mostraSnackbar(risultato)
             }
             return false
         }
@@ -498,6 +516,7 @@ fun Greeting(
         } else {
             "Permesso rete locale necessario per collegarsi a OSCam"
         }
+        mostraSnackbar(stato)
     }
 
     LaunchedEffect(Unit) {
@@ -550,6 +569,10 @@ fun Greeting(
 
                     if (erroriRefreshConsecutivi >= 3) {
                         stato = "Connessione persa"
+
+                        if (erroriRefreshConsecutivi == 3) {
+                            mostraSnackbar(stato)
+                        }
                     }
                 }
 
@@ -600,6 +623,7 @@ fun Greeting(
                         if (host.isBlank() || porta.isBlank()) {
                             stato =
                                 "Inserisci prima Host/IP e Porta"
+                            mostraSnackbar(stato)
                             return@TextButton
                         }
 
@@ -625,6 +649,7 @@ fun Greeting(
                             ) {
                                 riavvioInCorso = false
                                 stato = risultatoRiavvio
+                                mostraSnackbar(risultatoRiavvio)
                                 return@launch
                             }
 
@@ -662,6 +687,7 @@ fun Greeting(
                             } else {
                                 stato =
                                     "ERRORE: OSCam non raggiungibile dopo il riavvio"
+                                mostraSnackbar(stato)
                             }
                         }
                     }
@@ -716,6 +742,7 @@ fun Greeting(
                         mostraSpiegazionePermesso = false
                         stato =
                             "Permesso rete locale necessario per OSCam"
+                        mostraSnackbar(stato)
                     }
                 ) {
                     Text("Non ora")
@@ -884,6 +911,7 @@ fun Greeting(
                             portaPulita.toIntOrNull() == null
                         ) {
                             stato = "Inserisci nome, Host/IP e una porta valida"
+                            mostraSnackbar(stato)
                         } else {
                             val nuovoServer = OscamServer(
                                 nome = nomePulito,
@@ -920,6 +948,7 @@ fun Greeting(
                             nuovaPasswordServer = ""
                             mostraAggiungiServer = false
                             stato = "Server ${nuovoServer.nome} aggiunto"
+                            mostraSnackbar(stato)
                         }
                     }
                 ) {
@@ -1162,6 +1191,7 @@ fun Greeting(
                         ) {
                             stato =
                                 "Inserisci nome, Host/IP e una porta valida"
+                            mostraSnackbar(stato)
                         } else {
                             val serverAggiornato =
                                 serverOriginale.copy(
@@ -1235,6 +1265,7 @@ fun Greeting(
 
                                 stato =
                                     "Server ${serverAggiornato.nome} modificato"
+                            mostraSnackbar(stato)
                             }
 
                             serverDaModificare = null
@@ -1354,6 +1385,7 @@ fun Greeting(
 
                             stato =
                                 "Server ${serverOriginale.nome} eliminato"
+                        mostraSnackbar(stato)
                         }
 
                         serverDaEliminare = null
@@ -1548,12 +1580,14 @@ fun Greeting(
                         if (!permessoReteConcesso) {
                             stato =
                                 "Concedi prima l'accesso alla rete locale"
+                            mostraSnackbar(stato)
                             mostraSpiegazionePermesso = true
                             return@Button
                         }
 
                         if (host.isBlank() || porta.isBlank()) {
                             stato = "Inserisci Host/IP e Porta"
+                            mostraSnackbar(stato)
                             return@Button
                         }
 
@@ -1862,6 +1896,7 @@ fun Greeting(
                     onRiavviaClick = {
                         if (host.isBlank() || porta.isBlank()) {
                             stato = "Inserisci prima Host/IP e Porta"
+                            mostraSnackbar(stato)
                         } else {
                             mostraConfermaRiavvio = true
                         }
@@ -2432,6 +2467,14 @@ fun Greeting(
                 )
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(androidx.compose.ui.Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(16.dp)
+        )
     }
 }
 

@@ -13,8 +13,8 @@ android {
         applicationId = "com.mrunix.oscamlivemonitor"
         minSdk = 26
         targetSdk = 37
-        versionCode = 918
-        versionName = "0.9.18"
+        versionCode = 919
+        versionName = "0.9.19"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

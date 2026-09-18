@@ -160,6 +160,7 @@ fun Greeting(
     var mostraWebIf by rememberSaveable { mutableStateOf(false) }
     var mostraLiveLog by rememberSaveable { mutableStateOf(false) }
     var mostraStrumenti by rememberSaveable { mutableStateOf(false) }
+    var mostraInformazioni by rememberSaveable { mutableStateOf(false) }
 
     var serverSalvati by remember {
         mutableStateOf(caricaServerSalvati(preferences))
@@ -1627,6 +1628,26 @@ fun Greeting(
                     Text("Strumenti")
                 }
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    onClick = {
+                        mostraInformazioni = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Informazioni")
+                }
+
             }
 
             if (mostraConnessione && stato.isNotBlank()) {
@@ -1867,33 +1888,6 @@ fun Greeting(
                         modifier = Modifier.height(56.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .clickable {
-                                mostraRepositoryGitHub = true
-                            }
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        androidx.compose.material3.Icon(
-                            painter = androidx.compose.ui.res.painterResource(
-                                id = R.drawable.ic_github
-                            ),
-                            contentDescription = "Apri repository GitHub",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(7.dp))
-
-                        Text(
-                            text = "Repository GitHub",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             } else if (ultimoAggiornamento.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -2355,7 +2349,23 @@ fun Greeting(
             }
         }
 
-        if (mostraRepositoryGitHub) {
+        if (mostraInformazioni) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                InformazioniScreen(
+                    onClose = {
+                        mostraInformazioni = false
+                    },
+                    onOpenGitHub = {
+                        mostraInformazioni = false
+                        mostraRepositoryGitHub = true
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        } else if (mostraRepositoryGitHub) {
             androidx.compose.material3.Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
@@ -3886,6 +3896,221 @@ fun LiveLogScreen(
                 }
             }
         }
+    }
+}
+
+
+@Composable
+fun InformazioniScreen(
+    onClose: () -> Unit,
+    onOpenGitHub: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    androidx.activity.compose.BackHandler {
+        onClose()
+    }
+
+    val context = LocalContext.current
+
+    val packageInfo = remember(context) {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                android.content.pm.PackageManager.PackageInfoFlags.of(0)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(
+                context.packageName,
+                0
+            )
+        }
+    }
+
+    val versioneApp = packageInfo.versionName ?: "—"
+
+    val buildApp =
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode.toString()
+        } else {
+            @Suppress("DEPRECATION")
+            packageInfo.versionCode.toString()
+        }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(
+                horizontal = 12.dp,
+                vertical = 10.dp
+            )
+    ) {
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(9.dp),
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.Surface(
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    color =
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
+                ) {
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Indietro"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                androidx.compose.material3.Surface(
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                    color = Color(0xFF4CAF50).copy(alpha = 0.14f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = Color(0xFF4CAF50),
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column {
+                    Text(
+                        text = "Informazioni",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "OSCam Live Monitor",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        androidx.compose.material3.Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape =
+                androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            colors = androidx.compose.material3.CardDefaults.cardColors(
+                containerColor =
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp)
+            ) {
+                Text(
+                    text = "OSCam Live Monitor",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Monitor Android indipendente per OSCam",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    text = "Versione",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = versioneApp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Build",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = buildApp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Autore",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "mr-unix",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape =
+                androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            onClick = onOpenGitHub
+        ) {
+            androidx.compose.material3.Icon(
+                painter = androidx.compose.ui.res.painterResource(
+                    id = R.drawable.ic_github
+                ),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text("Repository GitHub")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "OSCam Live Monitor è un progetto indipendente e non ufficiale.",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 

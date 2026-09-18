@@ -17,12 +17,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -1429,6 +1432,9 @@ fun Greeting(
 
                             IconButton(
                                 enabled = indice > 0,
+                                modifier = Modifier.semantics {
+                                    contentDescription = "Sposta server su"
+                                },
                                 onClick = {
                                     val nuovaLista = serverSalvati.toMutableList()
                                     val elemento = nuovaLista.removeAt(indice)
@@ -1445,6 +1451,9 @@ fun Greeting(
 
                             IconButton(
                                 enabled = indice < serverSalvati.lastIndex,
+                                modifier = Modifier.semantics {
+                                    contentDescription = "Sposta server giù"
+                                },
                                 onClick = {
                                     val nuovaLista = serverSalvati.toMutableList()
                                     val elemento = nuovaLista.removeAt(indice)
@@ -1867,7 +1876,7 @@ fun Greeting(
 
                     DashboardQuickAction(
                         titolo = "Live Log",
-                        icona = Icons.Default.ReceiptLong,
+                        icona = Icons.AutoMirrored.Filled.ReceiptLong,
                         coloreAccento = Color(0xFFFFB74D),
                         onClick = {
                             mostraLiveLog = true
@@ -4016,7 +4025,7 @@ fun InformazioniScreen(
                         modifier = Modifier.size(42.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro"
                         )
                     }
@@ -4202,7 +4211,7 @@ fun GitHubRepositoryScreen(
                         modifier = Modifier.size(42.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro"
                         )
                     }
@@ -4399,7 +4408,7 @@ fun WebIfScreen(
                         modifier = Modifier.size(42.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Indietro"
                         )
                     }

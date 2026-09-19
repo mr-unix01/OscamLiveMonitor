@@ -227,6 +227,7 @@ fun Greeting(
     val api = remember { OscamApi() }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val dialogSnackbarHostState = remember { SnackbarHostState() }
     val refreshMutex = remember { kotlinx.coroutines.sync.Mutex() }
 
     fun mostraSnackbar(messaggio: String) {
@@ -240,6 +241,16 @@ fun Greeting(
             snackbarHostState.currentSnackbarData?.dismiss()
             snackbarHostState.showSnackbar(
                 message = testo,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
+    fun mostraSnackbarDialog(messaggio: String) {
+        coroutineScope.launch {
+            dialogSnackbarHostState.currentSnackbarData?.dismiss()
+            dialogSnackbarHostState.showSnackbar(
+                message = messaggio,
                 duration = SnackbarDuration.Short
             )
         }
@@ -798,7 +809,10 @@ fun Greeting(
                 }
             },
             text = {
-                Column(
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
                         .imePadding()
@@ -902,6 +916,14 @@ fun Greeting(
                         singleLine = true
                     )
                 }
+
+                    SnackbarHost(
+                        hostState = dialogSnackbarHostState,
+                        modifier = Modifier.align(
+                            androidx.compose.ui.Alignment.BottomCenter
+                        )
+                    )
+                }
             },
             confirmButton = {
                 Button(
@@ -920,8 +942,7 @@ fun Greeting(
                             hostPulito.isBlank() ||
                             portaPulita.toIntOrNull() == null
                         ) {
-                            stato = "Inserisci nome, Host/IP e una porta valida"
-                            mostraSnackbar(stato)
+                            mostraSnackbarDialog("Inserisci nome, Host/IP e una porta valida")
                         } else {
                             val nuovoServer = OscamServer(
                                 nome = nomePulito,
@@ -957,8 +978,7 @@ fun Greeting(
                             nuovoUsernameServer = ""
                             nuovaPasswordServer = ""
                             mostraAggiungiServer = false
-                            stato = "Server ${nuovoServer.nome} aggiunto"
-                            mostraSnackbar(stato)
+                            mostraSnackbar("Server ${nuovoServer.nome} aggiunto")
                         }
                     }
                 ) {
@@ -1015,7 +1035,10 @@ fun Greeting(
                 }
             },
             text = {
-                Column(
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
                         .imePadding()
@@ -1176,6 +1199,14 @@ fun Greeting(
                       }
                     }
                 }
+
+                    SnackbarHost(
+                        hostState = dialogSnackbarHostState,
+                        modifier = Modifier.align(
+                            androidx.compose.ui.Alignment.BottomCenter
+                        )
+                    )
+                }
             },
             confirmButton = {
                 Button(
@@ -1199,9 +1230,9 @@ fun Greeting(
                             hostPulito.isBlank() ||
                             portaPulita.toIntOrNull() == null
                         ) {
-                            stato =
+                            mostraSnackbarDialog(
                                 "Inserisci nome, Host/IP e una porta valida"
-                            mostraSnackbar(stato)
+                            )
                         } else {
                             val serverAggiornato =
                                 serverOriginale.copy(
@@ -1273,9 +1304,9 @@ fun Greeting(
                                         .apply()
                                 }
 
-                                stato =
+                                mostraSnackbar(
                                     "Server ${serverAggiornato.nome} modificato"
-                            mostraSnackbar(stato)
+                                )
                             }
 
                             serverDaModificare = null
@@ -1393,9 +1424,9 @@ fun Greeting(
                                 }
                             }
 
-                            stato =
+                            mostraSnackbar(
                                 "Server ${serverOriginale.nome} eliminato"
-                        mostraSnackbar(stato)
+                            )
                         }
 
                         serverDaEliminare = null

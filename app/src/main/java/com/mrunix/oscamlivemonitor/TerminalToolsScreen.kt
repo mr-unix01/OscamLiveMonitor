@@ -13,7 +13,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Description
@@ -1273,7 +1273,7 @@ val filePickerLauncher =
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Torna al File Manager"
                     )
                 }
@@ -1861,7 +1861,7 @@ val filePickerLauncher =
                         }
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription =
                                 "Torna alla selezione box"
                         )

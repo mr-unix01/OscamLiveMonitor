@@ -47,7 +47,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.clickable
-private const val VARIANTE_APP = "Smartphone"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,7 +75,8 @@ fun Greeting(
     val context = LocalContext.current
     val temaScuro = androidx.compose.foundation.isSystemInDarkTheme()
     val schermoCompatto =
-        androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 500
+        BuildConfig.TABLET_MODE ||
+                androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 500
 
     val preferences = remember {
         context.getSharedPreferences(
@@ -4360,7 +4360,7 @@ fun InformazioniScreen(
                         risultatoAggiornamento =
                             controllaAggiornamentoGitHub(
                                 versioneAttuale = versioneApp,
-                                variante = VARIANTE_APP
+                                variante = BuildConfig.VARIANTE_APP
                             )
                     } catch (e: Exception) {
                         erroreAggiornamento =
@@ -5165,7 +5165,9 @@ fun DashboardCard(
                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
                 }
             } else {
-                if (aperta) {
+                if (BuildConfig.TABLET_MODE) {
+                    MaterialTheme.colorScheme.surface
+                } else if (aperta) {
                     coloreAccento.copy(alpha = 0.07f)
                 } else {
                     MaterialTheme.colorScheme.surface
@@ -5239,6 +5241,11 @@ fun DashboardCard(
 
             Text(
                 text = valore.ifBlank { "0" },
+                modifier = if (BuildConfig.TABLET_MODE) {
+                    Modifier.padding(start = 6.dp)
+                } else {
+                    Modifier
+                },
                 fontSize = if (compatto) 27.sp else 31.sp,
                 lineHeight = if (compatto) 29.sp else 33.sp,
                 fontWeight = FontWeight.ExtraBold,

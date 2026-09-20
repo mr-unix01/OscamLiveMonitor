@@ -28,6 +28,22 @@ android {
         }
     }
 
+    flavorDimensions += "device"
+
+    productFlavors {
+        create("smartphone") {
+            dimension = "device"
+            buildConfigField("String", "VARIANTE_APP", "\"Smartphone\"")
+            buildConfigField("boolean", "TABLET_MODE", "false")
+        }
+
+        create("tablet") {
+            dimension = "device"
+            buildConfigField("String", "VARIANTE_APP", "\"Tablet\"")
+            buildConfigField("boolean", "TABLET_MODE", "true")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -35,6 +51,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

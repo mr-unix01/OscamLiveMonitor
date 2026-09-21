@@ -3485,7 +3485,9 @@ fun ClientInfoCard(
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Medium,
                             fontSize = if (compatto) 12.sp else 13.sp,
-                            modifier = Modifier.weight(1f),
+                            modifier =
+                                if (!BuildConfig.TABLET_MODE) Modifier
+                                else Modifier.weight(1f),
                             maxLines = 1
                         )
                     }

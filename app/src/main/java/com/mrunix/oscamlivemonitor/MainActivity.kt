@@ -1871,8 +1871,8 @@ fun Greeting(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     DashboardQuickAction(
-                        titolo = "Impostazioni",
-                        icona = Icons.Default.Settings,
+                        titolo = "Server",
+                      icona = Icons.Default.Home,
                         coloreAccento = Color(0xFF66BB6A),
                         onClick = {
                             mostraConnessione = true

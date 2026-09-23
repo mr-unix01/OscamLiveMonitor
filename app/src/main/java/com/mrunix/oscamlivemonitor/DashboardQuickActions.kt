@@ -50,14 +50,23 @@ fun DashboardQuickAction(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icona,
-                contentDescription = null,
-                tint = coloreAccento,
-                modifier = Modifier.size(21.dp)
-            )
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = coloreAccento.copy(
+                    alpha = if (temaScuro) 0.16f else 0.11f
+                )
+            ) {
+                Icon(
+                    imageVector = icona,
+                    contentDescription = null,
+                    tint = coloreAccento,
+                    modifier = Modifier
+                        .padding(6.dp)
+                        .size(20.dp)
+                )
+            }
 
-            Spacer(modifier = Modifier.height(5.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = titolo,

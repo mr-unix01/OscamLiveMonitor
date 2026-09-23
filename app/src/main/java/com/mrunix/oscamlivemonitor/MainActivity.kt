@@ -1614,7 +1614,7 @@ fun Greeting(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(if (schermoCompatto) 58.dp else 56.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
                     border = androidx.compose.foundation.BorderStroke(
                         1.dp,
                         Color(0xFF66BB6A)
@@ -2751,7 +2751,7 @@ fun ExpressiveMiniInfo(
         border = androidx.compose.foundation.BorderStroke(
             if (temaScuroMini) 1.dp else 1.1.dp,
             if (temaScuroMini) {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
             } else {
                 Color(0xFFD5DDD5)
             }
@@ -2794,14 +2794,14 @@ fun ExpressiveOscamInfoCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (temaScuroCard) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.48f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
             } else {
                 MaterialTheme.colorScheme.surface
             }
@@ -2813,7 +2813,7 @@ fun ExpressiveOscamInfoCard(
         Column(
             modifier = Modifier.padding(
                 horizontal = 14.dp,
-                vertical = 13.dp
+                vertical = 12.dp
             )
         ) {
             Row(
@@ -2923,11 +2923,12 @@ fun ExpressiveOscamInfoCard(
                     androidx.compose.foundation.shape.RoundedCornerShape(15.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    Color(0xFFFF7043).copy(alpha = 0.85f)
+                    Color(0xFFFF7043).copy(alpha = 0.70f)
                 ),
                 colors =
                     androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFFF7043)
+                        contentColor = Color(0xFFFF7043),
+                        containerColor = Color(0xFFFF7043).copy(alpha = 0.07f)
                     ),
                 onClick = onRiavviaClick
             ) {

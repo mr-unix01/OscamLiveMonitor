@@ -638,6 +638,9 @@ fun Greeting(
             },
             confirmButton = {
                 TextButton(
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFFF7043)
+                    ),
                     onClick = {
                         mostraConfermaRiavvio = false
 

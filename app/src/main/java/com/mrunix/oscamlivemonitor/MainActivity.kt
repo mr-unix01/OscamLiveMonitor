@@ -638,6 +638,9 @@ fun Greeting(
             },
             confirmButton = {
                 TextButton(
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFFFF7043)
+                    ),
                     onClick = {
                         mostraConfermaRiavvio = false
 
@@ -2958,24 +2961,24 @@ fun TitoloSezioneDashboard(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
     ) {
         androidx.compose.material3.Surface(
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-            color = coloreAccento.copy(alpha = 0.14f)
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            color = coloreAccento.copy(alpha = 0.12f)
         ) {
             Icon(
                 imageVector = icona,
                 contentDescription = null,
                 tint = coloreAccento,
                 modifier = Modifier
-                    .padding(if (compatto) 7.dp else 8.dp)
-                    .size(if (compatto) 18.dp else 20.dp)
+                    .padding(if (compatto) 6.dp else 7.dp)
+                    .size(if (compatto) 17.dp else 19.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(9.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Text(
             text = titolo,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             fontSize = if (compatto) 16.sp else 18.sp,
             color = MaterialTheme.colorScheme.onBackground
         )
@@ -3028,14 +3031,14 @@ fun BadgeStatoDashboard(
 
     androidx.compose.material3.Surface(
         shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
-        color = if (temaScuroBadge) {
-            colore.copy(alpha = 0.13f)
-        } else {
-            Color.White
-        },
+        color = colore.copy(
+            alpha = if (temaScuroBadge) 0.11f else 0.07f
+        ),
         border = androidx.compose.foundation.BorderStroke(
-            if (temaScuroBadge) 1.dp else 1.1.dp,
-            colore.copy(alpha = if (temaScuroBadge) 0.38f else 0.48f)
+            1.dp,
+            colore.copy(
+                alpha = if (temaScuroBadge) 0.32f else 0.38f
+            )
         )
     ) {
         Text(
@@ -3044,8 +3047,8 @@ fun BadgeStatoDashboard(
             fontWeight = FontWeight.Bold,
             fontSize = if (compatto) 10.sp else 11.sp,
             modifier = Modifier.padding(
-                horizontal = if (compatto) 8.dp else 10.dp,
-                vertical = if (compatto) 4.dp else 5.dp
+                horizontal = if (compatto) 7.dp else 9.dp,
+                vertical = if (compatto) 3.dp else 4.dp
             )
         )
     }

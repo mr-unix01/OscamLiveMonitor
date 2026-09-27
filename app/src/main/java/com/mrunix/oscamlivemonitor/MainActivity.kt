@@ -2958,24 +2958,24 @@ fun TitoloSezioneDashboard(
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
     ) {
         androidx.compose.material3.Surface(
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-            color = coloreAccento.copy(alpha = 0.14f)
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            color = coloreAccento.copy(alpha = 0.12f)
         ) {
             Icon(
                 imageVector = icona,
                 contentDescription = null,
                 tint = coloreAccento,
                 modifier = Modifier
-                    .padding(if (compatto) 7.dp else 8.dp)
-                    .size(if (compatto) 18.dp else 20.dp)
+                    .padding(if (compatto) 6.dp else 7.dp)
+                    .size(if (compatto) 17.dp else 19.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(9.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Text(
             text = titolo,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             fontSize = if (compatto) 16.sp else 18.sp,
             color = MaterialTheme.colorScheme.onBackground
         )

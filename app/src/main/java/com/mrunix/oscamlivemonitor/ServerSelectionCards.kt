@@ -133,9 +133,9 @@ fun OscamServerCard(
     val darkTheme = isSystemInDarkTheme()
     val selectionGreen = Color(0xFF4CAF50)
     val selectedContainer = if (darkTheme) {
-        Color(0xFF17351F)
+        Color(0xFF1D2A20)
     } else {
-        Color(0xFFEAF6EC)
+        Color(0xFFF1F8F2)
     }
 
     var menuExpanded by remember(server.nome, server.host, server.porta) {
@@ -146,7 +146,7 @@ fun OscamServerCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(
-            width = if (selected) 1.6.dp else 1.dp,
+            width = if (selected) 1.4.dp else 1.dp,
             color = if (selected) {
                 selectionGreen
             } else {
@@ -175,7 +175,7 @@ fun OscamServerCard(
                 modifier = Modifier.size(46.dp),
                 shape = CircleShape,
                 color = if (selected) {
-                    selectionGreen.copy(alpha = 0.18f)
+                    selectionGreen.copy(alpha = 0.14f)
                 } else {
                     MaterialTheme.colorScheme.surface
                 }
@@ -221,10 +221,10 @@ fun OscamServerCard(
 
                         Surface(
                             shape = RoundedCornerShape(50),
-                            color = selectionGreen.copy(alpha = 0.16f),
+                            color = selectionGreen.copy(alpha = 0.11f),
                             border = BorderStroke(
                                 1.dp,
-                                selectionGreen.copy(alpha = 0.38f)
+                                selectionGreen.copy(alpha = 0.30f)
                             )
                         ) {
                             Text(
@@ -234,11 +234,11 @@ fun OscamServerCard(
                                 } else {
                                     Color(0xFF2E7D32)
                                 },
-                                fontSize = 9.sp,
+                                fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(
-                                    horizontal = 7.dp,
-                                    vertical = 3.dp
+                                    horizontal = 6.dp,
+                                    vertical = 2.dp
                                 )
                             )
                         }

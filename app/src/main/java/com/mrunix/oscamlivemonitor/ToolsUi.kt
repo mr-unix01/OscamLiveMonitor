@@ -21,16 +21,14 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ToolsHeader(
     serverName: String,
+    serverHost: String,
     onBack: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f),
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
-        )
+        color = Color.Transparent,
+        border = null
     ) {
         Row(
             modifier = Modifier.padding(9.dp),
@@ -79,7 +77,14 @@ fun ToolsHeader(
                 )
 
                 Text(
-                    text = serverName,
+                    text = if (
+                        serverHost.isBlank() ||
+                        serverName.equals(serverHost, ignoreCase = true)
+                    ) {
+                        serverName
+                    } else {
+                        "$serverName  •  $serverHost"
+                    },
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
@@ -180,10 +185,11 @@ fun ToolsBinarySelector(
     leftSelected: Boolean,
     accent: Color,
     onLeft: () -> Unit,
-    onRight: () -> Unit
+    onRight: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         listOf(

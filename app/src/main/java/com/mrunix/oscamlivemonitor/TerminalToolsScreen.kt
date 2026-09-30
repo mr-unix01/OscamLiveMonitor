@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -1503,16 +1504,55 @@ val filePickerLauncher =
     }
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
+        modifier = (
+            if (
+                fullscreenTerminale ||
+                connected ||
+                fileConnected
+            ) {
+                modifier.fillMaxSize()
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(
+                        align = androidx.compose.ui.Alignment.Top
+                    )
+            }
+        )
             .imePadding()
             .padding(
                 if (fullscreenTerminale) 2.dp else 14.dp
+            )
+            .then(
+                if (
+                    !fullscreenTerminale &&
+                    !connected &&
+                    !fileConnected
+                ) {
+                    Modifier
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                alpha = 0.62f
+                            ),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
+                        )
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                alpha = 0.34f
+                            ),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
+                        )
+                        .padding(12.dp)
+                } else {
+                    Modifier
+                }
             )
     ) {
         if (!fullscreenTerminale) {
             ToolsHeader(
                 serverName = serverName.ifBlank { defaultHost },
+                serverHost = defaultHost,
                 onBack = {
                     disconnectTerminal()
                     onClose()
@@ -1521,19 +1561,17 @@ val filePickerLauncher =
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            if (!connected) {
-                ToolsModeSelector(
-                    fileSelected = mostraFile,
-                    onTerminal = {
-                        mostraFile = false
-                    },
-                    onFile = {
-                        mostraFile = true
-                    }
-                )
+            ToolsModeSelector(
+                fileSelected = mostraFile,
+                onTerminal = {
+                    mostraFile = false
+                },
+                onFile = {
+                    mostraFile = true
+                }
+            )
 
-                Spacer(modifier = Modifier.height(10.dp))
-            }
+            Spacer(modifier = Modifier.height(10.dp))
         }
 
         if (!fullscreenTerminale && !mostraFile) {
@@ -1552,168 +1590,184 @@ val filePickerLauncher =
                         }
                     )
             ) {
+                if (connected) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment =
+                            androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Terminal,
+                            contentDescription = null,
+                            tint = Color(0xFF66BB6A)
+                        )
+
+                        Spacer(modifier = Modifier.width(9.dp))
+
+                        Text(
+                            text = "Terminale",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        ToolsConnectionStatus(
+                            text = status
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                if (!connected) {
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment =
                         androidx.compose.ui.Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Terminal,
-                        contentDescription = null,
-                        tint = Color(0xFF66BB6A)
-                    )
+                    ToolsBinarySelector(
+                        leftTitle = "SSH",
+                        rightTitle = "Telnet",
+                        leftSelected =
+                            protocol == TerminalProtocol.SSH,
+                        accent = Color(0xFF66BB6A),
+                        onLeft = {
+                            if (!connected) {
+                                val oldDefault =
+                                    if (protocol == TerminalProtocol.SSH)
+                                        "22"
+                                    else
+                                        "23"
 
-                    Spacer(modifier = Modifier.width(9.dp))
+                                protocol = TerminalProtocol.SSH
 
-                    Text(
-                        text = "Terminale",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
+                                if (port == oldDefault) {
+                                    port = "22"
+                                }
+                            }
+                        },
+                        onRight = {
+                            if (!connected) {
+                                val oldDefault =
+                                    if (protocol == TerminalProtocol.SSH)
+                                        "22"
+                                    else
+                                        "23"
+
+                                protocol = TerminalProtocol.TELNET
+
+                                if (port == oldDefault) {
+                                    port = "23"
+                                }
+                            }
+                        },
                         modifier = Modifier.weight(1f)
                     )
 
-                    if (connected) {
-                        Text(
-                            text = "Connesso via ${protocol.name}",
-                            color = Color(0xFF66BB6A),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    ToolsConnectionStatus(
+                        text = status
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                if (!connected) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.weight(1.8f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        value = host,
+                        onValueChange = {
+                            if (!connected) host = it
+                        },
+                        label = {
+                            Text("Host/IP")
+                        },
+                        singleLine = true,
+                        enabled = !connected
+                    )
 
-                ToolsBinarySelector(
-                    leftTitle = "SSH",
-                    rightTitle = "Telnet",
-                    leftSelected =
-                        protocol == TerminalProtocol.SSH,
-                    accent = Color(0xFF66BB6A),
-                    onLeft = {
-                        if (!connected) {
-                            val oldDefault =
-                                if (protocol == TerminalProtocol.SSH)
-                                    "22"
-                                else
-                                    "23"
-
-                            protocol = TerminalProtocol.SSH
-
-                            if (port == oldDefault) {
-                                port = "22"
-                            }
-                        }
-                    },
-                    onRight = {
-                        if (!connected) {
-                            val oldDefault =
-                                if (protocol == TerminalProtocol.SSH)
-                                    "22"
-                                else
-                                    "23"
-
-                            protocol = TerminalProtocol.TELNET
-
-                            if (port == oldDefault) {
-                                port = "23"
-                            }
-                        }
-                    }
-                )
+                    OutlinedTextField(
+                        modifier = Modifier.weight(0.8f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        value = port,
+                        onValueChange = {
+                            if (!connected) port = it
+                        },
+                        label = {
+                            Text("Porta")
+                        },
+                        singleLine = true,
+                        enabled = !connected
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    value = host,
-                    onValueChange = {
-                        if (!connected) host = it
-                    },
-                    label = {
-                        Text("Host/IP")
-                    },
-                    singleLine = true,
-                    enabled = !connected
-                )
-
-                Spacer(modifier = Modifier.height(7.dp))
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    value = port,
-                    onValueChange = {
-                        if (!connected) port = it
-                    },
-                    label = {
-                        Text("Porta")
-                    },
-                    singleLine = true,
-                    enabled = !connected
-                )
-
-                Spacer(modifier = Modifier.height(7.dp))
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    value = username,
-                    onValueChange = {
-                        if (!connected) username = it
-                    },
-                    label = {
-                        Text("Username")
-                    },
-                    singleLine = true,
-                    enabled = !connected
-                )
-
-                Spacer(modifier = Modifier.height(7.dp))
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    value = password,
-                    onValueChange = {
-                        if (!connected) password = it
-                    },
-                    label = {
-                        Text("Password")
-                    },
-                    visualTransformation =
-                        if (showPassword) {
-                            VisualTransformation.None
-                        } else {
-                            PasswordVisualTransformation()
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.weight(1f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        value = username,
+                        onValueChange = {
+                            if (!connected) username = it
                         },
-                    trailingIcon = {
-                        IconButton(
-                            onClick = {
-                                showPassword = !showPassword
+                        label = {
+                            Text("Username")
+                        },
+                        singleLine = true,
+                        enabled = !connected
+                    )
+
+                    OutlinedTextField(
+                        modifier = Modifier.weight(1f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        value = password,
+                        onValueChange = {
+                            if (!connected) password = it
+                        },
+                        label = {
+                            Text("Password")
+                        },
+                        visualTransformation =
+                            if (showPassword) {
+                                VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    showPassword = !showPassword
+                                }
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        if (showPassword) {
+                                            Icons.Default.VisibilityOff
+                                        } else {
+                                            Icons.Default.Visibility
+                                        },
+                                    contentDescription =
+                                        if (showPassword)
+                                            "Nascondi password"
+                                        else
+                                            "Mostra password"
+                                )
                             }
-                        ) {
-                            Icon(
-                                imageVector =
-                                    if (showPassword) {
-                                        Icons.Default.VisibilityOff
-                                    } else {
-                                        Icons.Default.Visibility
-                                    },
-                                contentDescription =
-                                    if (showPassword)
-                                        "Nascondi password"
-                                    else
-                                        "Mostra password"
-                            )
-                        }
-                    },
-                    singleLine = true,
-                    enabled = !connected
-                )
+                        },
+                        singleLine = true,
+                        enabled = !connected
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -1833,13 +1887,6 @@ val filePickerLauncher =
                     }
                 }
 
-                if (!connected) {
-                    Spacer(modifier = Modifier.height(7.dp))
-
-                    ToolsConnectionStatus(
-                        text = status
-                    )
-                }
             }
         }
         }
@@ -2095,144 +2142,171 @@ val filePickerLauncher =
                         )
                         .padding(14.dp)
                 ) {
+                    if (fileConnected) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment =
+                                androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Folder,
+                                contentDescription = null,
+                                tint = Color(0xFFFFB300)
+                            )
+
+                            Spacer(modifier = Modifier.width(9.dp))
+
+                            Text(
+                                text = "File Manager",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            ToolsConnectionStatus(
+                                text = fileStatus
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                    }
+
+                    if (!fileConnected) {
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment =
                             androidx.compose.ui.Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Folder,
-                            contentDescription = null,
-                            tint = Color(0xFFFFB300)
+                        ToolsBinarySelector(
+                            leftTitle = "SFTP",
+                            rightTitle = "FTP",
+                            leftSelected = fileSftp,
+                            accent = Color(0xFFFFB300),
+                            onLeft = {
+                                val vecchiaPorta =
+                                    if (fileSftp) "22" else "21"
+
+                                fileSftp = true
+
+                                if (filePort == vecchiaPorta) {
+                                    filePort = "22"
+                                }
+                            },
+                            onRight = {
+                                val vecchiaPorta =
+                                    if (fileSftp) "22" else "21"
+
+                                fileSftp = false
+
+                                if (filePort == vecchiaPorta) {
+                                    filePort = "21"
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
                         )
 
-                        Spacer(modifier = Modifier.width(9.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
 
-                        Text(
-                            text = "File Manager",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                        ToolsConnectionStatus(
+                            text = fileStatus
                         )
                     }
 
-                    if (!fileConnected) {
-                        Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    ToolsBinarySelector(
-                        leftTitle = "SFTP",
-                        rightTitle = "FTP",
-                        leftSelected = fileSftp,
-                        accent = Color(0xFFFFB300),
-                        onLeft = {
-                            val vecchiaPorta =
-                                if (fileSftp) "22" else "21"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            modifier = Modifier.weight(1.8f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            value = fileHost,
+                            onValueChange = {
+                                fileHost = it
+                            },
+                            label = {
+                                Text("Host/IP")
+                            },
+                            singleLine = true
+                        )
 
-                            fileSftp = true
-
-                            if (filePort == vecchiaPorta) {
-                                filePort = "22"
-                            }
-                        },
-                        onRight = {
-                            val vecchiaPorta =
-                                if (fileSftp) "22" else "21"
-
-                            fileSftp = false
-
-                            if (filePort == vecchiaPorta) {
-                                filePort = "21"
-                            }
-                        }
-                    )
+                        OutlinedTextField(
+                            modifier = Modifier.weight(0.8f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            value = filePort,
+                            onValueChange = {
+                                filePort = it
+                            },
+                            label = {
+                                Text("Porta")
+                            },
+                            singleLine = true
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    OutlinedTextField(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        value = fileHost,
-                        onValueChange = {
-                            fileHost = it
-                        },
-                        label = {
-                            Text("Host/IP")
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(7.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        value = filePort,
-                        onValueChange = {
-                            filePort = it
-                        },
-                        label = {
-                            Text("Porta")
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(7.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        value = fileUsername,
-                        onValueChange = {
-                            fileUsername = it
-                        },
-                        label = {
-                            Text("Username")
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(7.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        value = filePassword,
-                        onValueChange = {
-                            filePassword = it
-                        },
-                        label = {
-                            Text("Password")
-                        },
-                        visualTransformation =
-                            if (mostraFilePassword) {
-                                VisualTransformation.None
-                            } else {
-                                PasswordVisualTransformation()
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            modifier = Modifier.weight(1f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            value = fileUsername,
+                            onValueChange = {
+                                fileUsername = it
                             },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = {
-                                    mostraFilePassword =
-                                        !mostraFilePassword
+                            label = {
+                                Text("Username")
+                            },
+                            singleLine = true
+                        )
+
+                        OutlinedTextField(
+                            modifier = Modifier.weight(1f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            value = filePassword,
+                            onValueChange = {
+                                filePassword = it
+                            },
+                            label = {
+                                Text("Password")
+                            },
+                            visualTransformation =
+                                if (mostraFilePassword) {
+                                    VisualTransformation.None
+                                } else {
+                                    PasswordVisualTransformation()
+                                },
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        mostraFilePassword =
+                                            !mostraFilePassword
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector =
+                                            if (mostraFilePassword) {
+                                                Icons.Default.VisibilityOff
+                                            } else {
+                                                Icons.Default.Visibility
+                                            },
+                                        contentDescription =
+                                            if (mostraFilePassword) {
+                                                "Nascondi password"
+                                            } else {
+                                                "Mostra password"
+                                            }
+                                    )
                                 }
-                            ) {
-                                Icon(
-                                    imageVector =
-                                        if (mostraFilePassword) {
-                                            Icons.Default.VisibilityOff
-                                        } else {
-                                            Icons.Default.Visibility
-                                        },
-                                    contentDescription =
-                                        if (mostraFilePassword) {
-                                            "Nascondi password"
-                                        } else {
-                                            "Mostra password"
-                                        }
-                                )
-                            }
-                        },
-                        singleLine = true
-                    )
+                            },
+                            singleLine = true
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -2351,11 +2425,6 @@ val filePickerLauncher =
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(7.dp))
-
-                    ToolsConnectionStatus(
-                        text = fileStatus
-                    )
                     } else {
                         Spacer(modifier = Modifier.height(10.dp))
 

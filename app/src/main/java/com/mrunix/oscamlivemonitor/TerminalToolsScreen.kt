@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,19 +32,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -57,6 +62,8 @@ fun TerminalToolsScreen(
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val terminalFocusRequester = remember { FocusRequester() }
 
     val landscape =
         configuration.orientation ==
@@ -138,12 +145,40 @@ fun TerminalToolsScreen(
         mutableStateOf(false)
     }
 
+    var ultimaConnessioneTerminale by remember(
+        safeKey,
+        protocol
+    ) {
+        mutableStateOf(
+            preferences.getLong(
+                "${safeKey}_last_${protocol.name.lowercase()}",
+                0L
+            )
+        )
+    }
+
     var mostraFile by remember {
         mutableStateOf(false)
     }
 
     var fileSftp by remember {
         mutableStateOf(true)
+    }
+
+    var ultimaConnessioneFile by remember(
+        safeKey,
+        fileSftp
+    ) {
+        mutableStateOf(
+            preferences.getLong(
+                if (fileSftp) {
+                    "${safeKey}_last_sftp"
+                } else {
+                    "${safeKey}_last_ftp"
+                },
+                0L
+            )
+        )
     }
 
     var fileHost by remember {
@@ -1422,16 +1457,15 @@ val filePickerLauncher =
     }
 
     var terminalInput by remember {
-        mutableStateOf("")
+        mutableStateOf(TextFieldValue(""))
     }
 
-    var terminalFieldValue by remember {
-        mutableStateOf(
-            TextFieldValue(
-                text = "",
-                selection = TextRange(0)
-            )
-        )
+    var ctrlAttivo by remember {
+        mutableStateOf(false)
+    }
+
+    var altAttivo by remember {
+        mutableStateOf(false)
     }
 
     var readJob by remember {
@@ -1439,6 +1473,47 @@ val filePickerLauncher =
     }
 
     val terminalScroll = rememberScrollState()
+
+    fun formattaUltimaConnessione(
+        timestamp: Long
+    ): String {
+        if (timestamp <= 0L) {
+            return ""
+        }
+
+        val zona =
+            java.time.ZoneId.systemDefault()
+
+        val dataOra =
+            java.time.Instant
+                .ofEpochMilli(timestamp)
+                .atZone(zona)
+
+        val oggi =
+            java.time.LocalDate.now(zona)
+
+        val ora =
+            dataOra.format(
+                java.time.format.DateTimeFormatter.ofPattern(
+                    "HH:mm"
+                )
+            )
+
+        return when (dataOra.toLocalDate()) {
+            oggi ->
+                "oggi alle $ora"
+
+            oggi.minusDays(1) ->
+                "ieri alle $ora"
+
+            else ->
+                dataOra.format(
+                    java.time.format.DateTimeFormatter.ofPattern(
+                        "dd/MM/yyyy 'alle' HH:mm"
+                    )
+                )
+        }
+    }
 
     fun saveSettings() {
         preferences.edit()
@@ -1475,6 +1550,131 @@ val filePickerLauncher =
         client.disconnect()
     }
 
+    fun inviaRawTerminale(
+        data: ByteArray,
+        inviaInputPrima: Boolean = false
+    ) {
+        val inputDaInviare =
+            if (inviaInputPrima) terminalInput.text else ""
+
+        if (inviaInputPrima) {
+            terminalInput = TextFieldValue("")
+        }
+
+        scope.launch {
+            if (inputDaInviare.isNotEmpty()) {
+                val inputResult =
+                    client.sendRaw(
+                        inputDaInviare.toByteArray(Charsets.UTF_8)
+                    )
+
+                if (inputResult.isFailure) {
+                    status =
+                        "Errore invio: " +
+                            (
+                                inputResult.exceptionOrNull()
+                                    ?.message
+                                    ?: "errore"
+                            )
+                    return@launch
+                }
+            }
+
+            val result = client.sendRaw(data)
+
+            if (result.isFailure) {
+                status =
+                    "Errore invio: " +
+                        (
+                            result.exceptionOrNull()
+                                ?.message
+                                ?: "errore"
+                        )
+            }
+        }
+
+        terminalFocusRequester.requestFocus()
+        keyboardController?.show()
+    }
+
+    fun inviaTastoModificato(carattere: Char) {
+        val bytes = mutableListOf<Byte>()
+
+        if (altAttivo) {
+            bytes.add(0x1B.toByte())
+        }
+
+        if (ctrlAttivo) {
+            val codice = carattere.uppercaseChar().code
+
+            if (codice in 64..95) {
+                bytes.add((codice - 64).toByte())
+            } else {
+                bytes.addAll(
+                    carattere.toString()
+                        .toByteArray(Charsets.UTF_8)
+                        .toList()
+                )
+            }
+        } else {
+            bytes.addAll(
+                carattere.toString()
+                    .toByteArray(Charsets.UTF_8)
+                    .toList()
+            )
+        }
+
+        ctrlAttivo = false
+        altAttivo = false
+
+        inviaRawTerminale(
+            bytes.toByteArray(),
+            inviaInputPrima = true
+        )
+    }
+
+    fun inviaComandoTerminale() {
+        val command = terminalInput.text
+        terminalInput = TextFieldValue("")
+
+        if (command.trim() == "clear") {
+            val ultimoPrompt =
+                terminalOutput
+                    .lines()
+                    .lastOrNull { riga ->
+                        val t = riga.trim()
+                        t.endsWith("#") ||
+                            t.endsWith("$") ||
+                            t.endsWith(">")
+                    }
+                    ?.trimEnd()
+                    .orEmpty()
+
+            terminalOutput =
+                if (ultimoPrompt.isNotBlank()) {
+                    "$ultimoPrompt "
+                } else {
+                    ""
+                }
+
+            return
+        }
+
+        scope.launch {
+            val result = client.send(command)
+
+            if (result.isFailure) {
+                status =
+                    "Errore invio: " +
+                        (
+                            result.exceptionOrNull()
+                                ?.message
+                                ?: "errore"
+                        )
+            }
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             client.disconnect()
@@ -1484,20 +1684,33 @@ val filePickerLauncher =
     }
 
     LaunchedEffect(
-        terminalOutput,
-        terminalInput
+        mostraFile,
+        fileSftp,
+        safeKey
     ) {
-        val testoCompleto =
-            terminalOutput + terminalInput
+        if (mostraFile) {
+            ultimaConnessioneFile =
+                preferences.getLong(
+                    if (fileSftp) {
+                        "${safeKey}_last_sftp"
+                    } else {
+                        "${safeKey}_last_ftp"
+                    },
+                    0L
+                )
+        }
+    }
 
-        terminalFieldValue =
-            TextFieldValue(
-                text = testoCompleto,
-                selection = TextRange(testoCompleto.length)
-            )
+    LaunchedEffect(connected, mostraFile) {
+        if (connected && !mostraFile) {
+            androidx.compose.runtime.withFrameNanos { }
+            delay(150)
+            terminalFocusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
-        androidx.compose.runtime.withFrameNanos { }
-
+    LaunchedEffect(terminalScroll.maxValue) {
         terminalScroll.scrollTo(
             terminalScroll.maxValue
         )
@@ -1519,9 +1732,24 @@ val filePickerLauncher =
                     )
             }
         )
-            .imePadding()
+            .windowInsetsPadding(
+                WindowInsets.ime.exclude(
+                    WindowInsets.navigationBars
+                )
+            )
             .padding(
-                if (fullscreenTerminale) 2.dp else 14.dp
+                start =
+                    if (fullscreenTerminale) 2.dp else 14.dp,
+                top =
+                    if (fullscreenTerminale) 2.dp else 14.dp,
+                end =
+                    if (fullscreenTerminale) 2.dp else 14.dp,
+                bottom =
+                    if (connected && !mostraFile) {
+                        0.dp
+                    } else {
+                        if (fullscreenTerminale) 2.dp else 14.dp
+                    }
             )
             .then(
                 if (
@@ -1812,6 +2040,19 @@ val filePickerLauncher =
                                     )
 
                                 if (result.isSuccess) {
+                                    val timestamp =
+                                        System.currentTimeMillis()
+
+                                    ultimaConnessioneTerminale =
+                                        timestamp
+
+                                    preferences.edit()
+                                        .putLong(
+                                            "${safeKey}_last_${protocol.name.lowercase()}",
+                                            timestamp
+                                        )
+                                        .apply()
+
                                     connected = true
                                     status =
                                         "Connesso via ${protocol.name}"
@@ -1822,12 +2063,15 @@ val filePickerLauncher =
                                                 Dispatchers.Main
                                             ) {
                                                 val chunkPulito =
-                                                    chunk.replace(
-                                                        Regex(
-                                                            "\\u001B\\[[;?0-9]*[ -/]*[@-~]"
-                                                        ),
-                                                        ""
-                                                    )
+                                                    chunk
+                                                        .replace(
+                                                            Regex(
+                                                                "\\u001B\\[[;?0-9]*[ -/]*[@-~]"
+                                                            ),
+                                                            ""
+                                                        )
+                                                        .replace("\r\n", "\n")
+                                                        .replace("\r", "")
 
                                                 terminalOutput += chunkPulito
 
@@ -1874,6 +2118,28 @@ val filePickerLauncher =
                             text =
                                 "Connetti ${protocol.name}",
                             fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (ultimaConnessioneTerminale > 0L) {
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Ultima connessione ${protocol.name} riuscita: " +
+                                    formattaUltimaConnessione(
+                                        ultimaConnessioneTerminale
+                                    ),
+                            modifier =
+                                Modifier.fillMaxWidth(),
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant,
+                            fontSize = 11.sp,
+                            textAlign =
+                                androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 } else {
@@ -1996,115 +2262,165 @@ val filePickerLauncher =
             color = Color(0xFF0D1117)
         ) {
             if (connected) {
-                androidx.compose.foundation.text.BasicTextField(
-                    value = terminalFieldValue,
-                    onValueChange = { nuovoValore ->
+                val ultimaRiga =
+                    terminalOutput
+                        .substringAfterLast("\n")
+                        .removeSuffix("\r")
 
-                        if (!nuovoValore.text.startsWith(terminalOutput)) {
-                            return@BasicTextField
+                val sembraPrompt =
+                    ultimaRiga
+                        .trimEnd()
+                        .let { riga ->
+                            riga.endsWith("#") ||
+                                riga.endsWith("$") ||
+                                riga.endsWith(">")
                         }
 
-                        val nuovoInput =
-                            nuovoValore.text
-                                .removePrefix(terminalOutput)
+                val promptCorrente =
+                    if (sembraPrompt) {
+                        ultimaRiga.trimEnd()
+                    } else {
+                        ""
+                    }
 
-                        if (
-                            nuovoInput.contains("\n") ||
-                            nuovoInput.contains("\r")
-                        ) {
-                            val command =
-                                nuovoInput
-                                    .replace("\n", "")
-                                    .replace("\r", "")
+                val outputStorico =
+                    if (sembraPrompt) {
+                        val ultimoNewline =
+                            terminalOutput.lastIndexOf('\n')
 
-                            terminalInput = ""
-
-                            if (command.trim() == "clear") {
-                                val ultimoPrompt =
-                                    terminalOutput
-                                        .lines()
-                                        .lastOrNull { riga ->
-                                            val t = riga.trim()
-                                            t.endsWith("#") ||
-                                            t.endsWith("$") ||
-                                            t.endsWith(">")
-                                        }
-                                        ?.trimEnd()
-                                        .orEmpty()
-
-                                terminalOutput =
-                                    if (ultimoPrompt.isNotBlank()) {
-                                        "$ultimoPrompt "
-                                    } else {
-                                        ""
-                                    }
-
-                                terminalFieldValue =
-                                    TextFieldValue(
-                                        text = terminalOutput,
-                                        selection =
-                                            TextRange(
-                                                terminalOutput.length
-                                            )
-                                    )
-                            } else {
-                                scope.launch {
-                                    val result =
-                                        client.send(command)
-
-                                    if (result.isFailure) {
-                                        status =
-                                            "Errore invio: " +
-                                            (
-                                                result.exceptionOrNull()
-                                                    ?.message
-                                                    ?: "errore"
-                                            )
-                                    }
-                                }
-                            }
+                        if (ultimoNewline >= 0) {
+                            terminalOutput.substring(
+                                0,
+                                ultimoNewline + 1
+                            )
                         } else {
-                            terminalInput = nuovoInput
-
-                            val testoCompleto =
-                                terminalOutput + nuovoInput
-
-                            terminalFieldValue =
-                                TextFieldValue(
-                                    text = testoCompleto,
-                                    selection =
-                                        TextRange(
-                                            testoCompleto.length
-                                        )
-                                )
+                            ""
                         }
-                    },
+                    } else {
+                        terminalOutput
+                    }
+
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(terminalScroll)
                         .padding(
                             horizontal = 8.dp,
                             vertical =
                                 if (fullscreenTerminale) 3.dp
                                 else 12.dp
-                        ),
-                    textStyle =
-                        androidx.compose.ui.text.TextStyle(
-                            color = Color(0xFFE6EDF3),
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 13.sp
-                        ),
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
-                        keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.None
-                    ),
-                    cursorBrush =
-                        androidx.compose.ui.graphics.SolidColor(
-                            Color(0xFF66BB6A)
                         )
-                )
+                ) {
+                    val terminalMaxHeight = maxHeight
+
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(
+                                    max = (terminalMaxHeight - 32.dp)
+                                        .coerceAtLeast(0.dp)
+                                )
+                                .verticalScroll(terminalScroll)
+                                .padding(bottom = 10.dp)
+                        ) {
+                            if (outputStorico.isNotEmpty()) {
+                                SelectionContainer {
+                                    Text(
+                                        text = outputStorico,
+                                        color = Color(0xFFE6EDF3),
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (promptCorrente.isNotEmpty()) {
+                                Text(
+                                    text = "$promptCorrente ",
+                                    modifier = Modifier.alignByBaseline(),
+                                    color = Color(0xFFE6EDF3),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 13.sp
+                                )
+                            }
+
+                            androidx.compose.foundation.text.BasicTextField(
+                                value = terminalInput,
+                                onValueChange = { nuovoValore ->
+                                val testoPulito =
+                                    nuovoValore.text
+                                        .replace("\n", "")
+                                        .replace("\r", "")
+
+                                if (
+                                    (ctrlAttivo || altAttivo) &&
+                                    testoPulito.length ==
+                                        terminalInput.text.length + 1 &&
+                                    testoPulito.startsWith(
+                                        terminalInput.text
+                                    )
+                                ) {
+                                    inviaTastoModificato(
+                                        testoPulito.last()
+                                    )
+                                } else {
+                                    val posizione =
+                                        nuovoValore.selection.end
+                                            .coerceAtMost(
+                                                testoPulito.length
+                                            )
+
+                                    terminalInput =
+                                        nuovoValore.copy(
+                                            text = testoPulito,
+                                            selection =
+                                                TextRange(posizione)
+                                        )
+                                }
+                            },
+                            modifier = Modifier
+                                    .weight(1f)
+                                    .alignByBaseline()
+                                    .focusRequester(terminalFocusRequester),
+                                singleLine = true,
+                                textStyle =
+                                    androidx.compose.ui.text.TextStyle(
+                                        color = Color(0xFFE6EDF3),
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 13.sp
+                                    ),
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.None,
+                                    autoCorrectEnabled = false,
+                                    keyboardType = KeyboardType.Uri,
+                                    imeAction = ImeAction.Send
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onSend = {
+                                        inviaComandoTerminale()
+                                    }
+                                ),
+                                cursorBrush =
+                                    androidx.compose.ui.graphics.SolidColor(
+                                        if (
+                                            terminalInput.text.isEmpty() &&
+                                            promptCorrente.isEmpty()
+                                        ) {
+                                            Color.Transparent
+                                        } else {
+                                            Color(0xFF66BB6A)
+                                        }
+                                    )
+                            )
+                        }
+                    }
+                }
             } else {
                 Text(
                     text = "Terminale pronto.",
@@ -2117,6 +2433,183 @@ val filePickerLauncher =
         }
 
         }
+
+        if (connected && !mostraFile) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    val tasti =
+                        listOf(
+                            "CTRL", "ALT", "TAB",
+                            "~", "/", "|", "-",
+                            "↑", "↓", "←", "→"
+                        )
+
+                    tasti.forEach { tasto ->
+                        val attivo =
+                            (tasto == "CTRL" && ctrlAttivo) ||
+                                (tasto == "ALT" && altAttivo)
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    when (tasto) {
+                                        "CTRL" -> {
+                                            ctrlAttivo = !ctrlAttivo
+                                            terminalFocusRequester.requestFocus()
+                                            keyboardController?.show()
+                                        }
+
+                                        "ALT" -> {
+                                            altAttivo = !altAttivo
+                                            terminalFocusRequester.requestFocus()
+                                            keyboardController?.show()
+                                        }
+
+                                        "TAB" -> {
+                                            inviaRawTerminale(
+                                                byteArrayOf(0x09),
+                                                inviaInputPrima = true
+                                            )
+                                        }
+
+                                        "↑" -> {
+                                            inviaRawTerminale(
+                                                byteArrayOf(
+                                                    0x1B, 0x5B, 0x41
+                                                ),
+                                                inviaInputPrima = true
+                                            )
+                                        }
+
+                                        "↓" -> {
+                                            inviaRawTerminale(
+                                                byteArrayOf(
+                                                    0x1B, 0x5B, 0x42
+                                                ),
+                                                inviaInputPrima = true
+                                            )
+                                        }
+
+                                        "→" -> {
+                                            if (
+                                                terminalInput.text
+                                                    .isNotEmpty()
+                                            ) {
+                                                val posizione =
+                                                    terminalInput.selection.max
+                                                        .coerceAtMost(
+                                                            terminalInput.text.length
+                                                        )
+
+                                                terminalInput =
+                                                    terminalInput.copy(
+                                                        selection =
+                                                            TextRange(
+                                                                (posizione + 1)
+                                                                    .coerceAtMost(
+                                                                        terminalInput.text.length
+                                                                    )
+                                                            )
+                                                    )
+                                            } else {
+                                                inviaRawTerminale(
+                                                    byteArrayOf(
+                                                        0x1B, 0x5B, 0x43
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        "←" -> {
+                                            if (
+                                                terminalInput.text
+                                                    .isNotEmpty()
+                                            ) {
+                                                val posizione =
+                                                    terminalInput.selection.min
+
+                                                terminalInput =
+                                                    terminalInput.copy(
+                                                        selection =
+                                                            TextRange(
+                                                                (posizione - 1)
+                                                                    .coerceAtLeast(0)
+                                                            )
+                                                    )
+                                            } else {
+                                                inviaRawTerminale(
+                                                    byteArrayOf(
+                                                        0x1B, 0x5B, 0x44
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        else -> {
+                                            val inizio =
+                                                terminalInput.selection.min
+                                            val fine =
+                                                terminalInput.selection.max
+
+                                            val nuovoTesto =
+                                                terminalInput.text
+                                                    .replaceRange(
+                                                        inizio,
+                                                        fine,
+                                                        tasto
+                                                    )
+
+                                            val nuovaPosizione =
+                                                inizio + tasto.length
+
+                                            terminalInput =
+                                                terminalInput.copy(
+                                                    text = nuovoTesto,
+                                                    selection =
+                                                        TextRange(
+                                                            nuovaPosizione
+                                                        )
+                                                )
+
+                                            terminalFocusRequester.requestFocus()
+                                            keyboardController?.show()
+                                        }
+                                    }
+                                },
+                            contentAlignment =
+                                androidx.compose.ui.Alignment.Center
+                        ) {
+                            Text(
+                                text = tasto,
+                                color =
+                                    if (attivo) {
+                                        Color(0xFF66BB6A)
+                                    } else {
+                                        Color(0xFFE6EDF3)
+                                    },
+                                fontFamily = FontFamily.Monospace,
+                                fontSize =
+                                    if (tasto.length > 1) 10.sp
+                                    else 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
 
         if (!fullscreenTerminale && mostraFile) {
             Card(
@@ -2360,6 +2853,19 @@ val filePickerLauncher =
                                             val remoto = directory.getOrThrow()
                                             filePath = remoto.path
                                             fileEntries = remoto.entries
+                                            val timestamp =
+                                                System.currentTimeMillis()
+
+                                            ultimaConnessioneFile =
+                                                timestamp
+
+                                            preferences.edit()
+                                                .putLong(
+                                                    "${safeKey}_last_sftp",
+                                                    timestamp
+                                                )
+                                                .apply()
+
                                             fileConnected = true
                                             fileStatus =
                                                 "Connesso via SFTP"
@@ -2394,6 +2900,19 @@ val filePickerLauncher =
                                             val remoto = directory.getOrThrow()
                                             filePath = remoto.path
                                             fileEntries = remoto.entries
+                                            val timestamp =
+                                                System.currentTimeMillis()
+
+                                            ultimaConnessioneFile =
+                                                timestamp
+
+                                            preferences.edit()
+                                                .putLong(
+                                                    "${safeKey}_last_ftp",
+                                                    timestamp
+                                                )
+                                                .apply()
+
                                             fileConnected = true
                                             fileStatus =
                                                 "Connesso via FTP"
@@ -2422,6 +2941,29 @@ val filePickerLauncher =
                                     "Connetti FTP"
                                 },
                             fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (ultimaConnessioneFile > 0L) {
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Ultima connessione " +
+                                    (if (fileSftp) "SFTP" else "FTP") +
+                                    " riuscita: " +
+                                    formattaUltimaConnessione(
+                                        ultimaConnessioneFile
+                                    ),
+                            modifier = Modifier.fillMaxWidth(),
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant,
+                            fontSize = 11.sp,
+                            textAlign =
+                                androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
 

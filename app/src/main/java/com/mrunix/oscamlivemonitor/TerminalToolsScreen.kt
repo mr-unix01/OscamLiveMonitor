@@ -145,12 +145,40 @@ fun TerminalToolsScreen(
         mutableStateOf(false)
     }
 
+    var ultimaConnessioneTerminale by remember(
+        safeKey,
+        protocol
+    ) {
+        mutableStateOf(
+            preferences.getLong(
+                "${safeKey}_last_${protocol.name.lowercase()}",
+                0L
+            )
+        )
+    }
+
     var mostraFile by remember {
         mutableStateOf(false)
     }
 
     var fileSftp by remember {
         mutableStateOf(true)
+    }
+
+    var ultimaConnessioneFile by remember(
+        safeKey,
+        fileSftp
+    ) {
+        mutableStateOf(
+            preferences.getLong(
+                if (fileSftp) {
+                    "${safeKey}_last_sftp"
+                } else {
+                    "${safeKey}_last_ftp"
+                },
+                0L
+            )
+        )
     }
 
     var fileHost by remember {
@@ -1446,6 +1474,47 @@ val filePickerLauncher =
 
     val terminalScroll = rememberScrollState()
 
+    fun formattaUltimaConnessione(
+        timestamp: Long
+    ): String {
+        if (timestamp <= 0L) {
+            return ""
+        }
+
+        val zona =
+            java.time.ZoneId.systemDefault()
+
+        val dataOra =
+            java.time.Instant
+                .ofEpochMilli(timestamp)
+                .atZone(zona)
+
+        val oggi =
+            java.time.LocalDate.now(zona)
+
+        val ora =
+            dataOra.format(
+                java.time.format.DateTimeFormatter.ofPattern(
+                    "HH:mm"
+                )
+            )
+
+        return when (dataOra.toLocalDate()) {
+            oggi ->
+                "oggi alle $ora"
+
+            oggi.minusDays(1) ->
+                "ieri alle $ora"
+
+            else ->
+                dataOra.format(
+                    java.time.format.DateTimeFormatter.ofPattern(
+                        "dd/MM/yyyy 'alle' HH:mm"
+                    )
+                )
+        }
+    }
+
     fun saveSettings() {
         preferences.edit()
             .putString(
@@ -1611,6 +1680,24 @@ val filePickerLauncher =
             client.disconnect()
             fileClient.disconnect()
             ftpClient.disconnect()
+        }
+    }
+
+    LaunchedEffect(
+        mostraFile,
+        fileSftp,
+        safeKey
+    ) {
+        if (mostraFile) {
+            ultimaConnessioneFile =
+                preferences.getLong(
+                    if (fileSftp) {
+                        "${safeKey}_last_sftp"
+                    } else {
+                        "${safeKey}_last_ftp"
+                    },
+                    0L
+                )
         }
     }
 
@@ -1953,6 +2040,19 @@ val filePickerLauncher =
                                     )
 
                                 if (result.isSuccess) {
+                                    val timestamp =
+                                        System.currentTimeMillis()
+
+                                    ultimaConnessioneTerminale =
+                                        timestamp
+
+                                    preferences.edit()
+                                        .putLong(
+                                            "${safeKey}_last_${protocol.name.lowercase()}",
+                                            timestamp
+                                        )
+                                        .apply()
+
                                     connected = true
                                     status =
                                         "Connesso via ${protocol.name}"
@@ -2018,6 +2118,28 @@ val filePickerLauncher =
                             text =
                                 "Connetti ${protocol.name}",
                             fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (ultimaConnessioneTerminale > 0L) {
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Ultima connessione ${protocol.name} riuscita: " +
+                                    formattaUltimaConnessione(
+                                        ultimaConnessioneTerminale
+                                    ),
+                            modifier =
+                                Modifier.fillMaxWidth(),
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant,
+                            fontSize = 11.sp,
+                            textAlign =
+                                androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 } else {
@@ -2731,6 +2853,19 @@ val filePickerLauncher =
                                             val remoto = directory.getOrThrow()
                                             filePath = remoto.path
                                             fileEntries = remoto.entries
+                                            val timestamp =
+                                                System.currentTimeMillis()
+
+                                            ultimaConnessioneFile =
+                                                timestamp
+
+                                            preferences.edit()
+                                                .putLong(
+                                                    "${safeKey}_last_sftp",
+                                                    timestamp
+                                                )
+                                                .apply()
+
                                             fileConnected = true
                                             fileStatus =
                                                 "Connesso via SFTP"
@@ -2765,6 +2900,19 @@ val filePickerLauncher =
                                             val remoto = directory.getOrThrow()
                                             filePath = remoto.path
                                             fileEntries = remoto.entries
+                                            val timestamp =
+                                                System.currentTimeMillis()
+
+                                            ultimaConnessioneFile =
+                                                timestamp
+
+                                            preferences.edit()
+                                                .putLong(
+                                                    "${safeKey}_last_ftp",
+                                                    timestamp
+                                                )
+                                                .apply()
+
                                             fileConnected = true
                                             fileStatus =
                                                 "Connesso via FTP"
@@ -2793,6 +2941,29 @@ val filePickerLauncher =
                                     "Connetti FTP"
                                 },
                             fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (ultimaConnessioneFile > 0L) {
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Ultima connessione " +
+                                    (if (fileSftp) "SFTP" else "FTP") +
+                                    " riuscita: " +
+                                    formattaUltimaConnessione(
+                                        ultimaConnessioneFile
+                                    ),
+                            modifier = Modifier.fillMaxWidth(),
+                            color =
+                                MaterialTheme.colorScheme
+                                    .onSurfaceVariant,
+                            fontSize = 11.sp,
+                            textAlign =
+                                androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
 

@@ -297,6 +297,24 @@ class TerminalClient {
         }
     }
 
+    suspend fun sendRaw(
+        data: ByteArray
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            if (!connected) {
+                error("Terminale non connesso")
+            }
+
+            val terminalOutput =
+                output ?: error("Terminale non connesso")
+
+            terminalOutput.write(data)
+            terminalOutput.flush()
+
+            Unit
+        }
+    }
+
     fun disconnect() {
         disconnectInternal()
     }

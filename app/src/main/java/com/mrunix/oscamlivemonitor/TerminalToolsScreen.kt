@@ -41,6 +41,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1427,7 +1429,15 @@ val filePickerLauncher =
     }
 
     var terminalInput by remember {
-        mutableStateOf("")
+        mutableStateOf(TextFieldValue(""))
+    }
+
+    var ctrlAttivo by remember {
+        mutableStateOf(false)
+    }
+
+    var altAttivo by remember {
+        mutableStateOf(false)
     }
 
     var readJob by remember {
@@ -1471,9 +1481,92 @@ val filePickerLauncher =
         client.disconnect()
     }
 
+    fun inviaRawTerminale(
+        data: ByteArray,
+        inviaInputPrima: Boolean = false
+    ) {
+        val inputDaInviare =
+            if (inviaInputPrima) terminalInput.text else ""
+
+        if (inviaInputPrima) {
+            terminalInput = TextFieldValue("")
+        }
+
+        scope.launch {
+            if (inputDaInviare.isNotEmpty()) {
+                val inputResult =
+                    client.sendRaw(
+                        inputDaInviare.toByteArray(Charsets.UTF_8)
+                    )
+
+                if (inputResult.isFailure) {
+                    status =
+                        "Errore invio: " +
+                            (
+                                inputResult.exceptionOrNull()
+                                    ?.message
+                                    ?: "errore"
+                            )
+                    return@launch
+                }
+            }
+
+            val result = client.sendRaw(data)
+
+            if (result.isFailure) {
+                status =
+                    "Errore invio: " +
+                        (
+                            result.exceptionOrNull()
+                                ?.message
+                                ?: "errore"
+                        )
+            }
+        }
+
+        terminalFocusRequester.requestFocus()
+        keyboardController?.show()
+    }
+
+    fun inviaTastoModificato(carattere: Char) {
+        val bytes = mutableListOf<Byte>()
+
+        if (altAttivo) {
+            bytes.add(0x1B.toByte())
+        }
+
+        if (ctrlAttivo) {
+            val codice = carattere.uppercaseChar().code
+
+            if (codice in 64..95) {
+                bytes.add((codice - 64).toByte())
+            } else {
+                bytes.addAll(
+                    carattere.toString()
+                        .toByteArray(Charsets.UTF_8)
+                        .toList()
+                )
+            }
+        } else {
+            bytes.addAll(
+                carattere.toString()
+                    .toByteArray(Charsets.UTF_8)
+                    .toList()
+            )
+        }
+
+        ctrlAttivo = false
+        altAttivo = false
+
+        inviaRawTerminale(
+            bytes.toByteArray(),
+            inviaInputPrima = true
+        )
+    }
+
     fun inviaComandoTerminale() {
-        val command = terminalInput
-        terminalInput = ""
+        val command = terminalInput.text
+        terminalInput = TextFieldValue("")
 
         if (command.trim() == "clear") {
             val ultimoPrompt =
@@ -1552,9 +1645,24 @@ val filePickerLauncher =
                     )
             }
         )
-            .imePadding()
+            .windowInsetsPadding(
+                WindowInsets.ime.exclude(
+                    WindowInsets.navigationBars
+                )
+            )
             .padding(
-                if (fullscreenTerminale) 2.dp else 14.dp
+                start =
+                    if (fullscreenTerminale) 2.dp else 14.dp,
+                top =
+                    if (fullscreenTerminale) 2.dp else 14.dp,
+                end =
+                    if (fullscreenTerminale) 2.dp else 14.dp,
+                bottom =
+                    if (connected && !mostraFile) {
+                        0.dp
+                    } else {
+                        if (fullscreenTerminale) 2.dp else 14.dp
+                    }
             )
             .then(
                 if (
@@ -2048,7 +2156,7 @@ val filePickerLauncher =
 
                 val promptCorrente =
                     if (sembraPrompt) {
-                        ultimaRiga
+                        ultimaRiga.trimEnd()
                     } else {
                         ""
                     }
@@ -2123,12 +2231,38 @@ val filePickerLauncher =
                             androidx.compose.foundation.text.BasicTextField(
                                 value = terminalInput,
                                 onValueChange = { nuovoValore ->
+                                val testoPulito =
+                                    nuovoValore.text
+                                        .replace("\n", "")
+                                        .replace("\r", "")
+
+                                if (
+                                    (ctrlAttivo || altAttivo) &&
+                                    testoPulito.length ==
+                                        terminalInput.text.length + 1 &&
+                                    testoPulito.startsWith(
+                                        terminalInput.text
+                                    )
+                                ) {
+                                    inviaTastoModificato(
+                                        testoPulito.last()
+                                    )
+                                } else {
+                                    val posizione =
+                                        nuovoValore.selection.end
+                                            .coerceAtMost(
+                                                testoPulito.length
+                                            )
+
                                     terminalInput =
-                                        nuovoValore
-                                            .replace("\n", "")
-                                            .replace("\r", "")
-                                },
-                                modifier = Modifier
+                                        nuovoValore.copy(
+                                            text = testoPulito,
+                                            selection =
+                                                TextRange(posizione)
+                                        )
+                                }
+                            },
+                            modifier = Modifier
                                     .weight(1f)
                                     .alignByBaseline()
                                     .focusRequester(terminalFocusRequester),
@@ -2152,7 +2286,14 @@ val filePickerLauncher =
                                 ),
                                 cursorBrush =
                                     androidx.compose.ui.graphics.SolidColor(
-                                        Color(0xFF66BB6A)
+                                        if (
+                                            terminalInput.text.isEmpty() &&
+                                            promptCorrente.isEmpty()
+                                        ) {
+                                            Color.Transparent
+                                        } else {
+                                            Color(0xFF66BB6A)
+                                        }
                                     )
                             )
                         }
@@ -2170,6 +2311,183 @@ val filePickerLauncher =
         }
 
         }
+
+        if (connected && !mostraFile) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    val tasti =
+                        listOf(
+                            "CTRL", "ALT", "TAB",
+                            "~", "/", "|", "-",
+                            "↑", "↓", "←", "→"
+                        )
+
+                    tasti.forEach { tasto ->
+                        val attivo =
+                            (tasto == "CTRL" && ctrlAttivo) ||
+                                (tasto == "ALT" && altAttivo)
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    when (tasto) {
+                                        "CTRL" -> {
+                                            ctrlAttivo = !ctrlAttivo
+                                            terminalFocusRequester.requestFocus()
+                                            keyboardController?.show()
+                                        }
+
+                                        "ALT" -> {
+                                            altAttivo = !altAttivo
+                                            terminalFocusRequester.requestFocus()
+                                            keyboardController?.show()
+                                        }
+
+                                        "TAB" -> {
+                                            inviaRawTerminale(
+                                                byteArrayOf(0x09),
+                                                inviaInputPrima = true
+                                            )
+                                        }
+
+                                        "↑" -> {
+                                            inviaRawTerminale(
+                                                byteArrayOf(
+                                                    0x1B, 0x5B, 0x41
+                                                ),
+                                                inviaInputPrima = true
+                                            )
+                                        }
+
+                                        "↓" -> {
+                                            inviaRawTerminale(
+                                                byteArrayOf(
+                                                    0x1B, 0x5B, 0x42
+                                                ),
+                                                inviaInputPrima = true
+                                            )
+                                        }
+
+                                        "→" -> {
+                                            if (
+                                                terminalInput.text
+                                                    .isNotEmpty()
+                                            ) {
+                                                val posizione =
+                                                    terminalInput.selection.max
+                                                        .coerceAtMost(
+                                                            terminalInput.text.length
+                                                        )
+
+                                                terminalInput =
+                                                    terminalInput.copy(
+                                                        selection =
+                                                            TextRange(
+                                                                (posizione + 1)
+                                                                    .coerceAtMost(
+                                                                        terminalInput.text.length
+                                                                    )
+                                                            )
+                                                    )
+                                            } else {
+                                                inviaRawTerminale(
+                                                    byteArrayOf(
+                                                        0x1B, 0x5B, 0x43
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        "←" -> {
+                                            if (
+                                                terminalInput.text
+                                                    .isNotEmpty()
+                                            ) {
+                                                val posizione =
+                                                    terminalInput.selection.min
+
+                                                terminalInput =
+                                                    terminalInput.copy(
+                                                        selection =
+                                                            TextRange(
+                                                                (posizione - 1)
+                                                                    .coerceAtLeast(0)
+                                                            )
+                                                    )
+                                            } else {
+                                                inviaRawTerminale(
+                                                    byteArrayOf(
+                                                        0x1B, 0x5B, 0x44
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        else -> {
+                                            val inizio =
+                                                terminalInput.selection.min
+                                            val fine =
+                                                terminalInput.selection.max
+
+                                            val nuovoTesto =
+                                                terminalInput.text
+                                                    .replaceRange(
+                                                        inizio,
+                                                        fine,
+                                                        tasto
+                                                    )
+
+                                            val nuovaPosizione =
+                                                inizio + tasto.length
+
+                                            terminalInput =
+                                                terminalInput.copy(
+                                                    text = nuovoTesto,
+                                                    selection =
+                                                        TextRange(
+                                                            nuovaPosizione
+                                                        )
+                                                )
+
+                                            terminalFocusRequester.requestFocus()
+                                            keyboardController?.show()
+                                        }
+                                    }
+                                },
+                            contentAlignment =
+                                androidx.compose.ui.Alignment.Center
+                        ) {
+                            Text(
+                                text = tasto,
+                                color =
+                                    if (attivo) {
+                                        Color(0xFF66BB6A)
+                                    } else {
+                                        Color(0xFFE6EDF3)
+                                    },
+                                fontFamily = FontFamily.Monospace,
+                                fontSize =
+                                    if (tasto.length > 1) 10.sp
+                                    else 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
 
         if (!fullscreenTerminale && mostraFile) {
             Card(

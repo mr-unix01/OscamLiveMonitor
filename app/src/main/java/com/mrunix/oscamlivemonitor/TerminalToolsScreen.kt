@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,10 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.ImeAction
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -57,6 +60,8 @@ fun TerminalToolsScreen(
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val terminalFocusRequester = remember { FocusRequester() }
 
     val landscape =
         configuration.orientation ==
@@ -1425,15 +1430,6 @@ val filePickerLauncher =
         mutableStateOf("")
     }
 
-    var terminalFieldValue by remember {
-        mutableStateOf(
-            TextFieldValue(
-                text = "",
-                selection = TextRange(0)
-            )
-        )
-    }
-
     var readJob by remember {
         mutableStateOf<Job?>(null)
     }
@@ -1475,6 +1471,48 @@ val filePickerLauncher =
         client.disconnect()
     }
 
+    fun inviaComandoTerminale() {
+        val command = terminalInput
+        terminalInput = ""
+
+        if (command.trim() == "clear") {
+            val ultimoPrompt =
+                terminalOutput
+                    .lines()
+                    .lastOrNull { riga ->
+                        val t = riga.trim()
+                        t.endsWith("#") ||
+                            t.endsWith("$") ||
+                            t.endsWith(">")
+                    }
+                    ?.trimEnd()
+                    .orEmpty()
+
+            terminalOutput =
+                if (ultimoPrompt.isNotBlank()) {
+                    "$ultimoPrompt "
+                } else {
+                    ""
+                }
+
+            return
+        }
+
+        scope.launch {
+            val result = client.send(command)
+
+            if (result.isFailure) {
+                status =
+                    "Errore invio: " +
+                        (
+                            result.exceptionOrNull()
+                                ?.message
+                                ?: "errore"
+                        )
+            }
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             client.disconnect()
@@ -1483,21 +1521,16 @@ val filePickerLauncher =
         }
     }
 
-    LaunchedEffect(
-        terminalOutput,
-        terminalInput
-    ) {
-        val testoCompleto =
-            terminalOutput + terminalInput
+    LaunchedEffect(connected, mostraFile) {
+        if (connected && !mostraFile) {
+            androidx.compose.runtime.withFrameNanos { }
+            delay(150)
+            terminalFocusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
-        terminalFieldValue =
-            TextFieldValue(
-                text = testoCompleto,
-                selection = TextRange(testoCompleto.length)
-            )
-
-        androidx.compose.runtime.withFrameNanos { }
-
+    LaunchedEffect(terminalScroll.maxValue) {
         terminalScroll.scrollTo(
             terminalScroll.maxValue
         )
@@ -1822,12 +1855,15 @@ val filePickerLauncher =
                                                 Dispatchers.Main
                                             ) {
                                                 val chunkPulito =
-                                                    chunk.replace(
-                                                        Regex(
-                                                            "\\u001B\\[[;?0-9]*[ -/]*[@-~]"
-                                                        ),
-                                                        ""
-                                                    )
+                                                    chunk
+                                                        .replace(
+                                                            Regex(
+                                                                "\\u001B\\[[;?0-9]*[ -/]*[@-~]"
+                                                            ),
+                                                            ""
+                                                        )
+                                                        .replace("\r\n", "\n")
+                                                        .replace("\r", "")
 
                                                 terminalOutput += chunkPulito
 
@@ -1996,115 +2032,132 @@ val filePickerLauncher =
             color = Color(0xFF0D1117)
         ) {
             if (connected) {
-                androidx.compose.foundation.text.BasicTextField(
-                    value = terminalFieldValue,
-                    onValueChange = { nuovoValore ->
+                val ultimaRiga =
+                    terminalOutput
+                        .substringAfterLast("\n")
+                        .removeSuffix("\r")
 
-                        if (!nuovoValore.text.startsWith(terminalOutput)) {
-                            return@BasicTextField
+                val sembraPrompt =
+                    ultimaRiga
+                        .trimEnd()
+                        .let { riga ->
+                            riga.endsWith("#") ||
+                                riga.endsWith("$") ||
+                                riga.endsWith(">")
                         }
 
-                        val nuovoInput =
-                            nuovoValore.text
-                                .removePrefix(terminalOutput)
+                val promptCorrente =
+                    if (sembraPrompt) {
+                        ultimaRiga
+                    } else {
+                        ""
+                    }
 
-                        if (
-                            nuovoInput.contains("\n") ||
-                            nuovoInput.contains("\r")
-                        ) {
-                            val command =
-                                nuovoInput
-                                    .replace("\n", "")
-                                    .replace("\r", "")
+                val outputStorico =
+                    if (sembraPrompt) {
+                        val ultimoNewline =
+                            terminalOutput.lastIndexOf('\n')
 
-                            terminalInput = ""
-
-                            if (command.trim() == "clear") {
-                                val ultimoPrompt =
-                                    terminalOutput
-                                        .lines()
-                                        .lastOrNull { riga ->
-                                            val t = riga.trim()
-                                            t.endsWith("#") ||
-                                            t.endsWith("$") ||
-                                            t.endsWith(">")
-                                        }
-                                        ?.trimEnd()
-                                        .orEmpty()
-
-                                terminalOutput =
-                                    if (ultimoPrompt.isNotBlank()) {
-                                        "$ultimoPrompt "
-                                    } else {
-                                        ""
-                                    }
-
-                                terminalFieldValue =
-                                    TextFieldValue(
-                                        text = terminalOutput,
-                                        selection =
-                                            TextRange(
-                                                terminalOutput.length
-                                            )
-                                    )
-                            } else {
-                                scope.launch {
-                                    val result =
-                                        client.send(command)
-
-                                    if (result.isFailure) {
-                                        status =
-                                            "Errore invio: " +
-                                            (
-                                                result.exceptionOrNull()
-                                                    ?.message
-                                                    ?: "errore"
-                                            )
-                                    }
-                                }
-                            }
+                        if (ultimoNewline >= 0) {
+                            terminalOutput.substring(
+                                0,
+                                ultimoNewline + 1
+                            )
                         } else {
-                            terminalInput = nuovoInput
-
-                            val testoCompleto =
-                                terminalOutput + nuovoInput
-
-                            terminalFieldValue =
-                                TextFieldValue(
-                                    text = testoCompleto,
-                                    selection =
-                                        TextRange(
-                                            testoCompleto.length
-                                        )
-                                )
+                            ""
                         }
-                    },
+                    } else {
+                        terminalOutput
+                    }
+
+                BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(terminalScroll)
                         .padding(
                             horizontal = 8.dp,
                             vertical =
                                 if (fullscreenTerminale) 3.dp
                                 else 12.dp
-                        ),
-                    textStyle =
-                        androidx.compose.ui.text.TextStyle(
-                            color = Color(0xFFE6EDF3),
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 13.sp
-                        ),
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
-                        keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.None
-                    ),
-                    cursorBrush =
-                        androidx.compose.ui.graphics.SolidColor(
-                            Color(0xFF66BB6A)
                         )
-                )
+                ) {
+                    val terminalMaxHeight = maxHeight
+
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(
+                                    max = (terminalMaxHeight - 32.dp)
+                                        .coerceAtLeast(0.dp)
+                                )
+                                .verticalScroll(terminalScroll)
+                                .padding(bottom = 10.dp)
+                        ) {
+                            if (outputStorico.isNotEmpty()) {
+                                SelectionContainer {
+                                    Text(
+                                        text = outputStorico,
+                                        color = Color(0xFFE6EDF3),
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (promptCorrente.isNotEmpty()) {
+                                Text(
+                                    text = "$promptCorrente ",
+                                    modifier = Modifier.alignByBaseline(),
+                                    color = Color(0xFFE6EDF3),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 13.sp
+                                )
+                            }
+
+                            androidx.compose.foundation.text.BasicTextField(
+                                value = terminalInput,
+                                onValueChange = { nuovoValore ->
+                                    terminalInput =
+                                        nuovoValore
+                                            .replace("\n", "")
+                                            .replace("\r", "")
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .alignByBaseline()
+                                    .focusRequester(terminalFocusRequester),
+                                singleLine = true,
+                                textStyle =
+                                    androidx.compose.ui.text.TextStyle(
+                                        color = Color(0xFFE6EDF3),
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 13.sp
+                                    ),
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.None,
+                                    autoCorrectEnabled = false,
+                                    keyboardType = KeyboardType.Uri,
+                                    imeAction = ImeAction.Send
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onSend = {
+                                        inviaComandoTerminale()
+                                    }
+                                ),
+                                cursorBrush =
+                                    androidx.compose.ui.graphics.SolidColor(
+                                        Color(0xFF66BB6A)
+                                    )
+                            )
+                        }
+                    }
+                }
             } else {
                 Text(
                     text = "Terminale pronto.",

@@ -1802,7 +1802,7 @@ val filePickerLauncher =
             Spacer(modifier = Modifier.height(10.dp))
         }
 
-        if (!fullscreenTerminale && !mostraFile) {
+        if (!fullscreenTerminale && !mostraFile && !connected) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
@@ -2142,19 +2142,48 @@ val filePickerLauncher =
                                 androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
-                } else {
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            disconnectTerminal()
-                        }
-                    ) {
-                        Text("Disconnetti")
-                    }
                 }
-
             }
         }
+        }
+
+        if (
+            connected &&
+            !mostraFile &&
+            !fullscreenTerminale
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(
+                    text = protocol.name,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color =
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                TextButton(
+                    onClick = {
+                        disconnectTerminal()
+                    },
+                    contentPadding = PaddingValues(
+                        horizontal = 8.dp,
+                        vertical = 0.dp
+                    )
+                ) {
+                    Text(
+                        "Disconnetti",
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
         }
 
         if (connected && !mostraFile) {
@@ -2213,39 +2242,6 @@ val filePickerLauncher =
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-            } else {
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    verticalAlignment =
-                        androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "●",
-                        color = Color(0xFF66BB6A),
-                        fontSize = 11.sp
-                    )
-
-                    Spacer(modifier = Modifier.width(7.dp))
-
-                    Text(
-                        text =
-                            "${protocol.name}  •  " +
-                            "${username}@" +
-                            serverName.ifBlank { defaultHost },
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
             }
 
         Surface(
@@ -2635,35 +2631,6 @@ val filePickerLauncher =
                         )
                         .padding(14.dp)
                 ) {
-                    if (fileConnected) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment =
-                                androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Folder,
-                                contentDescription = null,
-                                tint = Color(0xFFFFB300)
-                            )
-
-                            Spacer(modifier = Modifier.width(9.dp))
-
-                            Text(
-                                text = "File Manager",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            ToolsConnectionStatus(
-                                text = fileStatus
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-                    }
-
                     if (!fileConnected) {
 
                     Row(
@@ -2975,46 +2942,6 @@ val filePickerLauncher =
                             verticalAlignment =
                                 androidx.compose.ui.Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape =
-                                    androidx.compose.foundation.shape.RoundedCornerShape(
-                                        50
-                                    ),
-                                color = Color(0xFF66BB6A).copy(alpha = 0.10f),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    Color(0xFF66BB6A).copy(alpha = 0.32f)
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(
-                                        horizontal = 9.dp,
-                                        vertical = 5.dp
-                                    ),
-                                    verticalAlignment =
-                                        androidx.compose.ui.Alignment.CenterVertically
-                                ) {
-                                    Surface(
-                                        modifier = Modifier.size(7.dp),
-                                        shape =
-                                            androidx.compose.foundation.shape.CircleShape,
-                                        color = Color(0xFF66BB6A)
-                                    ) {}
-
-                                    Spacer(modifier = Modifier.width(6.dp))
-
-                                    Text(
-                                        text =
-                                            (if (fileSftp) "SFTP" else "FTP") +
-                                            " • ${fileHost.trim()}",
-                                        color = Color(0xFF66BB6A),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.weight(1f))
 
                             IconButton(
                                 enabled = filePath != "/",
@@ -3404,8 +3331,13 @@ val filePickerLauncher =
                             verticalAlignment =
                                 androidx.compose.ui.Alignment.CenterVertically
                         ) {
-                            ToolsConnectionStatus(
-                                text = fileStatus
+
+                            Text(
+                                text = if (fileSftp) "SFTP" else "FTP",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
                             Spacer(modifier = Modifier.weight(1f))

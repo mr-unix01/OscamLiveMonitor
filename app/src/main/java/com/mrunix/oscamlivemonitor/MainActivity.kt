@@ -197,6 +197,7 @@ fun Greeting(
     var nuovoUsernameServer by remember { mutableStateOf("") }
     var nuovaPasswordServer by remember { mutableStateOf("") }
     var mostraPasswordNuovo by remember { mutableStateOf(false) }
+    var testConnessioneNuovoInCorso by remember { mutableStateOf(false) }
     var mostraPasswordConnessione by remember { mutableStateOf(false) }
 
     var mostraServers by remember { mutableStateOf(true) }
@@ -953,6 +954,81 @@ fun Greeting(
                         },
                         singleLine = true
                     )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                        enabled = !testConnessioneNuovoInCorso,
+                        onClick = {
+                            val hostPulito = nuovoHostServer.trim()
+                            val portaPulita = nuovaPortaServer.trim()
+
+                            if (!permessoReteConcesso) {
+                                mostraSnackbarDialog(
+                                    "Concedi prima l'accesso alla rete locale"
+                                )
+                                return@OutlinedButton
+                            }
+
+                            if (
+                                hostPulito.isBlank() ||
+                                portaPulita.toIntOrNull() == null
+                            ) {
+                                mostraSnackbarDialog(
+                                    "Inserisci Host/IP e una porta valida"
+                                )
+                                return@OutlinedButton
+                            }
+
+                            testConnessioneNuovoInCorso = true
+
+                            coroutineScope.launch {
+                                val risultato =
+                                    withContext(Dispatchers.IO) {
+                                        api.scaricaStatusJson(
+                                            host = hostPulito,
+                                            porta = portaPulita,
+                                            username = nuovoUsernameServer,
+                                            password = nuovaPasswordServer
+                                        )
+                                    }
+
+                                testConnessioneNuovoInCorso = false
+
+                                if (
+                                    risultato.startsWith(
+                                        "ERRORE:",
+                                        ignoreCase = true
+                                    )
+                                ) {
+                                    mostraSnackbarDialog(
+                                        risultato
+                                            .substringAfter(":")
+                                            .trim()
+                                    )
+                                } else {
+                                    mostraSnackbarDialog(
+                                        "Connessione riuscita"
+                                    )
+                                }
+                            }
+                        }
+                    ) {
+                        if (testConnessioneNuovoInCorso) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text("Connessione...")
+                        } else {
+                            Text("Test connessione")
+                        }
+                    }
                 }
 
                     SnackbarHost(

@@ -105,7 +105,9 @@ fun Greeting(
 
     var password by remember {
         mutableStateOf(
-            preferences.getString("password", "") ?: ""
+            SecurePasswordCrypto.decrypt(
+                preferences.getString("password", "") ?: ""
+            )
         )
     }
 
@@ -541,14 +543,47 @@ fun Greeting(
     }
 
     LaunchedEffect(Unit) {
+        val jsonServerSalvati =
+            preferences.getString(
+                "server_salvati",
+                null
+            )
+
         if (
             serverSalvati.isNotEmpty() &&
-            preferences.getString("server_salvati", null) == null
+            (
+                jsonServerSalvati == null ||
+                serverSalvatiRichiedonoMigrazione(
+                    jsonServerSalvati
+                )
+            )
         ) {
             salvaServerSalvati(
                 preferences = preferences,
                 server = serverSalvati
             )
+        }
+
+        val passwordSalvata =
+            preferences.getString(
+                "password",
+                ""
+            ) ?: ""
+
+        if (
+            passwordSalvata.isNotEmpty() &&
+            !SecurePasswordCrypto.isEncrypted(
+                passwordSalvata
+            )
+        ) {
+            preferences.edit()
+                .putString(
+                    "password",
+                    SecurePasswordCrypto.encrypt(
+                        passwordSalvata
+                    )
+                )
+                .apply()
         }
 
         if (
@@ -972,7 +1007,12 @@ fun Greeting(
                                 .putString("host", nuovoServer.host)
                                 .putString("porta", nuovoServer.porta)
                                 .putString("username", nuovoServer.username)
-                                .putString("password", nuovoServer.password)
+                                .putString(
+                                    "password",
+                                    SecurePasswordCrypto.encrypt(
+                                        nuovoServer.password
+                                    )
+                                )
                                 .apply()
 
                             nuovoNomeServer = ""
@@ -1586,7 +1626,12 @@ fun Greeting(
                                     .putString("host", server.host)
                                     .putString("porta", server.porta)
                                     .putString("username", server.username)
-                                    .putString("password", server.password)
+                                    .putString(
+                                        "password",
+                                        SecurePasswordCrypto.encrypt(
+                                            server.password
+                                        )
+                                    )
                                     .apply()
 
                                 stato = ""
@@ -1645,7 +1690,10 @@ fun Greeting(
                             .putString("host", host.trim())
                             .putString("porta", porta.trim())
                             .putString("username", username)
-                            .putString("password", password)
+                            .putString(
+                                "password",
+                                SecurePasswordCrypto.encrypt(password)
+                            )
                             .apply()
 
                         stato = "Connessione..."
@@ -5355,7 +5403,9 @@ private fun caricaServerSalvati(
                         host = oggetto.optString("host", ""),
                         porta = oggetto.optString("porta", ""),
                         username = oggetto.optString("username", ""),
-                        password = oggetto.optString("password", "")
+                        password = SecurePasswordCrypto.decrypt(
+                            oggetto.optString("password", "")
+                        )
                     )
                 )
             }
@@ -5390,16 +5440,50 @@ private fun caricaServerSalvati(
                             ""
                         ) ?: "",
                     password =
-                        preferences.getString(
-                            "password",
-                            ""
-                        ) ?: ""
+                        SecurePasswordCrypto.decrypt(
+                            preferences.getString(
+                                "password",
+                                ""
+                            ) ?: ""
+                        )
                 )
             )
         }
     }
 
     return risultato
+}
+
+private fun serverSalvatiRichiedonoMigrazione(
+    json: String
+): Boolean {
+    if (json.isBlank()) {
+        return false
+    }
+
+    return runCatching {
+        val array = org.json.JSONArray(json)
+
+        for (indice in 0 until array.length()) {
+            val password =
+                array.getJSONObject(indice)
+                    .optString(
+                        "password",
+                        ""
+                    )
+
+            if (
+                password.isNotEmpty() &&
+                !SecurePasswordCrypto.isEncrypted(
+                    password
+                )
+            ) {
+                return@runCatching true
+            }
+        }
+
+        false
+    }.getOrDefault(false)
 }
 
 private fun salvaServerSalvati(
@@ -5415,7 +5499,12 @@ private fun salvaServerSalvati(
         oggetto.put("host", elemento.host)
         oggetto.put("porta", elemento.porta)
         oggetto.put("username", elemento.username)
-        oggetto.put("password", elemento.password)
+        oggetto.put(
+            "password",
+            SecurePasswordCrypto.encrypt(
+                elemento.password
+            )
+        )
 
         array.put(oggetto)
     }

@@ -1691,13 +1691,6 @@ fun Greeting(
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        Color(0xFFFFB300)
-                    ),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFFFB300)
-                    ),
                     enabled = host.isNotBlank(),
                     onClick = {
                         mostraStrumenti = true

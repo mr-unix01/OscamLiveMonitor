@@ -182,6 +182,8 @@ fun ToolsModeSelector(
 fun ToolsBinarySelector(
     leftTitle: String,
     rightTitle: String,
+    leftIcon: ImageVector,
+    rightIcon: ImageVector,
     leftSelected: Boolean,
     accent: Color,
     onLeft: () -> Unit,
@@ -193,9 +195,14 @@ fun ToolsBinarySelector(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         listOf(
-            Triple(leftTitle, leftSelected, onLeft),
-            Triple(rightTitle, !leftSelected, onRight)
-        ).forEach { (title, selected, action) ->
+            leftTitle to leftIcon,
+            rightTitle to rightIcon
+        ).forEachIndexed { index, (title, icon) ->
+            val selected =
+                if (index == 0) leftSelected else !leftSelected
+
+            val action =
+                if (index == 0) onLeft else onRight
             Card(
                 modifier = Modifier
                     .weight(1f)
@@ -216,10 +223,23 @@ fun ToolsBinarySelector(
                 ),
                 elevation = CardDefaults.cardElevation(0.dp)
             ) {
-                Box(
+                Row(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = if (selected)
+                            accent
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
                     Text(
                         text = title,
                         fontWeight = if (selected)

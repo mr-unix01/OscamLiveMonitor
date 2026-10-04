@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Terminal
@@ -22,7 +23,8 @@ import androidx.compose.ui.unit.sp
 fun ToolsHeader(
     serverName: String,
     serverHost: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onFullscreen: (() -> Unit)? = null
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -89,6 +91,21 @@ fun ToolsHeader(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
+            }
+
+            if (onFullscreen != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+
+                IconButton(
+                    onClick = onFullscreen,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Fullscreen,
+                        contentDescription = "Espandi terminale",
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
     }

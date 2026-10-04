@@ -18,6 +18,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -28,6 +34,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +58,23 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+@Composable
+private fun CompactIconButton(
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier.clickable(
+            enabled = enabled,
+            onClick = onClick
+        ),
+        contentAlignment = Alignment.Center,
+        content = content
+    )
+}
 
 @Composable
 fun TerminalToolsScreen(
@@ -1857,6 +1881,8 @@ val filePickerLauncher =
                     ToolsBinarySelector(
                         leftTitle = "SSH",
                         rightTitle = "Telnet",
+                        leftIcon = Icons.Default.Key,
+                        rightIcon = Icons.Default.Terminal,
                         leftSelected =
                             protocol == TerminalProtocol.SSH,
                         accent = Color(0xFF66BB6A),
@@ -1916,6 +1942,13 @@ val filePickerLauncher =
                         label = {
                             Text("Host/IP")
                         },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Dns,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
                         singleLine = true,
                         enabled = !connected
                     )
@@ -1929,6 +1962,13 @@ val filePickerLauncher =
                         },
                         label = {
                             Text("Porta")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
                         },
                         singleLine = true,
                         enabled = !connected
@@ -1951,6 +1991,13 @@ val filePickerLauncher =
                         label = {
                             Text("Username")
                         },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
                         singleLine = true,
                         enabled = !connected
                     )
@@ -1964,6 +2011,13 @@ val filePickerLauncher =
                         },
                         label = {
                             Text("Password")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
                         },
                         visualTransformation =
                             if (showPassword) {
@@ -2114,6 +2168,14 @@ val filePickerLauncher =
                             }
                         }
                     ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Login,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
                             text =
                                 "Connetti ${protocol.name}",
@@ -2641,6 +2703,8 @@ val filePickerLauncher =
                         ToolsBinarySelector(
                             leftTitle = "SFTP",
                             rightTitle = "FTP",
+                            leftIcon = Icons.Default.Lock,
+                            rightIcon = Icons.Default.Folder,
                             leftSelected = fileSftp,
                             accent = Color(0xFFFFB300),
                             onLeft = {
@@ -2689,6 +2753,13 @@ val filePickerLauncher =
                             label = {
                                 Text("Host/IP")
                             },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Dns,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
                             singleLine = true
                         )
 
@@ -2701,6 +2772,13 @@ val filePickerLauncher =
                             },
                             label = {
                                 Text("Porta")
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Link,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             },
                             singleLine = true
                         )
@@ -2722,6 +2800,13 @@ val filePickerLauncher =
                             label = {
                                 Text("Username")
                             },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
                             singleLine = true
                         )
 
@@ -2734,6 +2819,13 @@ val filePickerLauncher =
                             },
                             label = {
                                 Text("Password")
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             },
                             visualTransformation =
                                 if (mostraFilePassword) {
@@ -2900,6 +2992,14 @@ val filePickerLauncher =
                             }
                         }
                     ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Login,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
                             text =
                                 if (fileSftp) {
@@ -2939,11 +3039,22 @@ val filePickerLauncher =
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                6.dp,
+                                androidx.compose.ui.Alignment.CenterHorizontally
+                            ),
                             verticalAlignment =
                                 androidx.compose.ui.Alignment.CenterVertically
                         ) {
 
-                            IconButton(
+                            CompactIconButton(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .border(
+                                        1.dp,
+                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
+                                    ),
                                 enabled = filePath != "/",
                                 onClick = {
                                     scope.launch {
@@ -3005,7 +3116,14 @@ val filePickerLauncher =
                                 )
                             }
 
-                            IconButton(
+                            CompactIconButton(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .border(
+                                        1.dp,
+                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
+                                    ),
                                 onClick = {
                                     createDirectoryValue = ""
                                     createDirectoryOpen = true
@@ -3025,7 +3143,10 @@ val filePickerLauncher =
                                 onClick = {
                                     filePickerLauncher.launch("*/*")
                                 },
-                                modifier = Modifier.height(40.dp),
+                                modifier = Modifier
+                                    .width(120.dp)
+                                    .height(34.dp),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(11.dp),
                                 contentPadding = PaddingValues(
                                     horizontal = 10.dp,
                                     vertical = 4.dp
@@ -3069,7 +3190,14 @@ val filePickerLauncher =
                                 }
                             }
 
-                            IconButton(
+                            CompactIconButton(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .border(
+                                        1.dp,
+                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
+                                    ),
                                 onClick = {
                                     scope.launch {
                                         val directory =

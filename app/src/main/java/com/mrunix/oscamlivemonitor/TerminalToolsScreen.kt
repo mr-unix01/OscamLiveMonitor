@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -1469,8 +1471,28 @@ val filePickerLauncher =
         return
     }
 
+    var terminaleEspanso by
+        androidx.compose.runtime.saveable.rememberSaveable {
+            mutableStateOf(false)
+        }
+
+    val terminaleCompatto =
+        connected &&
+            !mostraFile &&
+            landscape &&
+            !terminaleEspanso
+
     val fullscreenTerminale =
-        connected && landscape
+        connected && terminaleEspanso
+
+    val layoutTerminaleCompatto =
+        terminaleCompatto || fullscreenTerminale
+
+    BackHandler(
+        enabled = fullscreenTerminale
+    ) {
+        terminaleEspanso = false
+    }
 
     var status by remember {
         mutableStateOf("Non connesso")
@@ -1566,6 +1588,7 @@ val filePickerLauncher =
 
     fun disconnectTerminal() {
         connected = false
+        terminaleEspanso = false
         status = "Disconnesso"
 
         readJob?.cancel()
@@ -1763,16 +1786,16 @@ val filePickerLauncher =
             )
             .padding(
                 start =
-                    if (fullscreenTerminale) 2.dp else 14.dp,
+                    if (layoutTerminaleCompatto) 2.dp else 14.dp,
                 top =
-                    if (fullscreenTerminale) 2.dp else 14.dp,
+                    if (layoutTerminaleCompatto) 2.dp else 14.dp,
                 end =
-                    if (fullscreenTerminale) 2.dp else 14.dp,
+                    if (layoutTerminaleCompatto) 2.dp else 14.dp,
                 bottom =
                     if (connected && !mostraFile) {
                         0.dp
                     } else {
-                        if (fullscreenTerminale) 2.dp else 14.dp
+                        if (layoutTerminaleCompatto) 2.dp else 14.dp
                     }
             )
             .then(
@@ -1801,14 +1824,24 @@ val filePickerLauncher =
                 }
             )
     ) {
-        if (!fullscreenTerminale) {
+        if (!layoutTerminaleCompatto) {
             ToolsHeader(
                 serverName = serverName.ifBlank { defaultHost },
                 serverHost = defaultHost,
                 onBack = {
                     disconnectTerminal()
                     onClose()
-                }
+                },
+                onFullscreen =
+                    if (connected && !mostraFile) {
+                        {
+                            terminaleEspanso = true
+                            terminalFocusRequester.requestFocus()
+                            keyboardController?.show()
+                        }
+                    } else {
+                        null
+                    }
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -2212,7 +2245,8 @@ val filePickerLauncher =
         if (
             connected &&
             !mostraFile &&
-            !fullscreenTerminale
+            !fullscreenTerminale &&
+            !terminaleCompatto
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -2250,8 +2284,7 @@ val filePickerLauncher =
 
         if (connected && !mostraFile) {
 
-            if (fullscreenTerminale) {
-
+            if (terminaleCompatto) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment =
@@ -2265,7 +2298,8 @@ val filePickerLauncher =
                         }
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector =
+                                Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription =
                                 "Torna alla selezione box"
                         )
@@ -2276,8 +2310,8 @@ val filePickerLauncher =
                     Text(
                         text =
                             "${protocol.name}  •  " +
-                            "${username}@" +
-                            serverName.ifBlank { defaultHost },
+                                "${username}@" +
+                                serverName.ifBlank { defaultHost },
                         modifier = Modifier.weight(1f),
                         color =
                             MaterialTheme.colorScheme.onSurfaceVariant,
@@ -2285,6 +2319,20 @@ val filePickerLauncher =
                         fontSize = 12.sp,
                         maxLines = 1
                     )
+
+                    IconButton(
+                        modifier = Modifier.size(32.dp),
+                        onClick = {
+                            terminaleEspanso = true
+                            terminalFocusRequester.requestFocus()
+                            keyboardController?.show()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Fullscreen,
+                            contentDescription = "Espandi terminale"
+                        )
+                    }
 
                     TextButton(
                         onClick = {
@@ -2303,7 +2351,32 @@ val filePickerLauncher =
                 }
 
                 Spacer(modifier = Modifier.height(2.dp))
+            }
 
+            if (fullscreenTerminale) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(32.dp),
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    IconButton(
+                        modifier = Modifier.size(32.dp),
+                        onClick = {
+                            terminaleEspanso = false
+                            terminalFocusRequester.requestFocus()
+                            keyboardController?.show()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FullscreenExit,
+                            contentDescription = "Riduci terminale"
+                        )
+                    }
+                }
             }
 
         Surface(
@@ -2364,7 +2437,7 @@ val filePickerLauncher =
                         .padding(
                             horizontal = 8.dp,
                             vertical =
-                                if (fullscreenTerminale) 3.dp
+                                if (layoutTerminaleCompatto) 3.dp
                                 else 12.dp
                         )
                 ) {

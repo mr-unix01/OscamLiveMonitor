@@ -43,7 +43,7 @@ class TerminalClient {
         password: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
         connectMutex.withLock {
-            runCatching {
+            val result = runCatching {
                 disconnectInternal()
 
                 when (protocol) {
@@ -64,6 +64,12 @@ class TerminalClient {
 
                 connected = true
             }
+
+            if (result.isFailure) {
+                disconnectInternal()
+            }
+
+            result
         }
     }
 
@@ -90,10 +96,13 @@ class TerminalClient {
             "no"
         )
 
+        sshSession = session
         session.connect(10_000)
 
         val channel =
             session.openChannel("shell") as ChannelShell
+
+        sshChannel = channel
 
         channel.setPty(true)
         channel.setPtyType("xterm")
@@ -102,9 +111,6 @@ class TerminalClient {
         output = channel.outputStream
 
         channel.connect(10_000)
-
-        sshSession = session
-        sshChannel = channel
     }
 
     private suspend fun connectTelnet(

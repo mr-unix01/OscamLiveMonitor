@@ -6,6 +6,8 @@ import com.jcraft.jsch.Session
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.commons.net.telnet.TelnetClient
 import java.io.InputStream
 import java.io.IOException
@@ -17,6 +19,8 @@ enum class TerminalProtocol {
 }
 
 class TerminalClient {
+
+    private val connectMutex = Mutex()
 
     private var sshSession: Session? = null
     private var sshChannel: ChannelShell? = null
@@ -38,10 +42,11 @@ class TerminalClient {
         username: String,
         password: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
-            disconnectInternal()
+        connectMutex.withLock {
+            val result = runCatching {
+                disconnectInternal()
 
-            when (protocol) {
+                when (protocol) {
                 TerminalProtocol.SSH -> connectSsh(
                     host = host,
                     port = port,
@@ -57,7 +62,14 @@ class TerminalClient {
                 )
             }
 
-            connected = true
+                connected = true
+            }
+
+            if (result.isFailure) {
+                disconnectInternal()
+            }
+
+            result
         }
     }
 
@@ -84,10 +96,13 @@ class TerminalClient {
             "no"
         )
 
+        sshSession = session
         session.connect(10_000)
 
         val channel =
             session.openChannel("shell") as ChannelShell
+
+        sshChannel = channel
 
         channel.setPty(true)
         channel.setPtyType("xterm")
@@ -96,9 +111,6 @@ class TerminalClient {
         output = channel.outputStream
 
         channel.connect(10_000)
-
-        sshSession = session
-        sshChannel = channel
     }
 
     private suspend fun connectTelnet(

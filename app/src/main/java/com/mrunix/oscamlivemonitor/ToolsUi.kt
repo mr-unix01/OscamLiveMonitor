@@ -276,7 +276,8 @@ fun ToolsBinarySelector(
 
 @Composable
 fun ToolsConnectionStatus(
-    text: String
+    text: String,
+    modifier: Modifier = Modifier
 ) {
     val color = when {
         text.contains("Errore", ignoreCase = true) ->
@@ -297,6 +298,7 @@ fun ToolsConnectionStatus(
     }
 
     Surface(
+        modifier = modifier,
         shape = RoundedCornerShape(50),
         color = color.copy(alpha = 0.10f),
         border = BorderStroke(
@@ -323,7 +325,9 @@ fun ToolsConnectionStatus(
                 text = text,
                 color = color,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         }
     }

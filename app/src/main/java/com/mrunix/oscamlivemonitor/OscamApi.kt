@@ -461,6 +461,19 @@ class OscamApi {
             ?: "Sconosciuto"
     }
 
+    fun statusJsonOscamValido(json: String): Boolean {
+        return try {
+            val oscam =
+                JSONObject(json)
+                    .optJSONObject("oscam")
+                    ?: return false
+
+            oscam.optJSONObject("status") != null
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun estraiVersioneJson(json: String): String {
         return try {
             JSONObject(json)

@@ -198,6 +198,9 @@ fun Greeting(
     var nuovaPasswordServer by remember { mutableStateOf("") }
     var mostraPasswordNuovo by remember { mutableStateOf(false) }
     var testConnessioneNuovoInCorso by remember { mutableStateOf(false) }
+    var testConnessioneNuovoJob by remember {
+        mutableStateOf<kotlinx.coroutines.Job?>(null)
+    }
     var mostraPasswordConnessione by remember { mutableStateOf(false) }
 
     var mostraServers by remember { mutableStateOf(true) }
@@ -814,6 +817,9 @@ fun Greeting(
     if (mostraAggiungiServer) {
         AlertDialog(
             onDismissRequest = {
+                testConnessioneNuovoJob?.cancel()
+                testConnessioneNuovoJob = null
+                testConnessioneNuovoInCorso = false
                 mostraAggiungiServer = false
             },
             title = {
@@ -984,7 +990,8 @@ fun Greeting(
 
                             testConnessioneNuovoInCorso = true
 
-                            coroutineScope.launch {
+                            testConnessioneNuovoJob =
+                                coroutineScope.launch {
                                 val risultato =
                                     withContext(Dispatchers.IO) {
                                         api.scaricaStatusJson(
@@ -1007,6 +1014,12 @@ fun Greeting(
                                         risultato
                                             .substringAfter(":")
                                             .trim()
+                                    )
+                                } else if (
+                                    !api.statusJsonOscamValido(risultato)
+                                ) {
+                                    mostraSnackbarDialog(
+                                        "Risposta ricevuta, ma non è un server OSCam valido"
                                     )
                                 } else {
                                     mostraSnackbarDialog(
@@ -1096,6 +1109,9 @@ fun Greeting(
                             nuovaPortaServer = ""
                             nuovoUsernameServer = ""
                             nuovaPasswordServer = ""
+                            testConnessioneNuovoJob?.cancel()
+                            testConnessioneNuovoJob = null
+                            testConnessioneNuovoInCorso = false
                             mostraAggiungiServer = false
                             mostraSnackbar("Server ${nuovoServer.nome} aggiunto")
                         }
@@ -1108,6 +1124,9 @@ fun Greeting(
                 OutlinedButton(
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                     onClick = {
+                        testConnessioneNuovoJob?.cancel()
+                        testConnessioneNuovoJob = null
+                        testConnessioneNuovoInCorso = false
                         mostraAggiungiServer = false
                     }
                 ) {

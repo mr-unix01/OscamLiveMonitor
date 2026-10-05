@@ -107,6 +107,10 @@ fun TerminalToolsScreen(
         )
     }
 
+    val ansiEscapeRegex = remember {
+        Regex("\\u001B\\[[;?0-9]*[ -/]*[@-~]")
+    }
+
     val preferences = remember {
         context.getSharedPreferences(
             "oscam_terminal",
@@ -1498,6 +1502,10 @@ val filePickerLauncher =
         mutableStateOf("Non connesso")
     }
 
+    var connessioneTerminaleInCorso by remember {
+        mutableStateOf(false)
+    }
+
     var terminalOutput by remember {
         mutableStateOf("")
     }
@@ -1906,10 +1914,8 @@ val filePickerLauncher =
 
                 if (!connected) {
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment =
-                        androidx.compose.ui.Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     ToolsBinarySelector(
                         leftTitle = "SSH",
@@ -1949,13 +1955,14 @@ val filePickerLauncher =
                                 }
                             }
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     ToolsConnectionStatus(
-                        text = status
+                        text = status,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 
@@ -2092,6 +2099,7 @@ val filePickerLauncher =
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
+                        enabled = !connessioneTerminaleInCorso,
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF2E7D32),
@@ -2115,16 +2123,21 @@ val filePickerLauncher =
 
                             status = "Connessione..."
                             terminalOutput = ""
+                            connessioneTerminaleInCorso = true
 
                             scope.launch {
                                 val result =
-                                    client.connect(
-                                        protocol = protocol,
-                                        host = host.trim(),
-                                        port = parsedPort,
-                                        username = username,
-                                        password = password
-                                    )
+                                    try {
+                                        client.connect(
+                                            protocol = protocol,
+                                            host = host.trim(),
+                                            port = parsedPort,
+                                            username = username,
+                                            password = password
+                                        )
+                                    } finally {
+                                        connessioneTerminaleInCorso = false
+                                    }
 
                                 if (result.isSuccess) {
                                     val timestamp =
@@ -2152,9 +2165,7 @@ val filePickerLauncher =
                                                 val chunkPulito =
                                                     chunk
                                                         .replace(
-                                                            Regex(
-                                                                "\\u001B\\[[;?0-9]*[ -/]*[@-~]"
-                                                            ),
+                                                            ansiEscapeRegex,
                                                             ""
                                                         )
                                                         .replace("\r\n", "\n")
@@ -2177,6 +2188,7 @@ val filePickerLauncher =
                                             Dispatchers.Main
                                         ) {
                                             connected = false
+                                            terminaleEspanso = false
 
                                             if (
                                                 status.startsWith(
@@ -2190,6 +2202,7 @@ val filePickerLauncher =
                                     }
                                 } else {
                                     connected = false
+                                    terminaleEspanso = false
                                     status =
                                         "Errore: " +
                                         (

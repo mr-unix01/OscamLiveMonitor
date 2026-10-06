@@ -2102,8 +2102,8 @@ val filePickerLauncher =
                         enabled = !connessioneTerminaleInCorso,
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32),
-                            contentColor = Color.White
+                            containerColor = Color(0xFF1F5A2C),
+                            contentColor = Color(0xFFD5F2DA)
                         ),
                         onClick = {
                             val parsedPort =
@@ -2266,22 +2266,47 @@ val filePickerLauncher =
                 verticalAlignment =
                     androidx.compose.ui.Alignment.CenterVertically
             ) {
-                Text(
-                    text = protocol.name,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color =
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "●",
+                        color = Color(0xFF66BB6A),
+                        fontSize = 11.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    Text(
+                        text = "${protocol.name} connesso",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                TextButton(
+                OutlinedButton(
                     onClick = {
                         disconnectTerminal()
                     },
+                    modifier = Modifier.height(34.dp),
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(11.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant
+                    ),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor =
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
                     contentPadding = PaddingValues(
-                        horizontal = 8.dp,
+                        horizontal = 10.dp,
                         vertical = 0.dp
                     )
                 ) {
@@ -2321,19 +2346,27 @@ val filePickerLauncher =
                     Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
-                        text =
-                            "${protocol.name}  •  " +
-                                "${username}@" +
-                                serverName.ifBlank { defaultHost },
-                        modifier = Modifier.weight(1f),
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
-                        maxLines = 1
-                    )
+                       text = "●",
+                       color = Color(0xFF66BB6A),
+                       fontSize = 11.sp
+                   )
 
-                    IconButton(
+                   Spacer(modifier = Modifier.width(5.dp))
+
+                   Text(
+                       text =
+                           "${protocol.name} connesso  •  " +
+                               "${username}@" +
+                               serverName.ifBlank { defaultHost },
+                       modifier = Modifier.weight(1f),
+                       color =
+                           MaterialTheme.colorScheme.onSurfaceVariant,
+                       fontFamily = FontFamily.Monospace,
+                       fontSize = 12.sp,
+                       maxLines = 1
+                   )
+
+                   IconButton(
                         modifier = Modifier.size(32.dp),
                         onClick = {
                             terminaleEspanso = true
@@ -2347,12 +2380,24 @@ val filePickerLauncher =
                         )
                     }
 
-                    TextButton(
+                    OutlinedButton(
                         onClick = {
                             disconnectTerminal()
                         },
+                        modifier = Modifier.height(34.dp),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(11.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant
+                        ),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor =
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
                         contentPadding = PaddingValues(
-                            horizontal = 8.dp,
+                            horizontal = 10.dp,
                             vertical = 0.dp
                         )
                     ) {

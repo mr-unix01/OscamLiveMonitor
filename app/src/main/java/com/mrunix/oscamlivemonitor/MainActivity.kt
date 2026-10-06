@@ -3297,10 +3297,7 @@ fun VoceStatoCard(
                             ),
                             strokeWidth = 2.dp,
                             color =
-                                if (readerAbilitato)
-                                    Color(0xFFE53935)
-                                else
-                                    Color(0xFF43A047)
+                                MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
                         Icon(
@@ -3308,10 +3305,7 @@ fun VoceStatoCard(
                             contentDescription =
                                 "Abilita/disabilita reader",
                             tint =
-                                if (readerAbilitato)
-                                    Color(0xFFE53935)
-                                else
-                                    Color(0xFF43A047),
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(
                                 if (compatto) 18.dp else 20.dp
                             )
@@ -3559,20 +3553,14 @@ fun ClientInfoCard(
                                 ),
                                 strokeWidth = 2.dp,
                                 color =
-                                    if (userAbilitato)
-                                        Color(0xFFE53935)
-                                    else
-                                        Color(0xFF43A047)
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.PowerSettingsNew,
                                 contentDescription = "Abilita/disabilita user",
                                 tint =
-                                    if (userAbilitato)
-                                        Color(0xFFE53935)
-                                    else
-                                        Color(0xFF43A047),
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(
                                     if (compatto) 17.dp else 19.dp
                                 )

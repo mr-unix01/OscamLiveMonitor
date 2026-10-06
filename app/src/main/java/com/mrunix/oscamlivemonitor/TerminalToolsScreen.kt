@@ -2954,8 +2954,8 @@ val filePickerLauncher =
                             .height(52.dp),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFFB300),
-                            contentColor = Color(0xFF211B00)
+                            containerColor = Color(0xFF6A5416),
+                            contentColor = Color(0xFFFFE0A3)
                         ),
                         onClick = {
                             val parsedPort =

@@ -5355,32 +5355,18 @@ fun DashboardCard(
             if (compatto) 18.dp else 22.dp
         ),
         border = androidx.compose.foundation.BorderStroke(
-            width = if (aperta) 1.5.dp else 1.dp,
-            color = if (aperta) {
-                coloreAccento.copy(alpha = 0.85f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
-            }
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (temaScuroCard) {
-                if (aperta) {
-                    coloreAccento.copy(alpha = 0.10f)
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
-                }
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
             } else {
-                if (BuildConfig.TABLET_MODE) {
-                    MaterialTheme.colorScheme.surface
-                } else if (aperta) {
-                    coloreAccento.copy(alpha = 0.07f)
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
+                MaterialTheme.colorScheme.surface
             }
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (aperta) 2.dp else 0.dp
+            defaultElevation = 0.dp
         )
     ) {
         Column(
@@ -5399,7 +5385,9 @@ fun DashboardCard(
                 androidx.compose.material3.Surface(
                     shape =
                         androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    color = coloreAccento.copy(alpha = 0.14f)
+                    color = coloreAccento.copy(
+                        alpha = if (aperta) 0.18f else 0.10f
+                    )
                 ) {
                     Icon(
                         imageVector = icona,
@@ -5434,10 +5422,7 @@ fun DashboardCard(
                         else
                             "Mostra $titolo",
                     tint =
-                        if (aperta)
-                            coloreAccento
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -5455,10 +5440,7 @@ fun DashboardCard(
                 lineHeight = if (compatto) 29.sp else 33.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color =
-                    if (aperta)
-                        coloreAccento
-                    else
-                        MaterialTheme.colorScheme.onSurface
+                    MaterialTheme.colorScheme.onSurface
             )
         }
     }

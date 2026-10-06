@@ -2298,7 +2298,7 @@ val filePickerLauncher =
                         androidx.compose.foundation.shape.RoundedCornerShape(11.dp),
                     border = androidx.compose.foundation.BorderStroke(
                         1.dp,
-                        MaterialTheme.colorScheme.outlineVariant
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                     ),
                     colors =
                         ButtonDefaults.outlinedButtonColors(
@@ -2389,7 +2389,7 @@ val filePickerLauncher =
                             androidx.compose.foundation.shape.RoundedCornerShape(11.dp),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            MaterialTheme.colorScheme.outlineVariant
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
                         ),
                         colors =
                             ButtonDefaults.outlinedButtonColors(

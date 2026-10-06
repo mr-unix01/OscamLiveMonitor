@@ -3138,7 +3138,7 @@ val filePickerLauncher =
                                     .size(34.dp)
                                     .border(
                                         1.dp,
-                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                         androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
                                     ),
                                 enabled = filePath != "/",
@@ -3193,7 +3193,7 @@ val filePickerLauncher =
                                     contentDescription = "Cartella superiore",
                                     tint =
                                         if (filePath != "/") {
-                                            Color(0xFF66BB6A)
+                                            MaterialTheme.colorScheme.onSurfaceVariant
                                         } else {
                                             MaterialTheme.colorScheme
                                                 .onSurfaceVariant
@@ -3207,7 +3207,7 @@ val filePickerLauncher =
                                     .size(34.dp)
                                     .border(
                                         1.dp,
-                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                         androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
                                     ),
                                 onClick = {
@@ -3220,7 +3220,7 @@ val filePickerLauncher =
                                         Icons.Default.CreateNewFolder,
                                     contentDescription =
                                         "Nuova cartella",
-                                    tint = Color(0xFF66BB6A)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
@@ -3239,8 +3239,8 @@ val filePickerLauncher =
                                 ),
                                 colors =
                                     ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFFFFB300),
-                                        contentColor = Color(0xFF211B00)
+                                        containerColor = Color(0xFF6A5416),
+                                        contentColor = Color(0xFFFFE0A3)
                                     )
                             ) {
                                 if (uploadInCorso) {
@@ -3281,7 +3281,7 @@ val filePickerLauncher =
                                     .size(34.dp)
                                     .border(
                                         1.dp,
-                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                         androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
                                     ),
                                 onClick = {
@@ -3324,7 +3324,7 @@ val filePickerLauncher =
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
                                     contentDescription = "Aggiorna directory",
-                                    tint = Color(0xFF66BB6A)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -3341,7 +3341,7 @@ val filePickerLauncher =
                                 ),
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                Color(0xFFFFB300).copy(alpha = 0.22f)
+                                Color(0xFFB88A2A).copy(alpha = 0.28f)
                             )
                         ) {
                             Row(
@@ -3354,7 +3354,7 @@ val filePickerLauncher =
                             ) {
                                 Text(
                                     text = "›",
-                                    color = Color(0xFFFFB300),
+                                    color = Color(0xFFD0A23A),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 )
@@ -3483,7 +3483,7 @@ val filePickerLauncher =
                                         contentDescription = null,
                                         tint =
                                             if (entry.isDirectory) {
-                                                Color(0xFFFFB300)
+                                                MaterialTheme.colorScheme.onSurfaceVariant
                                             } else {
                                                 MaterialTheme.colorScheme
                                                     .onSurfaceVariant
@@ -3546,13 +3546,30 @@ val filePickerLauncher =
                                 androidx.compose.ui.Alignment.CenterVertically
                         ) {
 
-                            Text(
-                                text = if (fileSftp) "SFTP" else "FTP",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color =
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Row(
+                                verticalAlignment =
+                                    androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "●",
+                                    color = Color(0xFFD0A23A),
+                                    fontSize = 11.sp
+                                )
+
+                                Spacer(modifier = Modifier.width(5.dp))
+
+                                Text(
+                                    text =
+                                        if (fileSftp)
+                                            "SFTP connesso"
+                                        else
+                                            "FTP connesso",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
                             Spacer(modifier = Modifier.weight(1f))
 

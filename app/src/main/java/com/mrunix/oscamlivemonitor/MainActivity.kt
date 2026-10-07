@@ -3075,26 +3075,6 @@ fun ExpressiveOscamInfoCard(
                     }
                 }
 
-                androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(50),
-                    color = Color(0xFF4CAF50).copy(alpha = 0.13f),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        Color(0xFF4CAF50).copy(alpha = 0.45f)
-                    )
-                ) {
-                    Text(
-                        text = "● LIVE",
-                        color = Color(0xFF66BB6A),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(
-                            horizontal = 8.dp,
-                            vertical = 4.dp
-                        )
-                    )
-                }
             }
 
             if (cpu.isNotBlank() || ram.isNotBlank()) {

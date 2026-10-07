@@ -1920,7 +1920,7 @@ fun Greeting(
                         color = if (temaScuro) {
                             coloreStato.copy(alpha = 0.16f)
                         } else {
-                            Color.White
+                            MaterialTheme.colorScheme.surface
                         },
                         border = androidx.compose.foundation.BorderStroke(
                             if (temaScuro) 1.dp else 1.4.dp,
@@ -1966,13 +1966,13 @@ fun Greeting(
                             modifier = Modifier.weight(1f),
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                             color = if (temaScuro) {
-                                coloreStato.copy(alpha = 0.10f)
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
                             } else {
-                                Color.White
+                                MaterialTheme.colorScheme.surface
                             },
                             border = androidx.compose.foundation.BorderStroke(
-                                if (temaScuro) 1.dp else 1.2.dp,
-                                coloreStato.copy(alpha = if (temaScuro) 0.42f else 0.60f)
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
                             )
                         ) {
                             Column(
@@ -1980,12 +1980,12 @@ fun Greeting(
                                     horizontal = 11.dp,
                                     vertical = 7.dp
                                 ),
-                                horizontalAlignment = androidx.compose.ui.Alignment.End
+                                horizontalAlignment = androidx.compose.ui.Alignment.Start
                             ) {
                                 Text(
                                     text = nomeServerDashboard,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = coloreStato,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1
                                 )
 
@@ -3062,12 +3062,12 @@ fun ExpressiveOscamInfoCard(
                     androidx.compose.foundation.shape.RoundedCornerShape(15.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    Color(0xFFFF7043).copy(alpha = 0.70f)
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
                 ),
                 colors =
                     androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
                         contentColor = Color(0xFFFF7043),
-                        containerColor = Color(0xFFFF7043).copy(alpha = 0.07f)
+                        containerColor = Color.Transparent
                     ),
                 onClick = onRiavviaClick
             ) {

@@ -208,33 +208,6 @@ fun OscamServerCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    if (selected) {
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = selectionGreen.copy(alpha = 0.11f),
-                            border = BorderStroke(
-                                1.dp,
-                                selectionGreen.copy(alpha = 0.30f)
-                            )
-                        ) {
-                            Text(
-                                text = "SELEZIONATO",
-                                color = if (darkTheme) {
-                                    Color(0xFF81C784)
-                                } else {
-                                    Color(0xFF2E7D32)
-                                },
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(
-                                    horizontal = 6.dp,
-                                    vertical = 2.dp
-                                )
-                            )
-                        }
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))

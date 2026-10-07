@@ -30,13 +30,13 @@ fun DashboardQuickAction(
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(
             1.dp,
-            coloreAccento.copy(alpha = 0.55f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (temaScuro) {
-                coloreAccento.copy(alpha = 0.08f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
             } else {
-                coloreAccento.copy(alpha = 0.05f)
+                MaterialTheme.colorScheme.surface
             }
         ),
         elevation = CardDefaults.cardElevation(

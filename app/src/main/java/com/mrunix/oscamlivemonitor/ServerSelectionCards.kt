@@ -21,6 +21,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+enum class OscamServerConnectionState {
+    CHECKING,
+    ACTIVE,
+    REACHABLE_NO_OSCAM,
+    UNREACHABLE
+}
+
 /**
  * Componenti grafici per la selezione dei server OSCam.
  *
@@ -123,6 +130,7 @@ fun EmptyServerState(
 fun OscamServerCard(
     server: OscamServer,
     selected: Boolean,
+    connectionState: OscamServerConnectionState,
     onSelect: () -> Unit,
     onEdit: () -> Unit,
     onReorder: () -> Unit,
@@ -131,6 +139,17 @@ fun OscamServerCard(
 ) {
     val darkTheme = isSystemInDarkTheme()
     val selectionGreen = Color(0xFF4CAF50)
+
+    val (connectionText, connectionColor) = when (connectionState) {
+        OscamServerConnectionState.CHECKING ->
+            "Verifica..." to MaterialTheme.colorScheme.onSurfaceVariant
+        OscamServerConnectionState.ACTIVE ->
+            "OSCam attivo" to Color(0xFF4CAF50)
+        OscamServerConnectionState.REACHABLE_NO_OSCAM ->
+            "OSCam non risponde" to Color(0xFFFFB300)
+        OscamServerConnectionState.UNREACHABLE ->
+            "Non raggiungibile" to Color(0xFFEF5350)
+    }
     var menuExpanded by remember(server.nome, server.host, server.porta) {
         mutableStateOf(false)
     }
@@ -229,6 +248,23 @@ fun OscamServerCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "●",
+                        color = connectionColor,
+                        fontSize = 8.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = connectionText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = connectionColor,
+                        maxLines = 1
+                    )
                 }
             }
 
@@ -293,3 +329,4 @@ fun OscamServerCard(
         }
     }
 }
+

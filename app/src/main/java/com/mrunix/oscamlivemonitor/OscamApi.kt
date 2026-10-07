@@ -5,6 +5,8 @@ import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.security.MessageDigest
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
@@ -79,6 +81,26 @@ class OscamApi {
                 .build()
         }
         .build()
+
+    fun portaOscamRaggiungibile(
+        host: String,
+        porta: String,
+        timeoutMs: Int = 1200
+    ): Boolean {
+        val portaNumero = porta.toIntOrNull() ?: return false
+
+        return try {
+            Socket().use { socket ->
+                socket.connect(
+                    InetSocketAddress(host.trim(), portaNumero),
+                    timeoutMs
+                )
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 
     fun scaricaStatus(
         host: String,

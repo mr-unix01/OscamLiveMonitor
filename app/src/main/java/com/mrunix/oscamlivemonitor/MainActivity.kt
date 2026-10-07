@@ -178,6 +178,14 @@ fun Greeting(
         mutableStateOf(caricaServerSalvati(preferences))
     }
 
+    val statoServerSalvati = remember {
+        androidx.compose.runtime.mutableStateMapOf<String, OscamServerConnectionState>()
+    }
+
+    val statoServerPrecedente = remember {
+        mutableMapOf<String, OscamServerConnectionState>()
+    }
+
     var mostraAggiungiServer by remember { mutableStateOf(false) }
 
     var serverDaModificare by remember { mutableStateOf<OscamServer?>(null) }
@@ -595,6 +603,69 @@ fun Greeting(
             !permessoReteConcesso
         ) {
             mostraSpiegazionePermesso = true
+        }
+    }
+
+    LaunchedEffect(
+        mostraConnessione,
+        serverSalvati,
+        permessoReteConcesso
+    ) {
+        if (mostraConnessione && permessoReteConcesso) {
+            statoServerSalvati.clear()
+
+            serverSalvati.forEach { server ->
+                val chiave = server.host.trim() + ":" + server.porta.trim()
+                statoServerSalvati[chiave] = OscamServerConnectionState.CHECKING
+
+                launch {
+                    val nuovoStato = withContext(Dispatchers.IO) {
+                        if (!api.portaOscamRaggiungibile(server.host, server.porta)) {
+                            OscamServerConnectionState.UNREACHABLE
+                        } else {
+                            val risultato = api.scaricaStatusJson(
+                                host = server.host,
+                                porta = server.porta,
+                                username = server.username,
+                                password = server.password
+                            )
+
+                            if (
+                                !risultato.startsWith("ERRORE:", ignoreCase = true) &&
+                                api.statusJsonOscamValido(risultato)
+                            ) {
+                                OscamServerConnectionState.ACTIVE
+                            } else {
+                                OscamServerConnectionState.REACHABLE_NO_OSCAM
+                            }
+                        }
+                    }
+
+                    val statoPrecedente = statoServerPrecedente[chiave]
+                    statoServerSalvati[chiave] = nuovoStato
+
+                    if (
+                        statoPrecedente != null &&
+                        statoPrecedente != nuovoStato
+                    ) {
+                        val messaggio = when (nuovoStato) {
+                            OscamServerConnectionState.ACTIVE ->
+                                "${server.nome}: OSCam di nuovo attivo"
+                            OscamServerConnectionState.REACHABLE_NO_OSCAM ->
+                                "${server.nome}: raggiungibile, ma OSCam non risponde"
+                            OscamServerConnectionState.UNREACHABLE ->
+                                "${server.nome}: non raggiungibile"
+                            OscamServerConnectionState.CHECKING -> null
+                        }
+
+                        if (messaggio != null) {
+                            mostraSnackbar(messaggio)
+                        }
+                    }
+
+                    statoServerPrecedente[chiave] = nuovoStato
+                }
+            }
         }
     }
 
@@ -1710,6 +1781,8 @@ fun Greeting(
                         OscamServerCard(
                             server = server,
                             selected = serverSelezionato,
+                          connectionState = statoServerSalvati[server.host.trim() + ":" + server.porta.trim()]
+                              ?: OscamServerConnectionState.CHECKING,
                             onSelect = {
                                 host = server.host
                                 porta = server.porta

@@ -4548,13 +4548,21 @@ fun InformazioniScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Button(
+        OutlinedButton(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape =
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
             enabled = !controlloAggiornamentoInCorso,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
+            ),
+            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
             onClick = {
                 controlloAggiornamentoInCorso = true
                 risultatoAggiornamento = null

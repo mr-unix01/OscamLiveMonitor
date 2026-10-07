@@ -617,54 +617,73 @@ fun Greeting(
             serverSalvati.forEach { server ->
                 val chiave = server.host.trim() + ":" + server.porta.trim()
                 statoServerSalvati[chiave] = OscamServerConnectionState.CHECKING
+            }
 
-                launch {
-                    val nuovoStato = withContext(Dispatchers.IO) {
-                        if (!api.portaOscamRaggiungibile(server.host, server.porta)) {
-                            OscamServerConnectionState.UNREACHABLE
-                        } else {
-                            val risultato = api.scaricaStatusJson(
-                                host = server.host,
-                                porta = server.porta,
-                                username = server.username,
-                                password = server.password
-                            )
+            while (true) {
+                kotlinx.coroutines.coroutineScope {
+                    serverSalvati.forEach { server ->
+                        launch {
+                            val chiave =
+                                server.host.trim() + ":" + server.porta.trim()
+
+                            val nuovoStato = withContext(Dispatchers.IO) {
+                                if (
+                                    !api.portaOscamRaggiungibile(
+                                        server.host,
+                                        server.porta
+                                    )
+                                ) {
+                                    OscamServerConnectionState.UNREACHABLE
+                                } else {
+                                    val risultato = api.scaricaStatusJson(
+                                        host = server.host,
+                                        porta = server.porta,
+                                        username = server.username,
+                                        password = server.password
+                                    )
+
+                                    if (
+                                        !risultato.startsWith(
+                                            "ERRORE:",
+                                            ignoreCase = true
+                                        ) &&
+                                        api.statusJsonOscamValido(risultato)
+                                    ) {
+                                        OscamServerConnectionState.ACTIVE
+                                    } else {
+                                        OscamServerConnectionState.REACHABLE_NO_OSCAM
+                                    }
+                                }
+                            }
+
+                            val statoPrecedente = statoServerPrecedente[chiave]
+                            statoServerSalvati[chiave] = nuovoStato
 
                             if (
-                                !risultato.startsWith("ERRORE:", ignoreCase = true) &&
-                                api.statusJsonOscamValido(risultato)
+                                statoPrecedente != null &&
+                                statoPrecedente != nuovoStato
                             ) {
-                                OscamServerConnectionState.ACTIVE
-                            } else {
-                                OscamServerConnectionState.REACHABLE_NO_OSCAM
+                                val messaggio = when (nuovoStato) {
+                                    OscamServerConnectionState.ACTIVE ->
+                                        "${server.nome}: OSCam di nuovo attivo"
+                                    OscamServerConnectionState.REACHABLE_NO_OSCAM ->
+                                        "${server.nome}: raggiungibile, ma OSCam non risponde"
+                                    OscamServerConnectionState.UNREACHABLE ->
+                                        "${server.nome}: non raggiungibile"
+                                    OscamServerConnectionState.CHECKING -> null
+                                }
+
+                                if (messaggio != null) {
+                                    mostraSnackbar(messaggio)
+                                }
                             }
+
+                            statoServerPrecedente[chiave] = nuovoStato
                         }
                     }
-
-                    val statoPrecedente = statoServerPrecedente[chiave]
-                    statoServerSalvati[chiave] = nuovoStato
-
-                    if (
-                        statoPrecedente != null &&
-                        statoPrecedente != nuovoStato
-                    ) {
-                        val messaggio = when (nuovoStato) {
-                            OscamServerConnectionState.ACTIVE ->
-                                "${server.nome}: OSCam di nuovo attivo"
-                            OscamServerConnectionState.REACHABLE_NO_OSCAM ->
-                                "${server.nome}: raggiungibile, ma OSCam non risponde"
-                            OscamServerConnectionState.UNREACHABLE ->
-                                "${server.nome}: non raggiungibile"
-                            OscamServerConnectionState.CHECKING -> null
-                        }
-
-                        if (messaggio != null) {
-                            mostraSnackbar(messaggio)
-                        }
-                    }
-
-                    statoServerPrecedente[chiave] = nuovoStato
                 }
+
+                kotlinx.coroutines.delay(5000)
             }
         }
     }

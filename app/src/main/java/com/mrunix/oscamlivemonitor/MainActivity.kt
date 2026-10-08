@@ -178,6 +178,17 @@ fun Greeting(
         mutableStateOf(caricaServerSalvati(preferences))
     }
 
+    val statoServerSalvati = remember {
+        androidx.compose.runtime.mutableStateMapOf<String, OscamServerConnectionState>()
+    }
+
+    val statoServerPrecedente = remember {
+        mutableMapOf<String, OscamServerConnectionState>()
+    }
+
+    var refreshServerSalvati by remember { mutableIntStateOf(0) }
+    var refreshServerInCorso by remember { mutableStateOf(false) }
+
     var mostraAggiungiServer by remember { mutableStateOf(false) }
 
     var serverDaModificare by remember { mutableStateOf<OscamServer?>(null) }
@@ -595,6 +606,101 @@ fun Greeting(
             !permessoReteConcesso
         ) {
             mostraSpiegazionePermesso = true
+        }
+    }
+
+    LaunchedEffect(
+        mostraConnessione,
+        serverSalvati,
+        permessoReteConcesso,
+        refreshServerSalvati
+    ) {
+        if (mostraConnessione && permessoReteConcesso) {
+            statoServerSalvati.clear()
+
+            serverSalvati.forEach { server ->
+                val chiave = server.host.trim() + ":" + server.porta.trim()
+                statoServerSalvati[chiave] = OscamServerConnectionState.CHECKING
+            }
+
+            while (true) {
+                kotlinx.coroutines.coroutineScope {
+                    serverSalvati.forEach { server ->
+                        launch {
+                            val chiave =
+                                server.host.trim() + ":" + server.porta.trim()
+
+                            val nuovoStato = withContext(Dispatchers.IO) {
+                                if (
+                                    !api.portaOscamRaggiungibile(
+                                        server.host,
+                                        server.porta
+                                    )
+                                ) {
+                                    OscamServerConnectionState.UNREACHABLE
+                                } else {
+                                    val risultato = api.scaricaStatusJson(
+                                        host = server.host,
+                                        porta = server.porta,
+                                        username = server.username,
+                                        password = server.password
+                                    )
+
+                                    if (
+                                        !risultato.startsWith(
+                                            "ERRORE:",
+                                            ignoreCase = true
+                                        ) &&
+                                        api.statusJsonOscamValido(risultato)
+                                    ) {
+                                        OscamServerConnectionState.ACTIVE
+                                    } else {
+                                        OscamServerConnectionState.REACHABLE_NO_OSCAM
+                                    }
+                                }
+                            }
+
+                            val statoPrecedente = statoServerPrecedente[chiave]
+                            statoServerSalvati[chiave] = nuovoStato
+
+                            if (
+                                nuovoStato == OscamServerConnectionState.ACTIVE &&
+                                chiave == host.trim() + ":" + porta.trim() &&
+                                stato.startsWith("ERRORE:", ignoreCase = true)
+                            ) {
+                                stato = ""
+                            }
+
+                            if (
+                                statoPrecedente != null &&
+                                statoPrecedente != nuovoStato
+                            ) {
+                                val messaggio = when (nuovoStato) {
+                                    OscamServerConnectionState.ACTIVE ->
+                                        "${server.nome}: OSCam di nuovo attivo"
+                                    OscamServerConnectionState.REACHABLE_NO_OSCAM ->
+                                        "${server.nome}: raggiungibile, ma OSCam non risponde"
+                                    OscamServerConnectionState.UNREACHABLE ->
+                                        "${server.nome}: non raggiungibile"
+                                    OscamServerConnectionState.CHECKING -> null
+                                }
+
+                                if (messaggio != null && !mostraStrumenti) {
+                                    mostraSnackbar(messaggio)
+                                }
+                            }
+
+                            statoServerPrecedente[chiave] = nuovoStato
+                        }
+                    }
+                }
+
+                if (refreshServerInCorso) {
+                    refreshServerInCorso = false
+                }
+
+                kotlinx.coroutines.delay(5000)
+            }
         }
     }
 
@@ -1664,7 +1770,18 @@ fun Greeting(
     Box(
         modifier = modifier.fillMaxSize()
     ) {
-        Column(
+        val refreshHomeAttivo =
+            mostraConnessione &&
+                !mostraInformazioni &&
+                !mostraRepositoryGitHub &&
+                !mostraWebIf &&
+                !mostraLiveLog &&
+                !mostraStrumenti &&
+                permessoReteConcesso &&
+                serverSalvati.isNotEmpty()
+
+        val contenutoPrincipale: @Composable () -> Unit = {
+            Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
@@ -1710,6 +1827,8 @@ fun Greeting(
                         OscamServerCard(
                             server = server,
                             selected = serverSelezionato,
+                          connectionState = statoServerSalvati[server.host.trim() + ":" + server.porta.trim()]
+                              ?: OscamServerConnectionState.CHECKING,
                             onSelect = {
                                 host = server.host
                                 porta = server.porta
@@ -1920,7 +2039,7 @@ fun Greeting(
                         color = if (temaScuro) {
                             coloreStato.copy(alpha = 0.16f)
                         } else {
-                            Color.White
+                            MaterialTheme.colorScheme.surface
                         },
                         border = androidx.compose.foundation.BorderStroke(
                             if (temaScuro) 1.dp else 1.4.dp,
@@ -1966,13 +2085,13 @@ fun Greeting(
                             modifier = Modifier.weight(1f),
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                             color = if (temaScuro) {
-                                coloreStato.copy(alpha = 0.10f)
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
                             } else {
-                                Color.White
+                                MaterialTheme.colorScheme.surface
                             },
                             border = androidx.compose.foundation.BorderStroke(
-                                if (temaScuro) 1.dp else 1.2.dp,
-                                coloreStato.copy(alpha = if (temaScuro) 0.42f else 0.60f)
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
                             )
                         ) {
                             Column(
@@ -1980,12 +2099,12 @@ fun Greeting(
                                     horizontal = 11.dp,
                                     vertical = 7.dp
                                 ),
-                                horizontalAlignment = androidx.compose.ui.Alignment.End
+                                horizontalAlignment = androidx.compose.ui.Alignment.Start
                             ) {
                                 Text(
                                     text = nomeServerDashboard,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = coloreStato,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1
                                 )
 
@@ -2569,6 +2688,22 @@ fun Greeting(
                 }
             }
         }
+        }
+
+        if (refreshHomeAttivo) {
+            androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                isRefreshing = refreshServerInCorso,
+                onRefresh = {
+                    refreshServerInCorso = true
+                    refreshServerSalvati++
+                },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                contenutoPrincipale()
+            }
+        } else {
+            contenutoPrincipale()
+        }
 
         if (mostraInformazioni) {
             androidx.compose.material3.Surface(
@@ -3002,26 +3137,6 @@ fun ExpressiveOscamInfoCard(
                     }
                 }
 
-                androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(50),
-                    color = Color(0xFF4CAF50).copy(alpha = 0.13f),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        Color(0xFF4CAF50).copy(alpha = 0.45f)
-                    )
-                ) {
-                    Text(
-                        text = "● LIVE",
-                        color = Color(0xFF66BB6A),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(
-                            horizontal = 8.dp,
-                            vertical = 4.dp
-                        )
-                    )
-                }
             }
 
             if (cpu.isNotBlank() || ram.isNotBlank()) {
@@ -3062,12 +3177,12 @@ fun ExpressiveOscamInfoCard(
                     androidx.compose.foundation.shape.RoundedCornerShape(15.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    Color(0xFFFF7043).copy(alpha = 0.70f)
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
                 ),
                 colors =
                     androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
                         contentColor = Color(0xFFFF7043),
-                        containerColor = Color(0xFFFF7043).copy(alpha = 0.07f)
+                        containerColor = Color.Transparent
                     ),
                 onClick = onRiavviaClick
             ) {
@@ -3297,10 +3412,7 @@ fun VoceStatoCard(
                             ),
                             strokeWidth = 2.dp,
                             color =
-                                if (readerAbilitato)
-                                    Color(0xFFE53935)
-                                else
-                                    Color(0xFF43A047)
+                                MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
                         Icon(
@@ -3308,10 +3420,7 @@ fun VoceStatoCard(
                             contentDescription =
                                 "Abilita/disabilita reader",
                             tint =
-                                if (readerAbilitato)
-                                    Color(0xFFE53935)
-                                else
-                                    Color(0xFF43A047),
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(
                                 if (compatto) 18.dp else 20.dp
                             )
@@ -3559,20 +3668,14 @@ fun ClientInfoCard(
                                 ),
                                 strokeWidth = 2.dp,
                                 color =
-                                    if (userAbilitato)
-                                        Color(0xFFE53935)
-                                    else
-                                        Color(0xFF43A047)
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.PowerSettingsNew,
                                 contentDescription = "Abilita/disabilita user",
                                 tint =
-                                    if (userAbilitato)
-                                        Color(0xFFE53935)
-                                    else
-                                        Color(0xFF43A047),
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(
                                     if (compatto) 17.dp else 19.dp
                                 )
@@ -4560,13 +4663,21 @@ fun InformazioniScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Button(
+        OutlinedButton(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape =
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
             enabled = !controlloAggiornamentoInCorso,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
+            ),
+            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
             onClick = {
                 controlloAggiornamentoInCorso = true
                 risultatoAggiornamento = null
@@ -5367,32 +5478,18 @@ fun DashboardCard(
             if (compatto) 18.dp else 22.dp
         ),
         border = androidx.compose.foundation.BorderStroke(
-            width = if (aperta) 1.5.dp else 1.dp,
-            color = if (aperta) {
-                coloreAccento.copy(alpha = 0.85f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
-            }
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (temaScuroCard) {
-                if (aperta) {
-                    coloreAccento.copy(alpha = 0.10f)
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
-                }
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
             } else {
-                if (BuildConfig.TABLET_MODE) {
-                    MaterialTheme.colorScheme.surface
-                } else if (aperta) {
-                    coloreAccento.copy(alpha = 0.07f)
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
+                MaterialTheme.colorScheme.surface
             }
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (aperta) 2.dp else 0.dp
+            defaultElevation = 0.dp
         )
     ) {
         Column(
@@ -5411,7 +5508,9 @@ fun DashboardCard(
                 androidx.compose.material3.Surface(
                     shape =
                         androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    color = coloreAccento.copy(alpha = 0.14f)
+                    color = coloreAccento.copy(
+                        alpha = if (aperta) 0.18f else 0.10f
+                    )
                 ) {
                     Icon(
                         imageVector = icona,
@@ -5446,10 +5545,7 @@ fun DashboardCard(
                         else
                             "Mostra $titolo",
                     tint =
-                        if (aperta)
-                            coloreAccento
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -5467,10 +5563,7 @@ fun DashboardCard(
                 lineHeight = if (compatto) 29.sp else 33.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color =
-                    if (aperta)
-                        coloreAccento
-                    else
-                        MaterialTheme.colorScheme.onSurface
+                    MaterialTheme.colorScheme.onSurface
             )
         }
     }

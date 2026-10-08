@@ -3,7 +3,6 @@ package com.mrunix.oscamlivemonitor
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -21,6 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+enum class OscamServerConnectionState {
+    CHECKING,
+    ACTIVE,
+    REACHABLE_NO_OSCAM,
+    UNREACHABLE
+}
 
 /**
  * Componenti grafici per la selezione dei server OSCam.
@@ -124,6 +130,7 @@ fun EmptyServerState(
 fun OscamServerCard(
     server: OscamServer,
     selected: Boolean,
+    connectionState: OscamServerConnectionState,
     onSelect: () -> Unit,
     onEdit: () -> Unit,
     onReorder: () -> Unit,
@@ -132,52 +139,60 @@ fun OscamServerCard(
 ) {
     val darkTheme = isSystemInDarkTheme()
     val selectionGreen = Color(0xFF4CAF50)
-    val selectedContainer = if (darkTheme) {
-        Color(0xFF1D2A20)
-    } else {
-        Color(0xFFF1F8F2)
-    }
 
+    val (connectionText, connectionColor) = when (connectionState) {
+        OscamServerConnectionState.CHECKING ->
+            "Verifica..." to MaterialTheme.colorScheme.onSurfaceVariant
+        OscamServerConnectionState.ACTIVE ->
+            "OSCam attivo" to Color(0xFF4CAF50)
+        OscamServerConnectionState.REACHABLE_NO_OSCAM ->
+            "OSCam non risponde" to Color(0xFFFFB300)
+        OscamServerConnectionState.UNREACHABLE ->
+            "Non raggiungibile" to Color(0xFFEF5350)
+    }
     var menuExpanded by remember(server.nome, server.host, server.porta) {
         mutableStateOf(false)
     }
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
-            width = if (selected) 1.4.dp else 1.dp,
-            color = if (selected) {
-                selectionGreen
-            } else {
-                MaterialTheme.colorScheme.outlineVariant
-            }
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant
         ),
         colors = CardDefaults.cardColors(
-            containerColor = if (selected) {
-                selectedContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
-            }
+            containerColor =
+                MaterialTheme.colorScheme.surfaceVariant.copy(
+                    alpha = if (darkTheme) 0.32f else 0.55f
+                )
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (selected) 1.dp else 0.dp
+            defaultElevation = 0.dp
         ),
         onClick = onSelect
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 11.dp),
+                .padding(horizontal = 10.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                modifier = Modifier.size(46.dp),
-                shape = CircleShape,
+                modifier = Modifier.size(42.dp),
+                shape = RoundedCornerShape(13.dp),
                 color = if (selected) {
                     selectionGreen.copy(alpha = 0.14f)
                 } else {
-                    MaterialTheme.colorScheme.surface
+                    MaterialTheme.colorScheme.surface.copy(alpha = 0.70f)
+                },
+                border = if (selected) {
+                    BorderStroke(
+                        1.dp,
+                        selectionGreen.copy(alpha = 0.35f)
+                    )
+                } else {
+                    null
                 }
             ) {
                 Box(
@@ -191,7 +206,7 @@ fun OscamServerCard(
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(21.dp)
                     )
                 }
             }
@@ -209,40 +224,9 @@ fun OscamServerCard(
                         modifier = Modifier.weight(1f, fill = false),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (selected && darkTheme) {
-                            Color.White
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    if (selected) {
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = selectionGreen.copy(alpha = 0.11f),
-                            border = BorderStroke(
-                                1.dp,
-                                selectionGreen.copy(alpha = 0.30f)
-                            )
-                        ) {
-                            Text(
-                                text = "SELEZIONATO",
-                                color = if (darkTheme) {
-                                    Color(0xFF81C784)
-                                } else {
-                                    Color(0xFF2E7D32)
-                                },
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(
-                                    horizontal = 6.dp,
-                                    vertical = 2.dp
-                                )
-                            )
-                        }
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -253,11 +237,7 @@ fun OscamServerCard(
                     Icon(
                         imageVector = Icons.Default.Language,
                         contentDescription = null,
-                        tint = if (selected) {
-                            selectionGreen
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(14.dp)
                     )
 
@@ -266,11 +246,24 @@ fun OscamServerCard(
                     Text(
                         text = "${server.host}:${server.porta}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (selected && darkTheme) {
-                            Color(0xFFC9D8CC)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "●",
+                        color = connectionColor,
+                        fontSize = 8.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = connectionText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = connectionColor,
+                        maxLines = 1
                     )
                 }
             }
@@ -282,11 +275,7 @@ fun OscamServerCard(
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = "Azioni server",
-                        tint = if (selected && darkTheme) {
-                            Color(0xFFE4EAE5)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -340,3 +329,4 @@ fun OscamServerCard(
         }
     }
 }
+

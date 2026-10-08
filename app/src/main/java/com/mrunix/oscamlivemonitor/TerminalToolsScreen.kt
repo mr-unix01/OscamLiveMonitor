@@ -90,6 +90,7 @@ fun TerminalToolsScreen(
     val configuration = LocalConfiguration.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val terminalFocusRequester = remember { FocusRequester() }
+    val editorFocusRequester = remember { FocusRequester() }
 
     val landscape =
         configuration.orientation ==
@@ -305,9 +306,8 @@ fun TerminalToolsScreen(
         mutableStateOf<RemoteFile?>(null)
     }
 
-    var editorText by remember {
-        mutableStateOf("")
-    }
+    val editorState =
+        androidx.compose.foundation.text.input.rememberTextFieldState()
 
     var editorOriginalText by remember {
         mutableStateOf("")
@@ -572,7 +572,10 @@ val filePickerLauncher =
 
                                             editorOriginalText =
                                                 testo
-                                            editorText = testo
+                                            editorState.edit {
+                                                replace(0, length, testo)
+                                                selection = androidx.compose.ui.text.TextRange(0)
+                                            }
                                             editorEntry = entry
 
                                             fileStatus =
@@ -1311,6 +1314,10 @@ val filePickerLauncher =
     val currentEditorEntry = editorEntry
 
     if (currentEditorEntry != null) {
+        LaunchedEffect(currentEditorEntry) {
+            editorFocusRequester.requestFocus()
+        }
+
         BackHandler(
             enabled = !editorBusy
         ) {
@@ -1370,9 +1377,12 @@ val filePickerLauncher =
                 TextButton(
                     enabled =
                         !editorBusy &&
-                        editorText != editorOriginalText,
+                        editorState.text.toString() != editorOriginalText,
                     onClick = {
-                        editorText = editorOriginalText
+                        editorState.edit {
+                            replace(0, length, editorOriginalText)
+                            selection = androidx.compose.ui.text.TextRange(0)
+                        }
                     }
                 ) {
                     Text(
@@ -1392,7 +1402,7 @@ val filePickerLauncher =
                         scope.launch {
                             val input =
                                 java.io.ByteArrayInputStream(
-                                    editorText.toByteArray(
+                                    editorState.text.toString().toByteArray(
                                         Charsets.UTF_8
                                     )
                                 )
@@ -1414,7 +1424,7 @@ val filePickerLauncher =
                                 fileStatus =
                                     "Salvato: ${currentEditorEntry.name}"
 
-                                editorOriginalText = editorText
+                                editorOriginalText = editorState.text.toString()
                             } else {
                                 fileStatus =
                                     "Errore salvataggio: " +
@@ -1443,14 +1453,16 @@ val filePickerLauncher =
             )
 
             OutlinedTextField(
-                value = editorText,
-                onValueChange = {
-                    editorText = it
-                },
+                state = editorState,
                 enabled = !editorBusy,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .focusRequester(editorFocusRequester),
+                keyboardOptions =
+                    androidx.compose.foundation.text.KeyboardOptions(
+                        showKeyboardOnFocus = false
+                    ),
                 textStyle =
                     androidx.compose.ui.text.TextStyle(
                         fontFamily = FontFamily.Monospace,
@@ -2102,8 +2114,8 @@ val filePickerLauncher =
                         enabled = !connessioneTerminaleInCorso,
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32),
-                            contentColor = Color.White
+                            containerColor = Color(0xFF1F5A2C),
+                            contentColor = Color(0xFFD5F2DA)
                         ),
                         onClick = {
                             val parsedPort =
@@ -2266,22 +2278,47 @@ val filePickerLauncher =
                 verticalAlignment =
                     androidx.compose.ui.Alignment.CenterVertically
             ) {
-                Text(
-                    text = protocol.name,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color =
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "●",
+                        color = Color(0xFF66BB6A),
+                        fontSize = 11.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    Text(
+                        text = "${protocol.name} connesso",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                TextButton(
+                OutlinedButton(
                     onClick = {
                         disconnectTerminal()
                     },
+                    modifier = Modifier.height(34.dp),
+                    shape =
+                        androidx.compose.foundation.shape.RoundedCornerShape(11.dp),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                    ),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor =
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
                     contentPadding = PaddingValues(
-                        horizontal = 8.dp,
+                        horizontal = 10.dp,
                         vertical = 0.dp
                     )
                 ) {
@@ -2297,8 +2334,25 @@ val filePickerLauncher =
 
         if (connected && !mostraFile) {
 
-            if (terminaleCompatto) {
-                Row(
+            androidx.compose.animation.AnimatedVisibility(
+                visible = terminaleCompatto,
+                enter =
+                    androidx.compose.animation.fadeIn(
+                        androidx.compose.animation.core.tween(180)
+                    ) +
+                        androidx.compose.animation.expandVertically(
+                            androidx.compose.animation.core.tween(180)
+                        ),
+                exit =
+                    androidx.compose.animation.fadeOut(
+                        androidx.compose.animation.core.tween(180)
+                    ) +
+                        androidx.compose.animation.shrinkVertically(
+                            androidx.compose.animation.core.tween(180)
+                        )
+            ) {
+                Column {
+                    Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment =
                         androidx.compose.ui.Alignment.CenterVertically
@@ -2321,19 +2375,27 @@ val filePickerLauncher =
                     Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
-                        text =
-                            "${protocol.name}  •  " +
-                                "${username}@" +
-                                serverName.ifBlank { defaultHost },
-                        modifier = Modifier.weight(1f),
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
-                        maxLines = 1
-                    )
+                       text = "●",
+                       color = Color(0xFF66BB6A),
+                       fontSize = 11.sp
+                   )
 
-                    IconButton(
+                   Spacer(modifier = Modifier.width(5.dp))
+
+                   Text(
+                       text =
+                           "${protocol.name} connesso  •  " +
+                               "${username}@" +
+                               serverName.ifBlank { defaultHost },
+                       modifier = Modifier.weight(1f),
+                       color =
+                           MaterialTheme.colorScheme.onSurfaceVariant,
+                       fontFamily = FontFamily.Monospace,
+                       fontSize = 12.sp,
+                       maxLines = 1
+                   )
+
+                   IconButton(
                         modifier = Modifier.size(32.dp),
                         onClick = {
                             terminaleEspanso = true
@@ -2347,12 +2409,24 @@ val filePickerLauncher =
                         )
                     }
 
-                    TextButton(
+                    OutlinedButton(
                         onClick = {
                             disconnectTerminal()
                         },
+                        modifier = Modifier.height(34.dp),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(11.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                        ),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor =
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
                         contentPadding = PaddingValues(
-                            horizontal = 8.dp,
+                            horizontal = 10.dp,
                             vertical = 0.dp
                         )
                     ) {
@@ -2363,21 +2437,22 @@ val filePickerLauncher =
                     }
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
             }
 
             if (fullscreenTerminale) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(32.dp),
-                    verticalAlignment =
-                        androidx.compose.ui.Alignment.CenterVertically
+                androidx.compose.ui.window.Popup(
+                    alignment = androidx.compose.ui.Alignment.TopEnd,
+                    properties =
+                        androidx.compose.ui.window.PopupProperties(
+                            focusable = false
+                        )
                 ) {
-                    Spacer(modifier = Modifier.weight(1f))
-
                     IconButton(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier
+                            .padding(top = 4.dp, end = 4.dp)
+                            .size(36.dp),
                         onClick = {
                             terminaleEspanso = false
                             terminalFocusRequester.requestFocus()
@@ -2954,8 +3029,8 @@ val filePickerLauncher =
                             .height(52.dp),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFFB300),
-                            contentColor = Color(0xFF211B00)
+                            containerColor = Color(0xFF6A5416),
+                            contentColor = Color(0xFFFFE0A3)
                         ),
                         onClick = {
                             val parsedPort =
@@ -3138,7 +3213,7 @@ val filePickerLauncher =
                                     .size(34.dp)
                                     .border(
                                         1.dp,
-                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                         androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
                                     ),
                                 enabled = filePath != "/",
@@ -3193,7 +3268,7 @@ val filePickerLauncher =
                                     contentDescription = "Cartella superiore",
                                     tint =
                                         if (filePath != "/") {
-                                            Color(0xFF66BB6A)
+                                            MaterialTheme.colorScheme.onSurfaceVariant
                                         } else {
                                             MaterialTheme.colorScheme
                                                 .onSurfaceVariant
@@ -3207,7 +3282,7 @@ val filePickerLauncher =
                                     .size(34.dp)
                                     .border(
                                         1.dp,
-                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                         androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
                                     ),
                                 onClick = {
@@ -3220,7 +3295,7 @@ val filePickerLauncher =
                                         Icons.Default.CreateNewFolder,
                                     contentDescription =
                                         "Nuova cartella",
-                                    tint = Color(0xFF66BB6A)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
@@ -3239,8 +3314,8 @@ val filePickerLauncher =
                                 ),
                                 colors =
                                     ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFFFFB300),
-                                        contentColor = Color(0xFF211B00)
+                                        containerColor = Color(0xFF6A5416),
+                                        contentColor = Color(0xFFFFE0A3)
                                     )
                             ) {
                                 if (uploadInCorso) {
@@ -3281,7 +3356,7 @@ val filePickerLauncher =
                                     .size(34.dp)
                                     .border(
                                         1.dp,
-                                        Color(0xFF66BB6A).copy(alpha = 0.65f),
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                         androidx.compose.foundation.shape.RoundedCornerShape(11.dp)
                                     ),
                                 onClick = {
@@ -3324,7 +3399,7 @@ val filePickerLauncher =
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
                                     contentDescription = "Aggiorna directory",
-                                    tint = Color(0xFF66BB6A)
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -3341,7 +3416,7 @@ val filePickerLauncher =
                                 ),
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                Color(0xFFFFB300).copy(alpha = 0.22f)
+                                Color(0xFFB88A2A).copy(alpha = 0.28f)
                             )
                         ) {
                             Row(
@@ -3354,7 +3429,7 @@ val filePickerLauncher =
                             ) {
                                 Text(
                                     text = "›",
-                                    color = Color(0xFFFFB300),
+                                    color = Color(0xFFD0A23A),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 )
@@ -3483,7 +3558,7 @@ val filePickerLauncher =
                                         contentDescription = null,
                                         tint =
                                             if (entry.isDirectory) {
-                                                Color(0xFFFFB300)
+                                                MaterialTheme.colorScheme.onSurfaceVariant
                                             } else {
                                                 MaterialTheme.colorScheme
                                                     .onSurfaceVariant
@@ -3546,13 +3621,30 @@ val filePickerLauncher =
                                 androidx.compose.ui.Alignment.CenterVertically
                         ) {
 
-                            Text(
-                                text = if (fileSftp) "SFTP" else "FTP",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color =
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Row(
+                                verticalAlignment =
+                                    androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "●",
+                                    color = Color(0xFFD0A23A),
+                                    fontSize = 11.sp
+                                )
+
+                                Spacer(modifier = Modifier.width(5.dp))
+
+                                Text(
+                                    text =
+                                        if (fileSftp)
+                                            "SFTP connesso"
+                                        else
+                                            "FTP connesso",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
                             Spacer(modifier = Modifier.weight(1f))
 

@@ -186,6 +186,9 @@ fun Greeting(
         mutableMapOf<String, OscamServerConnectionState>()
     }
 
+    var refreshServerSalvati by remember { mutableIntStateOf(0) }
+    var refreshServerInCorso by remember { mutableStateOf(false) }
+
     var mostraAggiungiServer by remember { mutableStateOf(false) }
 
     var serverDaModificare by remember { mutableStateOf<OscamServer?>(null) }
@@ -609,7 +612,8 @@ fun Greeting(
     LaunchedEffect(
         mostraConnessione,
         serverSalvati,
-        permessoReteConcesso
+        permessoReteConcesso,
+        refreshServerSalvati
     ) {
         if (mostraConnessione && permessoReteConcesso) {
             statoServerSalvati.clear()
@@ -689,6 +693,10 @@ fun Greeting(
                             statoServerPrecedente[chiave] = nuovoStato
                         }
                     }
+                }
+
+                if (refreshServerInCorso) {
+                    refreshServerInCorso = false
                 }
 
                 kotlinx.coroutines.delay(5000)
@@ -1762,7 +1770,18 @@ fun Greeting(
     Box(
         modifier = modifier.fillMaxSize()
     ) {
-        Column(
+        val refreshHomeAttivo =
+            mostraConnessione &&
+                !mostraInformazioni &&
+                !mostraRepositoryGitHub &&
+                !mostraWebIf &&
+                !mostraLiveLog &&
+                !mostraStrumenti &&
+                permessoReteConcesso &&
+                serverSalvati.isNotEmpty()
+
+        val contenutoPrincipale: @Composable () -> Unit = {
+            Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
@@ -2668,6 +2687,22 @@ fun Greeting(
                     }
                 }
             }
+        }
+        }
+
+        if (refreshHomeAttivo) {
+            androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                isRefreshing = refreshServerInCorso,
+                onRefresh = {
+                    refreshServerInCorso = true
+                    refreshServerSalvati++
+                },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                contenutoPrincipale()
+            }
+        } else {
+            contenutoPrincipale()
         }
 
         if (mostraInformazioni) {

@@ -660,6 +660,14 @@ fun Greeting(
                             statoServerSalvati[chiave] = nuovoStato
 
                             if (
+                                nuovoStato == OscamServerConnectionState.ACTIVE &&
+                                chiave == host.trim() + ":" + porta.trim() &&
+                                stato.startsWith("ERRORE:", ignoreCase = true)
+                            ) {
+                                stato = ""
+                            }
+
+                            if (
                                 statoPrecedente != null &&
                                 statoPrecedente != nuovoStato
                             ) {
@@ -673,7 +681,7 @@ fun Greeting(
                                     OscamServerConnectionState.CHECKING -> null
                                 }
 
-                                if (messaggio != null) {
+                                if (messaggio != null && !mostraStrumenti) {
                                     mostraSnackbar(messaggio)
                                 }
                             }

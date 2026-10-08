@@ -2334,8 +2334,25 @@ val filePickerLauncher =
 
         if (connected && !mostraFile) {
 
-            if (terminaleCompatto) {
-                Row(
+            androidx.compose.animation.AnimatedVisibility(
+                visible = terminaleCompatto,
+                enter =
+                    androidx.compose.animation.fadeIn(
+                        androidx.compose.animation.core.tween(180)
+                    ) +
+                        androidx.compose.animation.expandVertically(
+                            androidx.compose.animation.core.tween(180)
+                        ),
+                exit =
+                    androidx.compose.animation.fadeOut(
+                        androidx.compose.animation.core.tween(180)
+                    ) +
+                        androidx.compose.animation.shrinkVertically(
+                            androidx.compose.animation.core.tween(180)
+                        )
+            ) {
+                Column {
+                    Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment =
                         androidx.compose.ui.Alignment.CenterVertically
@@ -2420,21 +2437,22 @@ val filePickerLauncher =
                     }
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
+                }
             }
 
             if (fullscreenTerminale) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(32.dp),
-                    verticalAlignment =
-                        androidx.compose.ui.Alignment.CenterVertically
+                androidx.compose.ui.window.Popup(
+                    alignment = androidx.compose.ui.Alignment.TopEnd,
+                    properties =
+                        androidx.compose.ui.window.PopupProperties(
+                            focusable = false
+                        )
                 ) {
-                    Spacer(modifier = Modifier.weight(1f))
-
                     IconButton(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier
+                            .padding(top = 4.dp, end = 4.dp)
+                            .size(36.dp),
                         onClick = {
                             terminaleEspanso = false
                             terminalFocusRequester.requestFocus()

@@ -90,6 +90,7 @@ fun TerminalToolsScreen(
     val configuration = LocalConfiguration.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val terminalFocusRequester = remember { FocusRequester() }
+    val editorFocusRequester = remember { FocusRequester() }
 
     val landscape =
         configuration.orientation ==
@@ -305,9 +306,8 @@ fun TerminalToolsScreen(
         mutableStateOf<RemoteFile?>(null)
     }
 
-    var editorText by remember {
-        mutableStateOf("")
-    }
+    val editorState =
+        androidx.compose.foundation.text.input.rememberTextFieldState()
 
     var editorOriginalText by remember {
         mutableStateOf("")
@@ -572,7 +572,10 @@ val filePickerLauncher =
 
                                             editorOriginalText =
                                                 testo
-                                            editorText = testo
+                                            editorState.edit {
+                                                replace(0, length, testo)
+                                                selection = androidx.compose.ui.text.TextRange(0)
+                                            }
                                             editorEntry = entry
 
                                             fileStatus =
@@ -1311,6 +1314,10 @@ val filePickerLauncher =
     val currentEditorEntry = editorEntry
 
     if (currentEditorEntry != null) {
+        LaunchedEffect(currentEditorEntry) {
+            editorFocusRequester.requestFocus()
+        }
+
         BackHandler(
             enabled = !editorBusy
         ) {
@@ -1370,9 +1377,12 @@ val filePickerLauncher =
                 TextButton(
                     enabled =
                         !editorBusy &&
-                        editorText != editorOriginalText,
+                        editorState.text.toString() != editorOriginalText,
                     onClick = {
-                        editorText = editorOriginalText
+                        editorState.edit {
+                            replace(0, length, editorOriginalText)
+                            selection = androidx.compose.ui.text.TextRange(0)
+                        }
                     }
                 ) {
                     Text(
@@ -1392,7 +1402,7 @@ val filePickerLauncher =
                         scope.launch {
                             val input =
                                 java.io.ByteArrayInputStream(
-                                    editorText.toByteArray(
+                                    editorState.text.toString().toByteArray(
                                         Charsets.UTF_8
                                     )
                                 )
@@ -1414,7 +1424,7 @@ val filePickerLauncher =
                                 fileStatus =
                                     "Salvato: ${currentEditorEntry.name}"
 
-                                editorOriginalText = editorText
+                                editorOriginalText = editorState.text.toString()
                             } else {
                                 fileStatus =
                                     "Errore salvataggio: " +
@@ -1443,14 +1453,16 @@ val filePickerLauncher =
             )
 
             OutlinedTextField(
-                value = editorText,
-                onValueChange = {
-                    editorText = it
-                },
+                state = editorState,
                 enabled = !editorBusy,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .focusRequester(editorFocusRequester),
+                keyboardOptions =
+                    androidx.compose.foundation.text.KeyboardOptions(
+                        showKeyboardOnFocus = false
+                    ),
                 textStyle =
                     androidx.compose.ui.text.TextStyle(
                         fontFamily = FontFamily.Monospace,

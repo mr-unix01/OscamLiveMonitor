@@ -113,6 +113,38 @@ fun Greeting(
     onEditorLandscapeImeChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
+
+    val lifecycleOwner =
+        context as? androidx.lifecycle.LifecycleOwner
+
+    var activityAttiva by remember {
+        mutableStateOf(
+            lifecycleOwner?.lifecycle?.currentState?.isAtLeast(
+                androidx.lifecycle.Lifecycle.State.STARTED
+            ) ?: true
+        )
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        if (lifecycleOwner == null) {
+            onDispose {}
+        } else {
+            val observer =
+                androidx.lifecycle.LifecycleEventObserver { _, _ ->
+                    activityAttiva =
+                        lifecycleOwner.lifecycle.currentState.isAtLeast(
+                            androidx.lifecycle.Lifecycle.State.STARTED
+                        )
+                }
+
+            lifecycleOwner.lifecycle.addObserver(observer)
+
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+            }
+        }
+    }
+
     val temaScuro = androidx.compose.foundation.isSystemInDarkTheme()
     val schermoCompatto =
         BuildConfig.TABLET_MODE ||
@@ -653,9 +685,14 @@ fun Greeting(
         mostraConnessione,
         serverSalvati,
         permessoReteConcesso,
-        refreshServerSalvati
+        refreshServerSalvati,
+        activityAttiva
     ) {
-        if (mostraConnessione && permessoReteConcesso) {
+        if (
+            mostraConnessione &&
+            permessoReteConcesso &&
+            activityAttiva
+        ) {
             statoServerSalvati.clear()
 
             serverSalvati.forEach { server ->

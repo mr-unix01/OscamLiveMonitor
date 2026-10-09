@@ -509,6 +509,9 @@ val filePickerLauncher =
             },
             text = {
                 Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement =
                         Arrangement.spacedBy(8.dp)
                 ) {

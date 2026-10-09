@@ -55,13 +55,6 @@ fun ServerSelectionHeader(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(2.dp))
-
-            Text(
-                text = "Scegli un server salvato oppure inserisci i dati manualmente.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
 
         Spacer(modifier = Modifier.width(10.dp))

@@ -1869,11 +1869,13 @@ fun Greeting(
                 permessoReteConcesso &&
                 serverSalvati.isNotEmpty()
 
+        val scrollHome = rememberScrollState()
+
         val contenutoPrincipale: @Composable () -> Unit = {
             Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollHome)
                 .imePadding()
                 .padding(
                     horizontal = if (schermoCompatto) 12.dp else 16.dp,

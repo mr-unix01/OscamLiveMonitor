@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 enum class OscamServerConnectionState {
     CHECKING,
     ACTIVE,
+    AUTH_ERROR,
     REACHABLE_NO_OSCAM,
     UNREACHABLE
 }
@@ -145,6 +146,8 @@ fun OscamServerCard(
             "Verifica..." to MaterialTheme.colorScheme.onSurfaceVariant
         OscamServerConnectionState.ACTIVE ->
             "OSCam attivo" to Color(0xFF4CAF50)
+        OscamServerConnectionState.AUTH_ERROR ->
+            "Errore autenticazione" to Color(0xFFFF9800)
         OscamServerConnectionState.REACHABLE_NO_OSCAM ->
             "OSCam non risponde" to Color(0xFFFFB300)
         OscamServerConnectionState.UNREACHABLE ->

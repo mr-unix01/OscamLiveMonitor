@@ -723,16 +723,26 @@ fun Greeting(
                                         password = server.password
                                     )
 
-                                    if (
+                                    when {
+                                        risultato.startsWith(
+                                            "ERRORE: HTTP 401",
+                                            ignoreCase = true
+                                        ) ||
+                                        risultato.startsWith(
+                                            "ERRORE: HTTP 403",
+                                            ignoreCase = true
+                                        ) ->
+                                            OscamServerConnectionState.AUTH_ERROR
+
                                         !risultato.startsWith(
                                             "ERRORE:",
                                             ignoreCase = true
                                         ) &&
-                                        api.statusJsonOscamValido(risultato)
-                                    ) {
-                                        OscamServerConnectionState.ACTIVE
-                                    } else {
-                                        OscamServerConnectionState.REACHABLE_NO_OSCAM
+                                        api.statusJsonOscamValido(risultato) ->
+                                            OscamServerConnectionState.ACTIVE
+
+                                        else ->
+                                            OscamServerConnectionState.REACHABLE_NO_OSCAM
                                     }
                                 }
                             }
@@ -755,6 +765,8 @@ fun Greeting(
                                 val messaggio = when (nuovoStato) {
                                     OscamServerConnectionState.ACTIVE ->
                                         "${server.nome}: OSCam di nuovo attivo"
+                                    OscamServerConnectionState.AUTH_ERROR ->
+                                        "${server.nome}: errore autenticazione OSCam"
                                     OscamServerConnectionState.REACHABLE_NO_OSCAM ->
                                         "${server.nome}: raggiungibile, ma OSCam non risponde"
                                     OscamServerConnectionState.UNREACHABLE ->

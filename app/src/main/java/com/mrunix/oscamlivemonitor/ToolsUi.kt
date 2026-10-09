@@ -24,7 +24,8 @@ fun ToolsHeader(
     serverName: String,
     serverHost: String,
     onBack: () -> Unit,
-    onFullscreen: (() -> Unit)? = null
+    onFullscreen: (() -> Unit)? = null,
+    compact: Boolean = false
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -33,7 +34,10 @@ fun ToolsHeader(
         border = null
     ) {
         Row(
-            modifier = Modifier.padding(9.dp),
+            modifier = Modifier.padding(
+                horizontal = if (compact) 4.dp else 9.dp,
+                vertical = if (compact) 2.dp else 9.dp
+            ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
@@ -42,7 +46,7 @@ fun ToolsHeader(
             ) {
                 IconButton(
                     onClick = onBack,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier.size(if (compact) 34.dp else 42.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -62,8 +66,8 @@ fun ToolsHeader(
                     contentDescription = null,
                     tint = Color(0xFF66BB6A),
                     modifier = Modifier
-                        .padding(8.dp)
-                        .size(20.dp)
+                        .padding(if (compact) 6.dp else 8.dp)
+                        .size(if (compact) 17.dp else 20.dp)
                 )
             }
 
@@ -74,7 +78,7 @@ fun ToolsHeader(
             ) {
                 Text(
                     text = "Strumenti",
-                    fontSize = 19.sp,
+                    fontSize = if (compact) 16.sp else 19.sp,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -87,7 +91,7 @@ fun ToolsHeader(
                     } else {
                         "$serverName  •  $serverHost"
                     },
-                    fontSize = 12.sp,
+                    fontSize = if (compact) 10.sp else 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
@@ -118,10 +122,11 @@ private fun ToolsModeButton(
     selected: Boolean,
     accent: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
 ) {
     Card(
-        modifier = modifier.height(54.dp),
+        modifier = modifier.height(if (compact) 40.dp else 54.dp),
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
@@ -151,7 +156,7 @@ private fun ToolsModeButton(
                 contentDescription = null,
                 tint = if (selected) accent
                 else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(if (compact) 17.dp else 20.dp)
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -169,7 +174,8 @@ private fun ToolsModeButton(
 fun ToolsModeSelector(
     fileSelected: Boolean,
     onTerminal: () -> Unit,
-    onFile: () -> Unit
+    onFile: () -> Unit,
+    compact: Boolean = false
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -181,7 +187,8 @@ fun ToolsModeSelector(
             selected = !fileSelected,
             accent = Color(0xFF66BB6A),
             onClick = onTerminal,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            compact = compact
         )
 
         ToolsModeButton(
@@ -190,7 +197,8 @@ fun ToolsModeSelector(
             selected = fileSelected,
             accent = Color(0xFFFFB300),
             onClick = onFile,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            compact = compact
         )
     }
 }

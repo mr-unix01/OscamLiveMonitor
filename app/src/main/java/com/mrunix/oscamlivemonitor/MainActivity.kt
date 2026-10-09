@@ -54,12 +54,51 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OscamLiveMonitorTheme {
+                var editorLandscapeIme by remember {
+                    mutableStateOf(false)
+                }
+
+                val window = this@MainActivity.window
+
+                DisposableEffect(editorLandscapeIme) {
+                    val controller =
+                        androidx.core.view.WindowCompat.getInsetsController(
+                            window,
+                            window.decorView
+                        )
+
+                    if (editorLandscapeIme) {
+                        controller.hide(
+                            androidx.core.view.WindowInsetsCompat.Type.statusBars()
+                        )
+                    } else {
+                        controller.show(
+                            androidx.core.view.WindowInsetsCompat.Type.statusBars()
+                        )
+                    }
+
+                    onDispose {
+                        controller.show(
+                            androidx.core.view.WindowInsetsCompat.Type.statusBars()
+                        )
+                    }
+                }
+
                 Scaffold(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets =
+                        if (editorLandscapeIme) {
+                            WindowInsets.navigationBars
+                        } else {
+                            ScaffoldDefaults.contentWindowInsets
+                        }
                 ) { innerPadding ->
                     Greeting(
                         name = "OSCam Live Monitor",
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding),
+                        onEditorLandscapeImeChange = {
+                            editorLandscapeIme = it
+                        }
                     )
                 }
             }
@@ -70,7 +109,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(
     name: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditorLandscapeImeChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val temaScuro = androidx.compose.foundation.isSystemInDarkTheme()
@@ -2784,7 +2824,9 @@ fun Greeting(
                         mostraStrumenti = false
                         mostraConnessione = true
                     },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    onEditorLandscapeImeChange =
+                        onEditorLandscapeImeChange
                 )
             }
         }

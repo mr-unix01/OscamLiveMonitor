@@ -84,7 +84,8 @@ fun TerminalToolsScreen(
     serverName: String,
     defaultHost: String,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditorLandscapeImeChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -1325,6 +1326,16 @@ val filePickerLauncher =
         val editorLandscapeConTastiera =
             landscape && editorImeVisibile
 
+        LaunchedEffect(editorLandscapeConTastiera) {
+            onEditorLandscapeImeChange(editorLandscapeConTastiera)
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                onEditorLandscapeImeChange(false)
+            }
+        }
+
         LaunchedEffect(currentEditorEntry) {
             editorFocusRequester.requestFocus()
         }
@@ -1479,9 +1490,138 @@ val filePickerLauncher =
                 }
             }
 
-            OutlinedTextField(
-                state = editorState,
-                enabled = !editorBusy,
+            if (editorLandscapeConTastiera) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .padding(horizontal = 2.dp),
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        modifier = Modifier.size(34.dp),
+                        enabled = !editorBusy,
+                        onClick = {
+                            editorEntry = null
+                        }
+                    ) {
+                        Icon(
+                            imageVector =
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Torna al File Manager",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = currentEditorEntry.name,
+                        modifier = Modifier.weight(1f),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+
+                    TextButton(
+                        enabled =
+                            !editorBusy &&
+                            editorState.text.toString() != editorOriginalText,
+                        contentPadding = PaddingValues(
+                            horizontal = 9.dp,
+                            vertical = 0.dp
+                        ),
+                        onClick = {
+                            editorState.edit {
+                                replace(
+                                    0,
+                                    length,
+                                    editorOriginalText
+                                )
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "Annulla modifiche",
+                            fontSize = 11.sp,
+                            maxLines = 1
+                        )
+                    }
+
+                    TextButton(
+                        enabled = !editorBusy,
+                        contentPadding = PaddingValues(
+                            horizontal = 10.dp,
+                            vertical = 0.dp
+                        ),
+                        onClick = {
+                            editorBusy = true
+                            fileStatus =
+                                "Salvataggio ${currentEditorEntry.name}..."
+
+                            scope.launch {
+                                val input =
+                                    java.io.ByteArrayInputStream(
+                                        editorState.text
+                                            .toString()
+                                            .toByteArray(Charsets.UTF_8)
+                                    )
+
+                                val risultato =
+                                    if (fileSftp) {
+                                        fileClient.uploadFile(
+                                            currentEditorEntry.name,
+                                            input
+                                        )
+                                    } else {
+                                        ftpClient.uploadFile(
+                                            currentEditorEntry.name,
+                                            input
+                                        )
+                                    }
+
+                                if (risultato.isSuccess) {
+                                    fileStatus =
+                                        "Salvato: ${currentEditorEntry.name}"
+                                    editorOriginalText =
+                                        editorState.text.toString()
+                                } else {
+                                    fileStatus =
+                                        "Errore salvataggio: " +
+                                            (
+                                                risultato.exceptionOrNull()
+                                                    ?.message
+                                                    ?: "errore"
+                                            )
+                                }
+
+                                editorBusy = false
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "Salva",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                HorizontalDivider()
+            }
+
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.foundation.text.selection.LocalTextSelectionColors provides
+                    androidx.compose.foundation.text.selection.TextSelectionColors(
+                        handleColor = Color.Transparent,
+                        backgroundColor =
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    )
+            ) {
+                OutlinedTextField(
+                    state = editorState,
+                    enabled = !editorBusy,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -1498,7 +1638,8 @@ val filePickerLauncher =
                         lineHeight =
                             if (landscape) 19.sp else 18.sp
                     )
-            )
+                )
+            }
 
             if (editorBusy) {
                 Spacer(

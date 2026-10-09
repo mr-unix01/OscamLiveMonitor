@@ -1,6 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -139,7 +140,7 @@ fun OscamServerCard(
     modifier: Modifier = Modifier
 ) {
     val darkTheme = isSystemInDarkTheme()
-    val selectionGreen = Color(0xFF4CAF50)
+    val selectionColor = Color(0xFF4CAF50)
 
     val (connectionText, connectionColor) = when (connectionState) {
         OscamServerConnectionState.CHECKING ->
@@ -178,21 +179,35 @@ fun OscamServerCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .height(IntrinsicSize.Min)
         ) {
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(selectionColor)
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 10.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             Surface(
                 modifier = Modifier.size(42.dp),
                 shape = RoundedCornerShape(13.dp),
                 color = if (selected) {
-                    selectionGreen.copy(alpha = 0.14f)
+                    selectionColor.copy(alpha = 0.14f)
                 } else {
                     MaterialTheme.colorScheme.surface.copy(alpha = 0.70f)
                 },
                 border = if (selected) {
                     BorderStroke(
                         1.dp,
-                        selectionGreen.copy(alpha = 0.35f)
+                        selectionColor.copy(alpha = 0.35f)
                     )
                 } else {
                     null
@@ -205,7 +220,7 @@ fun OscamServerCard(
                         imageVector = Icons.Default.Storage,
                         contentDescription = null,
                         tint = if (selected) {
-                            selectionGreen
+                            selectionColor
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
@@ -329,6 +344,7 @@ fun OscamServerCard(
                     )
                 }
             }
+        }
         }
     }
 }

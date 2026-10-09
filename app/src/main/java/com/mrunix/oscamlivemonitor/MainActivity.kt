@@ -54,12 +54,51 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OscamLiveMonitorTheme {
+                var editorLandscapeIme by remember {
+                    mutableStateOf(false)
+                }
+
+                val window = this@MainActivity.window
+
+                DisposableEffect(editorLandscapeIme) {
+                    val controller =
+                        androidx.core.view.WindowCompat.getInsetsController(
+                            window,
+                            window.decorView
+                        )
+
+                    if (editorLandscapeIme) {
+                        controller.hide(
+                            androidx.core.view.WindowInsetsCompat.Type.statusBars()
+                        )
+                    } else {
+                        controller.show(
+                            androidx.core.view.WindowInsetsCompat.Type.statusBars()
+                        )
+                    }
+
+                    onDispose {
+                        controller.show(
+                            androidx.core.view.WindowInsetsCompat.Type.statusBars()
+                        )
+                    }
+                }
+
                 Scaffold(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets =
+                        if (editorLandscapeIme) {
+                            WindowInsets.navigationBars
+                        } else {
+                            ScaffoldDefaults.contentWindowInsets
+                        }
                 ) { innerPadding ->
                     Greeting(
                         name = "OSCam Live Monitor",
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding),
+                        onEditorLandscapeImeChange = {
+                            editorLandscapeIme = it
+                        }
                     )
                 }
             }
@@ -70,9 +109,42 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(
     name: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditorLandscapeImeChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
+
+    val lifecycleOwner =
+        context as? androidx.lifecycle.LifecycleOwner
+
+    var activityAttiva by remember {
+        mutableStateOf(
+            lifecycleOwner?.lifecycle?.currentState?.isAtLeast(
+                androidx.lifecycle.Lifecycle.State.STARTED
+            ) ?: true
+        )
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        if (lifecycleOwner == null) {
+            onDispose {}
+        } else {
+            val observer =
+                androidx.lifecycle.LifecycleEventObserver { _, _ ->
+                    activityAttiva =
+                        lifecycleOwner.lifecycle.currentState.isAtLeast(
+                            androidx.lifecycle.Lifecycle.State.STARTED
+                        )
+                }
+
+            lifecycleOwner.lifecycle.addObserver(observer)
+
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+            }
+        }
+    }
+
     val temaScuro = androidx.compose.foundation.isSystemInDarkTheme()
     val schermoCompatto =
         BuildConfig.TABLET_MODE ||
@@ -613,9 +685,14 @@ fun Greeting(
         mostraConnessione,
         serverSalvati,
         permessoReteConcesso,
-        refreshServerSalvati
+        refreshServerSalvati,
+        activityAttiva
     ) {
-        if (mostraConnessione && permessoReteConcesso) {
+        if (
+            mostraConnessione &&
+            permessoReteConcesso &&
+            activityAttiva
+        ) {
             statoServerSalvati.clear()
 
             serverSalvati.forEach { server ->
@@ -646,16 +723,26 @@ fun Greeting(
                                         password = server.password
                                     )
 
-                                    if (
+                                    when {
+                                        risultato.startsWith(
+                                            "ERRORE: HTTP 401",
+                                            ignoreCase = true
+                                        ) ||
+                                        risultato.startsWith(
+                                            "ERRORE: HTTP 403",
+                                            ignoreCase = true
+                                        ) ->
+                                            OscamServerConnectionState.AUTH_ERROR
+
                                         !risultato.startsWith(
                                             "ERRORE:",
                                             ignoreCase = true
                                         ) &&
-                                        api.statusJsonOscamValido(risultato)
-                                    ) {
-                                        OscamServerConnectionState.ACTIVE
-                                    } else {
-                                        OscamServerConnectionState.REACHABLE_NO_OSCAM
+                                        api.statusJsonOscamValido(risultato) ->
+                                            OscamServerConnectionState.ACTIVE
+
+                                        else ->
+                                            OscamServerConnectionState.REACHABLE_NO_OSCAM
                                     }
                                 }
                             }
@@ -678,6 +765,8 @@ fun Greeting(
                                 val messaggio = when (nuovoStato) {
                                     OscamServerConnectionState.ACTIVE ->
                                         "${server.nome}: OSCam di nuovo attivo"
+                                    OscamServerConnectionState.AUTH_ERROR ->
+                                        "${server.nome}: errore autenticazione OSCam"
                                     OscamServerConnectionState.REACHABLE_NO_OSCAM ->
                                         "${server.nome}: raggiungibile, ma OSCam non risponde"
                                     OscamServerConnectionState.UNREACHABLE ->
@@ -1780,11 +1869,13 @@ fun Greeting(
                 permessoReteConcesso &&
                 serverSalvati.isNotEmpty()
 
+        val scrollHome = rememberScrollState()
+
         val contenutoPrincipale: @Composable () -> Unit = {
             Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollHome)
                 .imePadding()
                 .padding(
                     horizontal = if (schermoCompatto) 12.dp else 16.dp,
@@ -2784,7 +2875,9 @@ fun Greeting(
                         mostraStrumenti = false
                         mostraConnessione = true
                     },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    onEditorLandscapeImeChange =
+                        onEditorLandscapeImeChange
                 )
             }
         }

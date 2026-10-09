@@ -84,7 +84,8 @@ fun TerminalToolsScreen(
     serverName: String,
     defaultHost: String,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditorLandscapeImeChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -509,6 +510,9 @@ val filePickerLauncher =
             },
             text = {
                 Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement =
                         Arrangement.spacedBy(8.dp)
                 ) {
@@ -1314,6 +1318,24 @@ val filePickerLauncher =
     val currentEditorEntry = editorEntry
 
     if (currentEditorEntry != null) {
+        val editorImeVisibile =
+            WindowInsets.ime.getBottom(
+                androidx.compose.ui.platform.LocalDensity.current
+            ) > 0
+
+        val editorLandscapeConTastiera =
+            landscape && editorImeVisibile
+
+        LaunchedEffect(editorLandscapeConTastiera) {
+            onEditorLandscapeImeChange(editorLandscapeConTastiera)
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                onEditorLandscapeImeChange(false)
+            }
+        }
+
         LaunchedEffect(currentEditorEntry) {
             editorFocusRequester.requestFocus()
         }
@@ -1331,130 +1353,275 @@ val filePickerLauncher =
                 .padding(
                     horizontal =
                         if (landscape) 16.dp else 12.dp,
-                    vertical = 8.dp
+                    vertical =
+                        if (editorLandscapeConTastiera) 2.dp else 8.dp
                 )
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment =
-                    androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                IconButton(
-                    enabled = !editorBusy,
-                    onClick = {
-                        editorEntry = null
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Torna al File Manager"
+            androidx.compose.animation.AnimatedVisibility(
+                visible = !editorLandscapeConTastiera,
+                enter =
+                    androidx.compose.animation.fadeIn(
+                        androidx.compose.animation.core.tween(120)
+                    ),
+                exit =
+                    androidx.compose.animation.fadeOut(
+                        androidx.compose.animation.core.tween(120)
                     )
+            ) {
+                Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        enabled = !editorBusy,
+                        onClick = {
+                            editorEntry = null
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Torna al File Manager"
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = currentEditorEntry.name,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+
+                        Text(
+                            text =
+                                if (fileSftp) {
+                                    "SFTP • ${fileHost.trim()}"
+                                } else {
+                                    "FTP • ${fileHost.trim()}"
+                                },
+                            fontSize = 11.sp,
+                            color =
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    TextButton(
+                        enabled =
+                            !editorBusy &&
+                            editorState.text.toString() != editorOriginalText,
+                        onClick = {
+                            editorState.edit {
+                                replace(0, length, editorOriginalText)
+                                selection = androidx.compose.ui.text.TextRange(0)
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "Annulla modifiche",
+                            fontSize = 12.sp,
+                            maxLines = 1
+                        )
+                    }
+
+                    TextButton(
+                        enabled = !editorBusy,
+                        onClick = {
+                            editorBusy = true
+                            fileStatus =
+                                "Salvataggio ${currentEditorEntry.name}..."
+
+                            scope.launch {
+                                val input =
+                                    java.io.ByteArrayInputStream(
+                                        editorState.text.toString().toByteArray(
+                                            Charsets.UTF_8
+                                        )
+                                    )
+
+                                val risultato =
+                                    if (fileSftp) {
+                                        fileClient.uploadFile(
+                                            currentEditorEntry.name,
+                                            input
+                                        )
+                                    } else {
+                                        ftpClient.uploadFile(
+                                            currentEditorEntry.name,
+                                            input
+                                        )
+                                    }
+
+                                if (risultato.isSuccess) {
+                                    fileStatus =
+                                        "Salvato: ${currentEditorEntry.name}"
+
+                                    editorOriginalText = editorState.text.toString()
+                                } else {
+                                    fileStatus =
+                                        "Errore salvataggio: " +
+                                            (
+                                                risultato.exceptionOrNull()
+                                                    ?.message
+                                                    ?: "errore"
+                                            )
+                                }
+
+                                editorBusy = false
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "Salva",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
-                Column(
-                    modifier = Modifier.weight(1f)
+                HorizontalDivider()
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+
+                }
+            }
+
+            if (editorLandscapeConTastiera) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .padding(horizontal = 2.dp),
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
                 ) {
+                    IconButton(
+                        modifier = Modifier.size(34.dp),
+                        enabled = !editorBusy,
+                        onClick = {
+                            editorEntry = null
+                        }
+                    ) {
+                        Icon(
+                            imageVector =
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Torna al File Manager",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
                     Text(
                         text = currentEditorEntry.name,
-                        fontSize = 18.sp,
+                        modifier = Modifier.weight(1f),
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1
                     )
 
-                    Text(
-                        text =
-                            if (fileSftp) {
-                                "SFTP • ${fileHost.trim()}"
-                            } else {
-                                "FTP • ${fileHost.trim()}"
-                            },
-                        fontSize = 11.sp,
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                TextButton(
-                    enabled =
-                        !editorBusy &&
-                        editorState.text.toString() != editorOriginalText,
-                    onClick = {
-                        editorState.edit {
-                            replace(0, length, editorOriginalText)
-                            selection = androidx.compose.ui.text.TextRange(0)
-                        }
-                    }
-                ) {
-                    Text(
-                        text = "Annulla modifiche",
-                        fontSize = 12.sp,
-                        maxLines = 1
-                    )
-                }
-
-                TextButton(
-                    enabled = !editorBusy,
-                    onClick = {
-                        editorBusy = true
-                        fileStatus =
-                            "Salvataggio ${currentEditorEntry.name}..."
-
-                        scope.launch {
-                            val input =
-                                java.io.ByteArrayInputStream(
-                                    editorState.text.toString().toByteArray(
-                                        Charsets.UTF_8
-                                    )
+                    TextButton(
+                        enabled =
+                            !editorBusy &&
+                            editorState.text.toString() != editorOriginalText,
+                        contentPadding = PaddingValues(
+                            horizontal = 9.dp,
+                            vertical = 0.dp
+                        ),
+                        onClick = {
+                            editorState.edit {
+                                replace(
+                                    0,
+                                    length,
+                                    editorOriginalText
                                 )
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "Annulla modifiche",
+                            fontSize = 11.sp,
+                            maxLines = 1
+                        )
+                    }
 
-                            val risultato =
-                                if (fileSftp) {
-                                    fileClient.uploadFile(
-                                        currentEditorEntry.name,
-                                        input
+                    TextButton(
+                        enabled = !editorBusy,
+                        contentPadding = PaddingValues(
+                            horizontal = 10.dp,
+                            vertical = 0.dp
+                        ),
+                        onClick = {
+                            editorBusy = true
+                            fileStatus =
+                                "Salvataggio ${currentEditorEntry.name}..."
+
+                            scope.launch {
+                                val input =
+                                    java.io.ByteArrayInputStream(
+                                        editorState.text
+                                            .toString()
+                                            .toByteArray(Charsets.UTF_8)
                                     )
+
+                                val risultato =
+                                    if (fileSftp) {
+                                        fileClient.uploadFile(
+                                            currentEditorEntry.name,
+                                            input
+                                        )
+                                    } else {
+                                        ftpClient.uploadFile(
+                                            currentEditorEntry.name,
+                                            input
+                                        )
+                                    }
+
+                                if (risultato.isSuccess) {
+                                    fileStatus =
+                                        "Salvato: ${currentEditorEntry.name}"
+                                    editorOriginalText =
+                                        editorState.text.toString()
                                 } else {
-                                    ftpClient.uploadFile(
-                                        currentEditorEntry.name,
-                                        input
-                                    )
+                                    fileStatus =
+                                        "Errore salvataggio: " +
+                                            (
+                                                risultato.exceptionOrNull()
+                                                    ?.message
+                                                    ?: "errore"
+                                            )
                                 }
 
-                            if (risultato.isSuccess) {
-                                fileStatus =
-                                    "Salvato: ${currentEditorEntry.name}"
-
-                                editorOriginalText = editorState.text.toString()
-                            } else {
-                                fileStatus =
-                                    "Errore salvataggio: " +
-                                        (
-                                            risultato.exceptionOrNull()
-                                                ?.message
-                                                ?: "errore"
-                                        )
+                                editorBusy = false
                             }
-
-                            editorBusy = false
                         }
+                    ) {
+                        Text(
+                            text = "Salva",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                ) {
-                    Text(
-                        text = "Salva",
-                        fontWeight = FontWeight.Bold
-                    )
                 }
+
+                HorizontalDivider()
             }
 
-            HorizontalDivider()
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            OutlinedTextField(
-                state = editorState,
-                enabled = !editorBusy,
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.foundation.text.selection.LocalTextSelectionColors provides
+                    androidx.compose.foundation.text.selection.TextSelectionColors(
+                        handleColor = Color.Transparent,
+                        backgroundColor =
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    )
+            ) {
+                OutlinedTextField(
+                    state = editorState,
+                    enabled = !editorBusy,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -1471,7 +1638,8 @@ val filePickerLauncher =
                         lineHeight =
                             if (landscape) 19.sp else 18.sp
                     )
-            )
+                )
+            }
 
             if (editorBusy) {
                 Spacer(
@@ -1503,6 +1671,9 @@ val filePickerLauncher =
 
     val layoutTerminaleCompatto =
         terminaleCompatto || fullscreenTerminale
+
+    val fileManagerCompatto =
+        landscape && mostraFile && fileConnected
 
     BackHandler(
         enabled = fullscreenTerminale
@@ -1806,16 +1977,24 @@ val filePickerLauncher =
             )
             .padding(
                 start =
-                    if (layoutTerminaleCompatto) 2.dp else 14.dp,
+                    if (layoutTerminaleCompatto) 2.dp
+                    else if (fileManagerCompatto) 4.dp
+                    else 14.dp,
                 top =
-                    if (layoutTerminaleCompatto) 2.dp else 14.dp,
+                    if (layoutTerminaleCompatto) 2.dp
+                    else if (fileManagerCompatto) 4.dp
+                    else 14.dp,
                 end =
-                    if (layoutTerminaleCompatto) 2.dp else 14.dp,
+                    if (layoutTerminaleCompatto) 2.dp
+                    else if (fileManagerCompatto) 4.dp
+                    else 14.dp,
                 bottom =
                     if (connected && !mostraFile) {
                         0.dp
                     } else {
-                        if (layoutTerminaleCompatto) 2.dp else 14.dp
+                        if (layoutTerminaleCompatto) 2.dp
+                        else if (fileManagerCompatto) 4.dp
+                        else 14.dp
                     }
             )
             .then(
@@ -1845,38 +2024,148 @@ val filePickerLauncher =
             )
     ) {
         if (!layoutTerminaleCompatto) {
-            ToolsHeader(
-                serverName = serverName.ifBlank { defaultHost },
-                serverHost = defaultHost,
-                onBack = {
-                    disconnectTerminal()
-                    onClose()
-                },
-                onFullscreen =
-                    if (connected && !mostraFile) {
-                        {
-                            terminaleEspanso = true
-                            terminalFocusRequester.requestFocus()
-                            keyboardController?.show()
+            if (fileManagerCompatto) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(38.dp),
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        modifier = Modifier.size(34.dp),
+                        onClick = {
+                            disconnectTerminal()
+                            onClose()
                         }
-                    } else {
-                        null
+                    ) {
+                        Icon(
+                            imageVector =
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Indietro",
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
-            )
 
-            Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
 
-            ToolsModeSelector(
-                fileSelected = mostraFile,
-                onTerminal = {
-                    mostraFile = false
-                },
-                onFile = {
-                    mostraFile = true
+                    Text(
+                        text = serverName.ifBlank { defaultHost },
+                        modifier = Modifier.weight(1f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+
+                    IconButton(
+                        modifier = Modifier.size(34.dp),
+                        onClick = {
+                            mostraFile = false
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Terminal,
+                            contentDescription = "Terminale",
+                            modifier = Modifier.size(19.dp),
+                            tint =
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Surface(
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                10.dp
+                            ),
+                        color = Color(0xFFFFB300).copy(alpha = 0.12f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Folder,
+                            contentDescription = "File",
+                            modifier = Modifier
+                                .padding(7.dp)
+                                .size(18.dp),
+                            tint = Color(0xFFFFB300)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Text(
+                        text = "●",
+                        color = Color(0xFFD0A23A),
+                        fontSize = 10.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = if (fileSftp) "SFTP" else "FTP",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    OutlinedButton(
+                        modifier = Modifier.height(32.dp),
+                        onClick = {
+                            fileClient.disconnect()
+                            ftpClient.disconnect()
+                            fileConnected = false
+                            fileEntries = emptyList()
+                            filePath = ""
+                            fileStatus = "Disconnesso"
+                        },
+                        contentPadding = PaddingValues(
+                            horizontal = 10.dp,
+                            vertical = 0.dp
+                        )
+                    ) {
+                        Text(
+                            text = "Disconnetti",
+                            fontSize = 11.sp
+                        )
+                    }
                 }
-            )
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(3.dp))
+            } else {
+                ToolsHeader(
+                    serverName = serverName.ifBlank { defaultHost },
+                    serverHost = defaultHost,
+                    onBack = {
+                        disconnectTerminal()
+                        onClose()
+                    },
+                    onFullscreen =
+                        if (connected && !mostraFile) {
+                            {
+                                terminaleEspanso = true
+                                terminalFocusRequester.requestFocus()
+                                keyboardController?.show()
+                            }
+                        } else {
+                            null
+                        }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                ToolsModeSelector(
+                    fileSelected = mostraFile,
+                    onTerminal = {
+                        mostraFile = false
+                    },
+                    onFile = {
+                        mostraFile = true
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+            }
         }
 
         if (!fullscreenTerminale && !mostraFile && !connected) {
@@ -2852,7 +3141,9 @@ val filePickerLauncher =
                                 Modifier.fillMaxWidth()
                             }
                         )
-                        .padding(14.dp)
+                        .padding(
+                            if (fileManagerCompatto) 8.dp else 14.dp
+                        )
                 ) {
                     if (!fileConnected) {
 
@@ -3196,7 +3487,11 @@ val filePickerLauncher =
                     }
 
                     } else {
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(
+                            modifier = Modifier.height(
+                                if (fileManagerCompatto) 4.dp else 10.dp
+                            )
+                        )
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -3422,7 +3717,8 @@ val filePickerLauncher =
                             Row(
                                 modifier = Modifier.padding(
                                     horizontal = 10.dp,
-                                    vertical = 7.dp
+                                    vertical =
+                                        if (fileManagerCompatto) 4.dp else 7.dp
                                 ),
                                 verticalAlignment =
                                     androidx.compose.ui.Alignment.CenterVertically
@@ -3447,7 +3743,11 @@ val filePickerLauncher =
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(
+                            modifier = Modifier.height(
+                                if (fileManagerCompatto) 4.dp else 8.dp
+                            )
+                        )
 
                         Column(
                             modifier = Modifier
@@ -3543,7 +3843,9 @@ val filePickerLauncher =
                                       )
                                       .padding(
                                             horizontal = 6.dp,
-                                            vertical = 7.dp
+                                            vertical =
+                                                if (fileManagerCompatto) 4.dp
+                                                else 7.dp
                                         ),
                                     verticalAlignment =
                                         androidx.compose.ui.Alignment.CenterVertically
@@ -3563,7 +3865,10 @@ val filePickerLauncher =
                                                 MaterialTheme.colorScheme
                                                     .onSurfaceVariant
                                             },
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(
+                                            if (fileManagerCompatto) 19.dp
+                                            else 22.dp
+                                        )
                                     )
 
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -3591,7 +3896,10 @@ val filePickerLauncher =
                                     if (entry.name != "..") {
                                         IconButton(
                                             modifier =
-                                                Modifier.size(36.dp),
+                                                Modifier.size(
+                                                    if (fileManagerCompatto) 30.dp
+                                                    else 36.dp
+                                                ),
                                             onClick = {
                                                 fileMenuEntry =
                                                     entry
@@ -3613,60 +3921,61 @@ val filePickerLauncher =
                             Spacer(modifier = Modifier.height(10.dp))
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment =
-                                androidx.compose.ui.Alignment.CenterVertically
-                        ) {
+                        if (!fileManagerCompatto) {
+                            Spacer(modifier = Modifier.height(8.dp))
 
                             Row(
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment =
                                     androidx.compose.ui.Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "●",
-                                    color = Color(0xFFD0A23A),
-                                    fontSize = 11.sp
-                                )
+                                Row(
+                                    verticalAlignment =
+                                        androidx.compose.ui.Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "●",
+                                        color = Color(0xFFD0A23A),
+                                        fontSize = 11.sp
+                                    )
 
-                                Spacer(modifier = Modifier.width(5.dp))
+                                    Spacer(modifier = Modifier.width(5.dp))
 
-                                Text(
-                                    text =
-                                        if (fileSftp)
-                                            "SFTP connesso"
-                                        else
-                                            "FTP connesso",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color =
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.weight(1f))
-
-                            OutlinedButton(
-                                modifier = Modifier.height(40.dp),
-                                shape =
-                                    androidx.compose.foundation.shape.RoundedCornerShape(
-                                        14.dp
-                                    ),
-                                onClick = {
-                                    fileClient.disconnect()
-                                    ftpClient.disconnect()
-                                    fileConnected = false
-                                    fileEntries = emptyList()
-                                    filePath = ""
-                                    fileStatus = "Disconnesso"
+                                    Text(
+                                        text =
+                                            if (fileSftp)
+                                                "SFTP connesso"
+                                            else
+                                                "FTP connesso",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color =
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
-                            ) {
-                                Text(
-                                    text = "Disconnetti",
-                                    fontSize = 12.sp
-                                )
+
+                                Spacer(modifier = Modifier.weight(1f))
+
+                                OutlinedButton(
+                                    modifier = Modifier.height(40.dp),
+                                    shape =
+                                        androidx.compose.foundation.shape.RoundedCornerShape(
+                                            14.dp
+                                        ),
+                                    onClick = {
+                                        fileClient.disconnect()
+                                        ftpClient.disconnect()
+                                        fileConnected = false
+                                        fileEntries = emptyList()
+                                        filePath = ""
+                                        fileStatus = "Disconnesso"
+                                    }
+                                ) {
+                                    Text(
+                                        text = "Disconnetti",
+                                        fontSize = 12.sp
+                                    )
+                                }
                             }
                         }
                     }

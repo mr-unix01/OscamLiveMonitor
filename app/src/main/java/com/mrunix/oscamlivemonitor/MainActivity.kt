@@ -1883,12 +1883,14 @@ fun Greeting(
                 )
         ) {
             ExpressiveAppHeader(
-                compatto = schermoCompatto
+                compatto = schermoCompatto,
+                totaleServer = serverSalvati.size,
+                statiServer = statoServerSalvati.values
             )
 
             Spacer(
                 modifier = Modifier.height(
-                    if (schermoCompatto) 12.dp else 16.dp
+                    if (schermoCompatto) 6.dp else 10.dp
                 )
             )
 
@@ -2895,9 +2897,50 @@ fun Greeting(
 
 @Composable
 fun ExpressiveAppHeader(
-    compatto: Boolean
+    compatto: Boolean,
+    totaleServer: Int,
+    statiServer: Collection<OscamServerConnectionState>
 ) {
     val temaScuroHeader = androidx.compose.foundation.isSystemInDarkTheme()
+
+    val serverAttivi =
+        statiServer.count {
+            it == OscamServerConnectionState.ACTIVE
+        }
+
+    val verificaInCorso =
+        totaleServer > 0 &&
+            (
+                statiServer.size < totaleServer ||
+                statiServer.any {
+                    it == OscamServerConnectionState.CHECKING
+                }
+            )
+
+    val statoHeaderText =
+        if (verificaInCorso) {
+            "$totaleServer server · verifica..."
+        } else {
+            "$totaleServer server · $serverAttivi attivi"
+        }
+
+    val statoHeaderColor =
+        when {
+            verificaInCorso ->
+                MaterialTheme.colorScheme.onSurfaceVariant
+
+            totaleServer > 0 && serverAttivi == totaleServer ->
+                Color(0xFF4CAF50)
+
+            serverAttivi > 0 ->
+                Color(0xFFFFB300)
+
+            totaleServer > 0 ->
+                Color(0xFFEF5350)
+
+            else ->
+                MaterialTheme.colorScheme.onSurfaceVariant
+        }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -2964,12 +3007,25 @@ fun ExpressiveAppHeader(
 
                 Spacer(modifier = Modifier.height(3.dp))
 
-                Text(
-                    text = "Real-time OSCam Dashboard",
-                    fontSize = if (compatto) 13.sp else 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (temaScuroHeader) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF5E6760)
-                )
+                Row(
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "●",
+                        color = statoHeaderColor,
+                        fontSize = 8.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    Text(
+                        text = statoHeaderText,
+                        fontSize = if (compatto) 13.sp else 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = statoHeaderColor
+                    )
+                }
             }
         }
     }

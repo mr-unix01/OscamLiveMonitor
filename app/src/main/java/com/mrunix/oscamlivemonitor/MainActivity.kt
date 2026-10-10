@@ -3776,35 +3776,30 @@ fun ClientInfoCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Text(
-                    text = nome.ifBlank { "Client" },
-                    modifier = Modifier.weight(1f),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = if (compatto) 14.sp else 16.sp,
-                    maxLines = 1
-                )
-
-                if (mostraToggleUser && !canale.isNullOrBlank()) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
-                        text = "Canale",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = if (compatto) 9.sp else 10.sp
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(
-                        text = canale,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = if (compatto) 11.sp else 12.sp,
+                        text = nome.ifBlank { "Client" },
+                        fontWeight = FontWeight.Bold,
+                        fontSize = if (compatto) 14.sp else 16.sp,
                         maxLines = 1
                     )
 
-                    Spacer(modifier = Modifier.width(6.dp))
-                } else {
-                    Spacer(modifier = Modifier.width(5.dp))
+                    if (mostraToggleUser && !canale.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(1.dp))
+
+                        Text(
+                            text = canale,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = if (compatto) 10.sp else 11.sp,
+                            maxLines = 1
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 BadgeStatoDashboard(
                     stato = stato,

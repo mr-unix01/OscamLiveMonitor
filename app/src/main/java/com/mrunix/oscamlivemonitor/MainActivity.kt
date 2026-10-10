@@ -3192,10 +3192,21 @@ fun ExpressiveMiniInfo(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(2.dp))
+            val valoreDisponibile =
+                valore.isNotBlank() &&
+                    !valore.equals("N/A", ignoreCase = true) &&
+                    !valore.equals("Sconosciuta", ignoreCase = true) &&
+                    !valore.equals("Sconosciuto", ignoreCase = true)
+
             Text(
-                text = valore.ifBlank { "N/A" },
+                text = if (valoreDisponibile) valore else "—",
                 fontSize = if (compatto) 12.sp else 14.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = if (valoreDisponibile) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
             )
         }
     }

@@ -1883,12 +1883,14 @@ fun Greeting(
                 )
         ) {
             ExpressiveAppHeader(
-                compatto = schermoCompatto
+                compatto = schermoCompatto,
+                totaleServer = serverSalvati.size,
+                statiServer = statoServerSalvati.values
             )
 
             Spacer(
                 modifier = Modifier.height(
-                    if (schermoCompatto) 12.dp else 16.dp
+                    if (schermoCompatto) 6.dp else 10.dp
                 )
             )
 
@@ -2895,9 +2897,50 @@ fun Greeting(
 
 @Composable
 fun ExpressiveAppHeader(
-    compatto: Boolean
+    compatto: Boolean,
+    totaleServer: Int,
+    statiServer: Collection<OscamServerConnectionState>
 ) {
     val temaScuroHeader = androidx.compose.foundation.isSystemInDarkTheme()
+
+    val serverAttivi =
+        statiServer.count {
+            it == OscamServerConnectionState.ACTIVE
+        }
+
+    val verificaInCorso =
+        totaleServer > 0 &&
+            (
+                statiServer.size < totaleServer ||
+                statiServer.any {
+                    it == OscamServerConnectionState.CHECKING
+                }
+            )
+
+    val statoHeaderText =
+        if (verificaInCorso) {
+            "$totaleServer server · verifica..."
+        } else {
+            "$totaleServer server · $serverAttivi attivi"
+        }
+
+    val statoHeaderColor =
+        when {
+            verificaInCorso ->
+                MaterialTheme.colorScheme.onSurfaceVariant
+
+            totaleServer > 0 && serverAttivi == totaleServer ->
+                Color(0xFF4CAF50)
+
+            serverAttivi > 0 ->
+                Color(0xFFFFB300)
+
+            totaleServer > 0 ->
+                Color(0xFFEF5350)
+
+            else ->
+                MaterialTheme.colorScheme.onSurfaceVariant
+        }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -2964,12 +3007,25 @@ fun ExpressiveAppHeader(
 
                 Spacer(modifier = Modifier.height(3.dp))
 
-                Text(
-                    text = "Real-time OSCam Dashboard",
-                    fontSize = if (compatto) 13.sp else 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (temaScuroHeader) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF5E6760)
-                )
+                Row(
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "●",
+                        color = statoHeaderColor,
+                        fontSize = 8.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    Text(
+                        text = statoHeaderText,
+                        fontSize = if (compatto) 13.sp else 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = statoHeaderColor
+                    )
+                }
             }
         }
     }
@@ -3136,10 +3192,21 @@ fun ExpressiveMiniInfo(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(2.dp))
+            val valoreDisponibile =
+                valore.isNotBlank() &&
+                    !valore.equals("N/A", ignoreCase = true) &&
+                    !valore.equals("Sconosciuta", ignoreCase = true) &&
+                    !valore.equals("Sconosciuto", ignoreCase = true)
+
             Text(
-                text = valore.ifBlank { "N/A" },
+                text = if (valoreDisponibile) valore else "—",
                 fontSize = if (compatto) 12.sp else 14.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = if (valoreDisponibile) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
             )
         }
     }
@@ -3709,35 +3776,30 @@ fun ClientInfoCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Text(
-                    text = nome.ifBlank { "Client" },
-                    modifier = Modifier.weight(1f),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = if (compatto) 14.sp else 16.sp,
-                    maxLines = 1
-                )
-
-                if (mostraToggleUser && !canale.isNullOrBlank()) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
-                        text = "Canale",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = if (compatto) 9.sp else 10.sp
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(
-                        text = canale,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = if (compatto) 11.sp else 12.sp,
+                        text = nome.ifBlank { "Client" },
+                        fontWeight = FontWeight.Bold,
+                        fontSize = if (compatto) 14.sp else 16.sp,
                         maxLines = 1
                     )
 
-                    Spacer(modifier = Modifier.width(6.dp))
-                } else {
-                    Spacer(modifier = Modifier.width(5.dp))
+                    if (mostraToggleUser && !canale.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(1.dp))
+
+                        Text(
+                            text = canale,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = if (compatto) 10.sp else 11.sp,
+                            maxLines = 1
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 BadgeStatoDashboard(
                     stato = stato,

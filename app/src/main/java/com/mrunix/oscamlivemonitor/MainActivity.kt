@@ -4686,23 +4686,55 @@ fun InformazioniScreen(
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                Column {
-                    Text(
-                        text = "Informazioni",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                Text(
+                    text = "Informazioni",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
 
-                    Text(
-                        text = "OSCam Live Monitor",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+        Spacer(modifier = Modifier.height(22.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
+                color = Color(0xFF4CAF50).copy(alpha = 0.20f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null,
+                    tint = Color(0xFF4CAF50),
+                    modifier = Modifier
+                        .padding(22.dp)
+                        .size(42.dp)
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "OSCam Live Monitor",
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            fontSize = 25.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(5.dp))
+
+        Text(
+            text = "Monitor Android per OSCam",
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         androidx.compose.material3.Card(
             modifier = Modifier.fillMaxWidth(),
@@ -4716,21 +4748,6 @@ fun InformazioniScreen(
             Column(
                 modifier = Modifier.padding(18.dp)
             ) {
-                Text(
-                    text = "OSCam Live Monitor",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "Monitor Android per OSCam",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -4818,20 +4835,18 @@ fun InformazioniScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlinedButton(
+        androidx.compose.material3.Button(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape =
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
             enabled = !controlloAggiornamentoInCorso,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
-            ),
-            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.onSurface
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF2E8B57),
+                contentColor = Color.White,
+                disabledContainerColor = Color(0xFF2E8B57).copy(alpha = 0.45f),
+                disabledContentColor = Color.White.copy(alpha = 0.70f)
             ),
             onClick = {
                 controlloAggiornamentoInCorso = true
@@ -4958,6 +4973,8 @@ fun InformazioniScreen(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 

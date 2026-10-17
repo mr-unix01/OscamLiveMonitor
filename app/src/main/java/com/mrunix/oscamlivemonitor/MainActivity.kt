@@ -26,6 +26,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
@@ -2772,7 +2773,23 @@ fun Greeting(
                 elencoClients.forEachIndexed { indice, client ->
                     ClientInfoCard(
                         testo = client,
-                        compatto = schermoCompatto
+                        compatto = schermoCompatto,
+                        onHeightIncrease = { incremento ->
+                            if (schermoCompatto) {
+                                coroutineScope.launch {
+                                    kotlinx.coroutines.delay(50)
+
+                                    scrollHome.animateScrollTo(
+                                        (
+                                            scrollHome.value +
+                                                incremento
+                                        ).coerceAtMost(
+                                            scrollHome.maxValue
+                                        )
+                                    )
+                                }
+                            }
+                        }
                     )
 
                     if (indice < elencoClients.lastIndex) {
@@ -3645,7 +3662,8 @@ fun MiniDatoClient(
             Text(
                 text = etichetta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = if (compatto) 9.sp else 10.sp
+                fontSize = if (compatto) 9.sp else 10.sp,
+                softWrap = !compatto
             )
 
             Spacer(modifier = Modifier.width(4.dp))
@@ -3654,7 +3672,8 @@ fun MiniDatoClient(
                 text = valore,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
-                fontSize = if (compatto) 11.sp else 12.sp
+                fontSize = if (compatto) 11.sp else 12.sp,
+                softWrap = !compatto
             )
         }
     }
@@ -3667,7 +3686,8 @@ fun ClientInfoCard(
     mostraToggleUser: Boolean = false,
     userAbilitato: Boolean = true,
     toggleUserInCorso: Boolean = false,
-    onToggleUser: (() -> Unit)? = null
+    onToggleUser: (() -> Unit)? = null,
+    onHeightIncrease: ((Int) -> Unit)? = null
 ) {
     val righe = testo
         .lines()
@@ -3723,8 +3743,28 @@ fun ClientInfoCard(
     val temaScuroClient =
         androidx.compose.foundation.isSystemInDarkTheme()
 
+    var altezzaPrecedenteCard by remember {
+        mutableIntStateOf(0)
+    }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .onSizeChanged { size ->
+                val precedente = altezzaPrecedenteCard
+
+                if (
+                    compatto &&
+                    precedente > 0 &&
+                    size.height > precedente
+                ) {
+                    onHeightIncrease?.invoke(
+                        size.height - precedente
+                    )
+                }
+
+                altezzaPrecedenteCard = size.height
+            },
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
             if (compatto) 18.dp else 22.dp
         ),
@@ -3861,44 +3901,36 @@ fun ClientInfoCard(
             }
 
             if (haDettagli) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    if (!mostraToggleUser && !canale.isNullOrBlank()) {
-                        MiniDatoClient(
-                            etichetta = "Canale",
-                            valore = canale,
-                            compatto = compatto
-                        )
-                    }
-
-                    if (!provider.isNullOrBlank()) {
-                        MiniDatoClient(
-                            etichetta = "Provider",
-                            valore = provider,
-                            compatto = compatto
-                        )
-                    }
-
-                    if (!caid.isNullOrBlank()) {
-                        MiniDatoClient(
-                            etichetta = "CAID",
-                            valore = caid,
-                            compatto = compatto
-                        )
-                    }
-                }
-
-                if (!ecm.isNullOrBlank() || !reader.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(5.dp))
-
-                    Row(
+                if (compatto) {
+                    androidx.compose.foundation.layout.FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
+                        if (!mostraToggleUser && !canale.isNullOrBlank()) {
+                            MiniDatoClient(
+                                etichetta = "Canale",
+                                valore = canale,
+                                compatto = compatto
+                            )
+                        }
+
+                        if (!caid.isNullOrBlank()) {
+                            MiniDatoClient(
+                                etichetta = "CAID",
+                                valore = caid,
+                                compatto = compatto
+                            )
+                        }
+
+                        if (!provider.isNullOrBlank()) {
+                            MiniDatoClient(
+                                etichetta = "Provider",
+                                valore = provider,
+                                compatto = compatto
+                            )
+                        }
+
                         if (!ecm.isNullOrBlank()) {
                             MiniDatoClient(
                                 etichetta = "ECM",
@@ -3913,6 +3945,62 @@ fun ClientInfoCard(
                                 valore = reader,
                                 compatto = compatto
                             )
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        if (!mostraToggleUser && !canale.isNullOrBlank()) {
+                            MiniDatoClient(
+                                etichetta = "Canale",
+                                valore = canale,
+                                compatto = compatto
+                            )
+                        }
+
+                        if (!caid.isNullOrBlank()) {
+                            MiniDatoClient(
+                                etichetta = "CAID",
+                                valore = caid,
+                                compatto = compatto
+                            )
+                        }
+
+                        if (!provider.isNullOrBlank()) {
+                            MiniDatoClient(
+                                etichetta = "Provider",
+                                valore = provider,
+                                compatto = compatto
+                            )
+                        }
+                    }
+
+                    if (!ecm.isNullOrBlank() || !reader.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(5.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            if (!ecm.isNullOrBlank()) {
+                                MiniDatoClient(
+                                    etichetta = "ECM",
+                                    valore = ecm,
+                                    compatto = compatto
+                                )
+                            }
+
+                            if (!reader.isNullOrBlank()) {
+                                MiniDatoClient(
+                                    etichetta = "Reader",
+                                    valore = reader,
+                                    compatto = compatto
+                                )
+                            }
                         }
                     }
                 }

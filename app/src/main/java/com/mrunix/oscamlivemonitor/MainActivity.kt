@@ -3860,71 +3860,28 @@ fun ClientInfoCard(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            if (
-                (!mostraToggleUser && !canale.isNullOrBlank()) ||
-                !provider.isNullOrBlank()
-            ) {
+            if (haDettagli) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment =
-                        androidx.compose.ui.Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
                     if (!mostraToggleUser && !canale.isNullOrBlank()) {
-                        Text(
-                            text = "Canale",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = if (compatto) 10.sp else 11.sp
-                        )
-
-                        Spacer(modifier = Modifier.width(5.dp))
-
-                        Text(
-                            text = canale,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = if (compatto) 12.sp else 13.sp,
-                            modifier =
-                                if (!BuildConfig.TABLET_MODE) Modifier
-                                else Modifier.weight(1f),
-                            maxLines = 1
+                        MiniDatoClient(
+                            etichetta = "Canale",
+                            valore = canale,
+                            compatto = compatto
                         )
                     }
 
                     if (!provider.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = "Provider",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = if (compatto) 10.sp else 11.sp
-                        )
-
-                        Spacer(modifier = Modifier.width(5.dp))
-
-                        Text(
-                            text = provider,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = if (compatto) 12.sp else 13.sp,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1
+                        MiniDatoClient(
+                            etichetta = "Provider",
+                            valore = provider,
+                            compatto = compatto
                         )
                     }
-                }
-            }
 
-            if (
-                !caid.isNullOrBlank() ||
-                !ecm.isNullOrBlank() ||
-                !reader.isNullOrBlank()
-            ) {
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment =
-                        androidx.compose.ui.Alignment.CenterVertically
-                ) {
                     if (!caid.isNullOrBlank()) {
                         MiniDatoClient(
                             etichetta = "CAID",
@@ -3932,36 +3889,31 @@ fun ClientInfoCard(
                             compatto = compatto
                         )
                     }
+                }
 
-                    if (!ecm.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.width(5.dp))
+                if (!ecm.isNullOrBlank() || !reader.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(5.dp))
 
-                        MiniDatoClient(
-                            etichetta = "ECM",
-                            valore = ecm,
-                            compatto = compatto
-                        )
-                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        if (!ecm.isNullOrBlank()) {
+                            MiniDatoClient(
+                                etichetta = "ECM",
+                                valore = ecm,
+                                compatto = compatto
+                            )
+                        }
 
-                    if (!reader.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = "Reader",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = if (compatto) 9.sp else 10.sp
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Text(
-                            text = reader,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = if (compatto) 11.sp else 12.sp,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1
-                        )
+                        if (!reader.isNullOrBlank()) {
+                            MiniDatoClient(
+                                etichetta = "Reader",
+                                valore = reader,
+                                compatto = compatto
+                            )
+                        }
                     }
                 }
             }
@@ -4843,9 +4795,9 @@ fun InformazioniScreen(
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
             enabled = !controlloAggiornamentoInCorso,
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2E8B57),
+                containerColor = Color(0xFF2E7D32),
                 contentColor = Color.White,
-                disabledContainerColor = Color(0xFF2E8B57).copy(alpha = 0.45f),
+                disabledContainerColor = Color(0xFF2E7D32).copy(alpha = 0.45f),
                 disabledContentColor = Color.White.copy(alpha = 0.70f)
             ),
             onClick = {

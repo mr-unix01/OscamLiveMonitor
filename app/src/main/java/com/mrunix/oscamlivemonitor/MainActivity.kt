@@ -1872,6 +1872,11 @@ fun Greeting(
 
         val scrollHome = rememberScrollState()
 
+        val sogliaAutoscrollClient =
+            with(androidx.compose.ui.platform.LocalDensity.current) {
+                240.dp.roundToPx()
+            }
+
         val contenutoPrincipale: @Composable () -> Unit = {
             Column(
             modifier = Modifier
@@ -2225,7 +2230,7 @@ fun Greeting(
                     DashboardQuickAction(
                         titolo = "Server",
                       icona = Icons.Default.Home,
-                        coloreAccento = Color(0xFF66BB6A),
+                        coloreAccento = Color(0xFF29B6F6),
                         onClick = {
                             mostraConnessione = true
                             stato = ""
@@ -2267,7 +2272,7 @@ fun Greeting(
                     DashboardQuickAction(
                         titolo = "Live Log",
                         icona = Icons.AutoMirrored.Filled.ReceiptLong,
-                        coloreAccento = Color(0xFFFFB74D),
+                        coloreAccento = MaterialTheme.colorScheme.onSurfaceVariant,
                         onClick = {
                             mostraLiveLog = true
                         },
@@ -2436,22 +2441,64 @@ fun Greeting(
                         modifier = Modifier.weight(1f)
                     )
 
+                    val utentiOnline =
+                        elencoUsers.count { user ->
+                            user.lineSequence()
+                                .firstOrNull()
+                                ?.substringAfterLast("—", "")
+                                ?.trim()
+                                ?.equals("ONLINE", ignoreCase = true) == true
+                        }
+
+                    val utentiConnessi =
+                        elencoUsers.count { user ->
+                            val statoUser =
+                                user.lineSequence()
+                                    .firstOrNull()
+                                    ?.substringAfterLast("—", "")
+                                    ?.trim()
+                                    ?.uppercase()
+                                    .orEmpty()
+
+                            statoUser == "ONLINE" ||
+                                statoUser == "CONNESSO" ||
+                                statoUser == "CONNECTED"
+                        }
+
                     DashboardCard(
                         titolo = "Users / Clients",
                         compatto = schermoCompatto,
-                        valore =
-                            if (users.isNotBlank()) {
-                                "$users / $clients"
-                            } else {
-                                clients
-                            },
+                        valore = "$utentiOnline/$utentiConnessi",
                         icona = Icons.Default.Devices,
                         coloreAccento = Color(0xFFFFA726),
                         aperta = mostraClients,
                         onClick = {
                             mostraClients = !mostraClients
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        didascalia =
+                            run {
+                                val totaleUtenti =
+                                    users.trim().toIntOrNull() ?: 0
+
+                                when {
+                                    totaleUtenti == 0 ->
+                                        "nessun utente configurato"
+
+                                    utentiConnessi == 0 ->
+                                        if (totaleUtenti == 1) {
+                                            "nessun client connesso · 1 utente"
+                                        } else {
+                                            "nessun client connesso · $totaleUtenti utenti"
+                                        }
+
+                                    totaleUtenti == 1 ->
+                                        "online/connessi · 1 utente"
+
+                                    else ->
+                                        "online/connessi · $totaleUtenti utenti"
+                                }
+                            }
                     )
                 }
             }
@@ -2775,7 +2822,13 @@ fun Greeting(
                         testo = client,
                         compatto = schermoCompatto,
                         onHeightIncrease = { incremento ->
-                            if (schermoCompatto) {
+                            val distanzaDalFondo =
+                                scrollHome.maxValue - scrollHome.value
+
+                            if (
+                                schermoCompatto &&
+                                distanzaDalFondo <= sogliaAutoscrollClient
+                            ) {
                                 coroutineScope.launch {
                                     kotlinx.coroutines.delay(50)
 
@@ -5677,7 +5730,8 @@ fun DashboardCard(
     coloreAccento: Color,
     aperta: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    didascalia: String? = null
 ) {
     val temaScuroCard =
         androidx.compose.foundation.isSystemInDarkTheme()
@@ -5762,7 +5816,11 @@ fun DashboardCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(
+                modifier = Modifier.height(
+                    if (!didascalia.isNullOrBlank()) 4.dp else 8.dp
+                )
+            )
 
             Text(
                 text = valore.ifBlank { "0" },
@@ -5777,6 +5835,19 @@ fun DashboardCard(
                 color =
                     MaterialTheme.colorScheme.onSurface
             )
+
+            if (!didascalia.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(1.dp))
+
+                Text(
+                    text = didascalia,
+                    fontSize = if (compatto) 9.sp else 11.sp,
+                    lineHeight = if (compatto) 10.sp else 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
         }
     }
 }

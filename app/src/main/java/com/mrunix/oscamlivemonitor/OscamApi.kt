@@ -19,6 +19,13 @@ class OscamApi {
         val valido: Boolean
     )
 
+    data class ReaderListVoce(
+        val nome: String,
+        val tipo: String,
+        val abilitato: Boolean,
+        val stato: String
+    )
+
     private data class AuthDati(
         val username: String,
         val password: String
@@ -174,6 +181,21 @@ class OscamApi {
             username = username,
             password = password,
             percorso = "readers.html"
+        )
+    }
+
+    fun scaricaReaderListJson(
+        host: String,
+        porta: String,
+        username: String,
+        password: String
+    ): String {
+        return scaricaPagina(
+            host = host,
+            porta = porta,
+            username = username,
+            password = password,
+            percorso = "oscamapi.json?part=readerlist"
         )
     }
 
@@ -728,6 +750,119 @@ class OscamApi {
 
             elenco
         } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun scaricaReaderConfigHtml(
+        host: String,
+        porta: String,
+        username: String,
+        password: String,
+        nomeReader: String
+    ): String {
+        val nomeCodificato =
+            java.net.URLEncoder.encode(
+                nomeReader,
+                "UTF-8"
+            )
+
+        return scaricaPagina(
+            host = host,
+            porta = porta,
+            username = username,
+            password = password,
+            percorso =
+                "readerconfig.html?label=$nomeCodificato"
+        )
+    }
+
+    fun estraiProtocolloReaderConfigHtml(
+        html: String
+    ): String {
+        val inputProtocollo =
+            Regex(
+                """<input\b[^>]*>""",
+                RegexOption.IGNORE_CASE
+            )
+                .findAll(html)
+                .firstOrNull { match ->
+                    Regex(
+                        """\bname\s*=\s*["']protocol["']""",
+                        RegexOption.IGNORE_CASE
+                    ).containsMatchIn(match.value)
+                }
+                ?.value
+                ?: return ""
+
+        return Regex(
+            """\bvalue\s*=\s*["']([^"']*)["']""",
+            RegexOption.IGNORE_CASE
+        )
+            .find(inputProtocollo)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.trim()
+            ?.lowercase()
+            .orEmpty()
+    }
+
+    fun estraiReaderListJson(
+        json: String
+    ): List<ReaderListVoce> {
+        return try {
+            val readers =
+                JSONObject(json)
+                    .getJSONObject("oscam")
+                    .optJSONArray("readers")
+                    ?: return emptyList()
+
+            val risultato = mutableListOf<ReaderListVoce>()
+
+            for (indice in 0 until readers.length()) {
+                val elemento = readers.getJSONObject(indice)
+
+                val nomeCodificato =
+                    elemento.optString("label", "").trim()
+
+                val nome =
+                    try {
+                        java.net.URLDecoder.decode(
+                            nomeCodificato,
+                            "UTF-8"
+                        )
+                    } catch (_: Exception) {
+                        nomeCodificato
+                    }
+
+                val tipo =
+                    elemento.optString("type", "")
+                        .trim()
+                        .lowercase()
+
+                val abilitato =
+                    elemento.optString("enabled", "0") == "1"
+
+                val stato =
+                    elemento.optString("status", "")
+                        .replace(
+                            Regex("<[^>]+>"),
+                            ""
+                        )
+                        .trim()
+
+                if (nome.isNotBlank()) {
+                    risultato += ReaderListVoce(
+                        nome = nome,
+                        tipo = tipo,
+                        abilitato = abilitato,
+                        stato = stato
+                    )
+                }
+            }
+
+            risultato
+        } catch (_: Exception) {
             emptyList()
         }
     }

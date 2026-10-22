@@ -481,14 +481,15 @@ fun Greeting(
                 }
             }
 
-        val elencoReadersPrecedente = elencoReaders
-
-        val elencoReadersAttuali =
+        val elencoReadersStatus =
             api.estraiElencoReadersJson(risultato)
 
-        val risultatoReadersHtml =
+        val elencoProxiesStatus =
+            api.estraiElencoProxiesJson(risultato)
+
+        val risultatoReaderList =
             withContext(Dispatchers.IO) {
-                api.scaricaReadersHtml(
+                api.scaricaReaderListJson(
                     host = host.trim(),
                     porta = porta.trim(),
                     username = username,
@@ -496,108 +497,339 @@ fun Greeting(
                 )
             }
 
-        if (!risultatoReadersHtml.startsWith("ERRORE:")) {
-            val nuoviStatiReader =
-                api.estraiAbilitazioneReadersHtml(
-                    risultatoReadersHtml
-                )
+        val readerList =
+            if (!risultatoReaderList.startsWith("ERRORE:")) {
+                api.estraiReaderListJson(risultatoReaderList)
+            } else {
+                emptyList()
+            }
 
-            readerAbilitati = nuoviStatiReader
+        fun chiaveNomeReaderProxy(nome: String): String =
+            nome.trim().lowercase(java.util.Locale.ROOT)
 
-            val attualiPerNome =
-                elencoReadersAttuali.associateBy {
-                    it.substringBeforeLast("—", it).trim()
-                }
+        val chiaveTipiReaderProxy =
+            "reader_proxy_types_v2_" +
+                host.trim() + "_" +
+                porta.trim()
 
-            val nomiPrecedenti =
-                elencoReadersPrecedente
-                    .map {
-                        it.substringBeforeLast("—", it).trim()
+        val tipiReaderProxySalvati =
+            mutableMapOf<String, String>()
+
+        preferences
+            .getString(chiaveTipiReaderProxy, null)
+            ?.let { jsonSalvato ->
+                try {
+                    val json =
+                        org.json.JSONObject(jsonSalvato)
+
+                    val chiavi = json.keys()
+
+                    while (chiavi.hasNext()) {
+                        val nome = chiavi.next()
+
+                        val tipo =
+                            json.optString(nome, "")
+                                .trim()
+                                .lowercase()
+
+                        if (tipo == "r" || tipo == "p") {
+                            tipiReaderProxySalvati[nome] = tipo
+                        }
                     }
-                    .toSet()
-
-            val elencoFinale = mutableListOf<String>()
-
-            elencoReadersPrecedente.forEach { voce ->
-                val nome =
-                    voce.substringBeforeLast("—", voce).trim()
-
-                val voceAttuale = attualiPerNome[nome]
-
-                if (voceAttuale != null) {
-                    elencoFinale += voceAttuale
-                } else if (nuoviStatiReader.containsKey(nome)) {
-                    elencoFinale +=
-                        if (nuoviStatiReader[nome] == false)
-                            "$nome — DISABILITATO"
-                        else
-                            "$nome — OFFLINE"
+                } catch (_: Exception) {
+                    Unit
                 }
             }
 
-            elencoReadersAttuali.forEach { voce ->
-                val nome =
-                    voce.substringBeforeLast("—", voce).trim()
+        /*
+         * Lo status JSON e' la fonte piu' affidabile per distinguere
+         * reader fisici/locali (r) e proxy di rete (p) quando sono attivi.
+         */
+        elencoReadersStatus.forEach { voce ->
+            val nome =
+                voce.substringBeforeLast("—", voce).trim()
 
-                if (nome !in nomiPrecedenti) {
-                    elencoFinale += voce
-                }
-            }
-
-            elencoReaders = elencoFinale
-        } else {
-            elencoReaders = elencoReadersAttuali
+            tipiReaderProxySalvati[
+                chiaveNomeReaderProxy(nome)
+            ] = "r"
         }
 
-        val elencoProxiesPrecedente = elencoProxies
+        elencoProxiesStatus.forEach { voce ->
+            val nome =
+                voce.substringBeforeLast("—", voce).trim()
 
-        val elencoProxiesAttuali =
-            api.estraiElencoProxiesJson(risultato)
+            tipiReaderProxySalvati[
+                chiaveNomeReaderProxy(nome)
+            ] = "p"
+        }
 
-        if (!risultatoReadersHtml.startsWith("ERRORE:")) {
-            val attualiPerNome =
-                elencoProxiesAttuali.associateBy {
-                    it.substringBeforeLast("—", it).trim()
-                }
+        /*
+         * readerlist contiene anche gli elementi disabilitati.
+         * Quando OSCam fornisce type=r/p lo memorizziamo, cosi'
+         * la categoria resta disponibile anche dopo uscita/rientro.
+         */
+        readerList.forEach { voce ->
+            if (
+                voce.abilitato &&
+                (voce.tipo == "r" || voce.tipo == "p")
+            ) {
+                tipiReaderProxySalvati[
+                    chiaveNomeReaderProxy(voce.nome)
+                ] = voce.tipo
+            }
+        }
 
-            val nomiPrecedenti =
-                elencoProxiesPrecedente
-                    .map {
-                        it.substringBeforeLast("—", it).trim()
+        fun tipoDaProtocolloReaderProxy(
+            protocollo: String
+        ): String {
+            return when (
+                protocollo.trim().lowercase()
+            ) {
+                /*
+                 * Reader locali / fisici.
+                 */
+                "internal",
+                "mouse",
+                "mp35",
+                "pcsc",
+                "sc8in1",
+                "smargo",
+                "smartreader",
+                "serial",
+                "drecas",
+                "emu",
+                "stapi",
+                "stapi5",
+                "stinger",
+                "phoenix" -> "r"
+
+                /*
+                 * Reader di rete: nella Status WebIF
+                 * vengono mostrati come Proxy.
+                 */
+                "camd33",
+                "camd35",
+                "cs357x",
+                "cs378x",
+                "newcamd",
+                "newcamd525",
+                "newcamd524",
+                "cccam",
+                "cccam_ext",
+                "gbox",
+                "radegast",
+                "scam",
+                "ghttp",
+                "constcw",
+                "csp",
+                "pandora" -> "p"
+
+                else -> ""
+            }
+        }
+
+        /*
+         * Per una voce disabilitata e mai classificata
+         * non ci fidiamo di readerlist.type:
+         * leggiamo una sola volta il protocollo reale
+         * dalla configurazione OSCam.
+         *
+         * Questo rende la classificazione indipendente
+         * dal nome del reader/proxy.
+         */
+        val vociDisabilitateSenzaTipo =
+            readerList.filter { voce ->
+                !voce.abilitato &&
+                    tipiReaderProxySalvati[
+                        chiaveNomeReaderProxy(voce.nome)
+                    ].isNullOrBlank()
+            }
+
+        if (vociDisabilitateSenzaTipo.isNotEmpty()) {
+            val tipiDaConfigurazione =
+                withContext(Dispatchers.IO) {
+                    vociDisabilitateSenzaTipo.associate { voce ->
+                        val html =
+                            api.scaricaReaderConfigHtml(
+                                host = host.trim(),
+                                porta = porta.trim(),
+                                username = username,
+                                password = password,
+                                nomeReader = voce.nome
+                            )
+
+                        val protocollo =
+                            if (!html.startsWith("ERRORE:")) {
+                                api.estraiProtocolloReaderConfigHtml(
+                                    html
+                                )
+                            } else {
+                                ""
+                            }
+
+                        chiaveNomeReaderProxy(voce.nome) to
+                            tipoDaProtocolloReaderProxy(protocollo)
                     }
-                    .toSet()
+                }
 
-            val elencoFinaleProxy = mutableListOf<String>()
-
-            elencoProxiesPrecedente.forEach { voce ->
-                val nome =
-                    voce.substringBeforeLast("—", voce).trim()
-
-                val voceAttuale = attualiPerNome[nome]
-
-                if (voceAttuale != null) {
-                    elencoFinaleProxy += voceAttuale
-                } else if (readerAbilitati.containsKey(nome)) {
-                    elencoFinaleProxy +=
-                        if (readerAbilitati[nome] == false)
-                            "$nome — DISABILITATO"
-                        else
-                            "$nome — OFFLINE"
+            tipiDaConfigurazione.forEach { (nome, tipo) ->
+                if (tipo == "r" || tipo == "p") {
+                    tipiReaderProxySalvati[nome] = tipo
                 }
             }
+        }
 
-            elencoProxiesAttuali.forEach { voce ->
-                val nome =
-                    voce.substringBeforeLast("—", voce).trim()
+        if (tipiReaderProxySalvati.isNotEmpty()) {
+            val jsonTipi =
+                org.json.JSONObject()
 
-                if (nome !in nomiPrecedenti) {
-                    elencoFinaleProxy += voce
-                }
+            tipiReaderProxySalvati.forEach { (nome, tipo) ->
+                jsonTipi.put(nome, tipo)
             }
 
-            elencoProxies = elencoFinaleProxy
+            preferences.edit()
+                .putString(
+                    chiaveTipiReaderProxy,
+                    jsonTipi.toString()
+                )
+                .apply()
+        }
+
+        val readersStatusPerNome =
+            elencoReadersStatus.associateBy { voce ->
+                chiaveNomeReaderProxy(
+                    voce.substringBeforeLast("—", voce).trim()
+                )
+            }
+
+        val proxiesStatusPerNome =
+            elencoProxiesStatus.associateBy { voce ->
+                chiaveNomeReaderProxy(
+                    voce.substringBeforeLast("—", voce).trim()
+                )
+            }
+
+        fun tipoEffettivo(
+            voce: OscamApi.ReaderListVoce
+        ): String {
+            val tipoSalvato =
+                tipiReaderProxySalvati[
+                    chiaveNomeReaderProxy(voce.nome)
+                ].orEmpty()
+
+            return when {
+                !voce.abilitato ->
+                    tipoSalvato
+
+                voce.tipo == "r" || voce.tipo == "p" ->
+                    voce.tipo
+
+                else ->
+                    tipoSalvato
+            }
+        }
+
+        fun voceDashboard(
+            voce: OscamApi.ReaderListVoce,
+            voceStatus: String?
+        ): String {
+            if (!voce.abilitato) {
+                return "${voce.nome} — DISABILITATO"
+            }
+
+            if (!voceStatus.isNullOrBlank()) {
+                return voceStatus
+            }
+
+            val statoFallback =
+                voce.stato
+                    .ifBlank { "OFFLINE" }
+
+            return "${voce.nome} — $statoFallback"
+        }
+
+        if (readerList.isNotEmpty()) {
+            readerAbilitati =
+                readerList.associate { voce ->
+                    voce.nome to voce.abilitato
+                }
+
+            val catalogoReaders =
+                readerList.filter { voce ->
+                    tipoEffettivo(voce) == "r"
+                }
+
+            val catalogoProxies =
+                readerList.filter { voce ->
+                    tipoEffettivo(voce) == "p"
+                }
+
+            elencoReaders =
+                catalogoReaders.map { voce ->
+                    voceDashboard(
+                        voce = voce,
+                        voceStatus =
+                            readersStatusPerNome[
+                                chiaveNomeReaderProxy(voce.nome)
+                            ]
+                    )
+                }
+
+            elencoProxies =
+                catalogoProxies.map { voce ->
+                    voceDashboard(
+                        voce = voce,
+                        voceStatus =
+                            proxiesStatusPerNome[
+                                chiaveNomeReaderProxy(voce.nome)
+                            ]
+                    )
+                }
+
+            fun statoAttivo(voce: String?): Boolean {
+                val statoVoce =
+                    voce
+                        ?.substringAfterLast("—", "")
+                        ?.trim()
+                        ?.uppercase()
+                        .orEmpty()
+
+                return statoVoce == "OK" ||
+                    statoVoce == "ACTIVE" ||
+                    statoVoce == "CONNECTED" ||
+                    statoVoce == "CARDOK"
+            }
+
+            val readersAttivi =
+                catalogoReaders.count { voce ->
+                    statoAttivo(
+                        readersStatusPerNome[
+                            chiaveNomeReaderProxy(voce.nome)
+                        ]
+                    )
+                }
+
+            val proxiesAttivi =
+                catalogoProxies.count { voce ->
+                    statoAttivo(
+                        proxiesStatusPerNome[
+                            chiaveNomeReaderProxy(voce.nome)
+                        ]
+                    )
+                }
+
+            readers =
+                "$readersAttivi/${catalogoReaders.size}"
+
+            proxies =
+                "$proxiesAttivi/${catalogoProxies.size}"
         } else {
-            elencoProxies = elencoProxiesAttuali
+            /*
+             * Fallback: se readerlist non risponde, manteniamo
+             * il comportamento precedente basato sullo status.
+             */
+            elencoReaders = elencoReadersStatus
+            elencoProxies = elencoProxiesStatus
         }
 
         elencoClients =
@@ -2229,7 +2461,7 @@ fun Greeting(
                 ) {
                     DashboardQuickAction(
                         titolo = "Server",
-                      icona = Icons.Default.Home,
+                      icona = Icons.Default.Storage,
                         coloreAccento = Color(0xFF29B6F6),
                         onClick = {
                             mostraConnessione = true

@@ -1995,208 +1995,49 @@ fun Greeting(
     }
 
     if (mostraRiordinaServer) {
-        AlertDialog(
-            onDismissRequest = {
+        RiordinaServerDialog(
+            server = serverSalvati,
+            onDismiss = {
                 mostraRiordinaServer = false
             },
-            title = {
-                Text(
-                    text = "Riordina server",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
+            onMoveUp = { indice ->
+                val nuovaLista =
+                    serverSalvati.toMutableList()
+
+                val elemento =
+                    nuovaLista.removeAt(indice)
+
+                nuovaLista.add(
+                    indice - 1,
+                    elemento
+                )
+
+                serverSalvati = nuovaLista
+
+                salvaServerSalvati(
+                    preferences = preferences,
+                    server = serverSalvati
                 )
             },
-            text = {
-                Column(
-                    verticalArrangement =
-                        Arrangement.spacedBy(10.dp)
-                ) {
-                    serverSalvati.forEachIndexed { indice, server ->
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape =
-                                androidx.compose.foundation.shape.RoundedCornerShape(
-                                    18.dp
-                                ),
-                            color =
-                                MaterialTheme.colorScheme.surfaceVariant
-                                    .copy(alpha = 0.38f)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        horizontal = 12.dp,
-                                        vertical = 10.dp
-                                    ),
-                                verticalAlignment =
-                                    androidx.compose.ui.Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    modifier = Modifier.size(42.dp),
-                                    shape =
-                                        androidx.compose.foundation.shape.RoundedCornerShape(
-                                            12.dp
-                                        ),
-                                    color =
-                                        MaterialTheme.colorScheme.surface,
-                                    border =
-                                        androidx.compose.foundation.BorderStroke(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.outline
-                                                .copy(alpha = 0.35f)
-                                        )
-                                ) {
-                                    Box(
-                                        contentAlignment =
-                                            androidx.compose.ui.Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector =
-                                                Icons.Default.Storage,
-                                            contentDescription = null,
-                                            modifier =
-                                                Modifier.size(20.dp),
-                                            tint =
-                                                MaterialTheme.colorScheme
-                                                    .onSurfaceVariant
-                                        )
-                                    }
-                                }
+            onMoveDown = { indice ->
+                val nuovaLista =
+                    serverSalvati.toMutableList()
 
-                                Spacer(
-                                    modifier = Modifier.width(12.dp)
-                                )
+                val elemento =
+                    nuovaLista.removeAt(indice)
 
-                                Text(
-                                    text = server.nome,
-                                    modifier = Modifier.weight(1f),
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                nuovaLista.add(
+                    indice + 1,
+                    elemento
+                )
 
-                                IconButton(
-                                    enabled = indice > 0,
-                                    modifier = Modifier.semantics {
-                                        contentDescription =
-                                            "Sposta server su"
-                                    },
-                                    onClick = {
-                                        val nuovaLista =
-                                            serverSalvati.toMutableList()
+                serverSalvati = nuovaLista
 
-                                        val elemento =
-                                            nuovaLista.removeAt(indice)
-
-                                        nuovaLista.add(
-                                            indice - 1,
-                                            elemento
-                                        )
-
-                                        serverSalvati = nuovaLista
-
-                                        salvaServerSalvati(
-                                            preferences = preferences,
-                                            server = serverSalvati
-                                        )
-                                    }
-                                ) {
-                                    Text(
-                                        text = "↑",
-                                        fontSize = 22.sp,
-                                        color =
-                                            if (indice > 0) {
-                                                MaterialTheme.colorScheme.onSurface
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                                    .copy(alpha = 0.25f)
-                                            }
-                                    )
-                                }
-
-                                IconButton(
-                                    enabled =
-                                        indice <
-                                            serverSalvati.lastIndex,
-                                    modifier = Modifier.semantics {
-                                        contentDescription =
-                                            "Sposta server giù"
-                                    },
-                                    onClick = {
-                                        val nuovaLista =
-                                            serverSalvati.toMutableList()
-
-                                        val elemento =
-                                            nuovaLista.removeAt(indice)
-
-                                        nuovaLista.add(
-                                            indice + 1,
-                                            elemento
-                                        )
-
-                                        serverSalvati = nuovaLista
-
-                                        salvaServerSalvati(
-                                            preferences = preferences,
-                                            server = serverSalvati
-                                        )
-                                    }
-                                ) {
-                                    Text(
-                                        text = "↓",
-                                        fontSize = 22.sp,
-                                        color =
-                                            if (
-                                                indice <
-                                                serverSalvati.lastIndex
-                                            ) {
-                                                MaterialTheme.colorScheme.onSurface
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                                    .copy(alpha = 0.25f)
-                                            }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(
-                        modifier = Modifier.height(6.dp)
-                    )
-
-                    Button(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
-                        shape =
-                            androidx.compose.foundation.shape.RoundedCornerShape(
-                                16.dp
-                            ),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor =
-                                    Color(0xFF2E7D32),
-                                contentColor = Color.White
-                            ),
-                        onClick = {
-                            mostraRiordinaServer = false
-                        }
-                    ) {
-                        Text(
-                            text = "Fine",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            },
-            confirmButton = {},
-            shape =
-                androidx.compose.foundation.shape.RoundedCornerShape(
-                    28.dp
-                ),
-            tonalElevation = 0.dp
+                salvaServerSalvati(
+                    preferences = preferences,
+                    server = serverSalvati
+                )
+            }
         )
     }
 

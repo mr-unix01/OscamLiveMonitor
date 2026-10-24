@@ -61,6 +61,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+private enum class SshTrustTarget {
+    TERMINAL,
+    SFTP
+}
+
+private data class SshTrustPrompt(
+    val candidate: SshHostKeyCandidate,
+    val changed: Boolean,
+    val target: SshTrustTarget
+)
+
 @Composable
 private fun CompactIconButton(
     modifier: Modifier = Modifier,
@@ -98,8 +109,25 @@ fun TerminalToolsScreen(
             Configuration.ORIENTATION_LANDSCAPE
 
     val scope = rememberCoroutineScope()
-    val client = remember { TerminalClient() }
-    val fileClient = remember { FileTransferClient() }
+
+    val sshHostKeyStore = remember {
+        SshHostKeyStore(
+            context.applicationContext
+        )
+    }
+
+    val client = remember(sshHostKeyStore) {
+        TerminalClient(
+            sshHostKeyStore
+        )
+    }
+
+    val fileClient = remember(sshHostKeyStore) {
+        FileTransferClient(
+            sshHostKeyStore
+        )
+    }
+
     val ftpClient = remember { FtpTransferClient() }
 
     val safeKey = remember(serverKey) {
@@ -162,11 +190,37 @@ fun TerminalToolsScreen(
 
     var password by remember {
         mutableStateOf(
+            SecurePasswordCrypto.decrypt(
+                preferences.getString(
+                    "${safeKey}_password",
+                    ""
+                ) ?: ""
+            )
+        )
+    }
+
+    LaunchedEffect(safeKey) {
+        val passwordSalvata =
             preferences.getString(
                 "${safeKey}_password",
                 ""
             ) ?: ""
-        )
+
+        if (
+            passwordSalvata.isNotEmpty() &&
+            !SecurePasswordCrypto.isEncrypted(
+                passwordSalvata
+            )
+        ) {
+            preferences.edit()
+                .putString(
+                    "${safeKey}_password",
+                    SecurePasswordCrypto.encrypt(
+                        passwordSalvata
+                    )
+                )
+                .apply()
+        }
     }
 
     var showPassword by remember {
@@ -1689,6 +1743,10 @@ val filePickerLauncher =
         mutableStateOf(false)
     }
 
+    var sshTrustPrompt by remember {
+        mutableStateOf<SshTrustPrompt?>(null)
+    }
+
     var terminalOutput by remember {
         mutableStateOf("")
     }
@@ -1772,7 +1830,9 @@ val filePickerLauncher =
             )
             .putString(
                 "${safeKey}_password",
-                password
+                SecurePasswordCrypto.encrypt(
+                    password
+                )
             )
             .apply()
     }
@@ -1951,6 +2011,214 @@ val filePickerLauncher =
     LaunchedEffect(terminalScroll.maxValue) {
         terminalScroll.scrollTo(
             terminalScroll.maxValue
+        )
+    }
+
+    sshTrustPrompt?.let { prompt ->
+        AlertDialog(
+            onDismissRequest = {
+                sshTrustPrompt = null
+            },
+            title = {
+                Text(
+                    if (prompt.changed) {
+                        "Chiave SSH cambiata"
+                    } else {
+                        "Nuovo host SSH"
+                    }
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        if (prompt.changed) {
+                            "La chiave SSH presentata dal server non corrisponde a quella salvata. La connessione è stata bloccata per sicurezza."
+                        } else {
+                            "È la prima connessione a questo host. Verifica il fingerprint prima di considerarlo attendibile."
+                        }
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(12.dp)
+                    )
+
+                    Text(
+                        text = prompt.candidate.alias,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(6.dp)
+                    )
+
+                    Text(
+                        text = prompt.candidate.type,
+                        fontSize = 12.sp,
+                        color =
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(8.dp)
+                    )
+
+                    SelectionContainer {
+                        Text(
+                            text = prompt.candidate.fingerprint,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                if (prompt.changed) {
+                    TextButton(
+                        onClick = {
+                            sshTrustPrompt = null
+                        }
+                    ) {
+                        Text("Chiudi")
+                    }
+                } else {
+                    Button(
+                        onClick = {
+                            sshHostKeyStore.trust(
+                                alias =
+                                    prompt.candidate.alias,
+                                keyBase64 =
+                                    prompt.candidate.keyBase64
+                            )
+
+                            sshTrustPrompt = null
+
+                            val parsedPort =
+                                port.trim().toIntOrNull()
+
+                            if (parsedPort == null) {
+                                status = "Porta SSH non valida"
+                                return@Button
+                            }
+
+                            status = "Connessione..."
+                            terminalOutput = ""
+                            connessioneTerminaleInCorso = true
+
+                            scope.launch {
+                                val result =
+                                    try {
+                                        client.connect(
+                                            protocol = TerminalProtocol.SSH,
+                                            host = host.trim(),
+                                            port = parsedPort,
+                                            username = username,
+                                            password = password
+                                        )
+                                    } finally {
+                                        connessioneTerminaleInCorso = false
+                                    }
+
+                                if (result.isSuccess) {
+                                    val timestamp =
+                                        System.currentTimeMillis()
+
+                                    ultimaConnessioneTerminale =
+                                        timestamp
+
+                                    preferences.edit()
+                                        .putLong(
+                                            "${safeKey}_last_ssh",
+                                            timestamp
+                                        )
+                                        .apply()
+
+                                    connected = true
+                                    status = "Connesso via SSH"
+
+                                    readJob = scope.launch {
+                                        client.readLoop { chunk ->
+                                            withContext(
+                                                Dispatchers.Main
+                                            ) {
+                                                val chunkPulito =
+                                                    chunk
+                                                        .replace(
+                                                            ansiEscapeRegex,
+                                                            ""
+                                                        )
+                                                        .replace(
+                                                            "\r\n",
+                                                            "\n"
+                                                        )
+                                                        .replace(
+                                                            "\r",
+                                                            ""
+                                                        )
+
+                                                terminalOutput +=
+                                                    chunkPulito
+
+                                                if (
+                                                    terminalOutput.length >
+                                                    100_000
+                                                ) {
+                                                    terminalOutput =
+                                                        terminalOutput
+                                                            .takeLast(
+                                                                80_000
+                                                            )
+                                                }
+                                            }
+                                        }
+
+                                        withContext(
+                                            Dispatchers.Main
+                                        ) {
+                                            connected = false
+                                            terminaleEspanso = false
+
+                                            if (
+                                                status.startsWith(
+                                                    "Connesso"
+                                                )
+                                            ) {
+                                                status =
+                                                    "Connessione terminata"
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    connected = false
+                                    terminaleEspanso = false
+
+                                    status =
+                                        "Errore: " +
+                                            (
+                                                result
+                                                    .exceptionOrNull()
+                                                    ?.message
+                                                    ?: "connessione fallita"
+                                            )
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Considera attendibile")
+                    }
+                }
+            },
+            dismissButton = {
+                if (!prompt.changed) {
+                    TextButton(
+                        onClick = {
+                            sshTrustPrompt = null
+                            status = "Connessione annullata"
+                        }
+                    ) {
+                        Text("Annulla")
+                    }
+                }
+            }
         )
     }
 
@@ -2504,13 +2772,35 @@ val filePickerLauncher =
                                 } else {
                                     connected = false
                                     terminaleEspanso = false
-                                    status =
-                                        "Errore: " +
-                                        (
-                                            result.exceptionOrNull()
-                                                ?.message
-                                                ?: "connessione fallita"
-                                        )
+
+                                    val error =
+                                        result.exceptionOrNull()
+
+                                    if (
+                                        protocol == TerminalProtocol.SSH &&
+                                        error is SshHostKeyVerificationException
+                                    ) {
+                                        sshTrustPrompt =
+                                            SshTrustPrompt(
+                                                candidate = error.candidate,
+                                                changed = error.changed,
+                                                target = SshTrustTarget.TERMINAL
+                                            )
+
+                                        status =
+                                            if (error.changed) {
+                                                "Chiave SSH del server cambiata"
+                                            } else {
+                                                "Verifica chiave SSH richiesta"
+                                            }
+                                    } else {
+                                        status =
+                                            "Errore: " +
+                                                (
+                                                    error?.message
+                                                        ?: "connessione fallita"
+                                                )
+                                    }
                                 }
                             }
                         }

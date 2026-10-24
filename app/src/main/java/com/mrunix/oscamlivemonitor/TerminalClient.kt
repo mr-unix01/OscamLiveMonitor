@@ -2,6 +2,8 @@ package com.mrunix.oscamlivemonitor
 
 import com.jcraft.jsch.ChannelShell
 import com.jcraft.jsch.JSch
+import com.jcraft.jsch.JSchChangedHostKeyException
+import com.jcraft.jsch.JSchUnknownHostKeyException
 import com.jcraft.jsch.Session
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -18,7 +20,9 @@ enum class TerminalProtocol {
     TELNET
 }
 
-class TerminalClient {
+class TerminalClient(
+    private val hostKeyStore: SshHostKeyStore
+) {
 
     private val connectMutex = Mutex()
 
@@ -87,17 +91,25 @@ class TerminalClient {
             port
         )
 
+        session.setHostKeyRepository(
+            hostKeyStore
+        )
+
         if (password.isNotEmpty()) {
             session.setPassword(password.toByteArray())
         }
 
         session.setConfig(
             "StrictHostKeyChecking",
-            "no"
+            "yes"
         )
 
         sshSession = session
-        session.connect(10_000)
+        connectVerifiedSession(
+            session = session,
+            host = host,
+            port = port
+        )
 
         val channel =
             session.openChannel("shell") as ChannelShell
@@ -111,6 +123,40 @@ class TerminalClient {
         output = channel.outputStream
 
         channel.connect(10_000)
+    }
+
+    private fun connectVerifiedSession(
+        session: Session,
+        host: String,
+        port: Int
+    ) {
+        try {
+            session.connect(10_000)
+        } catch (error: Exception) {
+            if (
+                error is JSchUnknownHostKeyException ||
+                error is JSchChangedHostKeyException
+            ) {
+                val alias =
+                    SshHostKeyStore.alias(
+                        host,
+                        port
+                    )
+
+                val candidate =
+                    hostKeyStore.pending(alias)
+
+                if (candidate != null) {
+                    throw SshHostKeyVerificationException(
+                        candidate = candidate,
+                        changed =
+                            error is JSchChangedHostKeyException
+                    )
+                }
+            }
+
+            throw error
+        }
     }
 
     private suspend fun connectTelnet(

@@ -2,6 +2,8 @@ package com.mrunix.oscamlivemonitor
 
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
+import com.jcraft.jsch.JSchChangedHostKeyException
+import com.jcraft.jsch.JSchUnknownHostKeyException
 import com.jcraft.jsch.Session
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -38,7 +40,9 @@ data class RemoteProperties(
     val directoryCount: Int?
 )
 
-class FileTransferClient {
+class FileTransferClient(
+    private val hostKeyStore: SshHostKeyStore
+) {
 
     private var sftpSession: Session? = null
     private var sftpChannel: ChannelSftp? = null
@@ -115,6 +119,10 @@ class FileTransferClient {
                     port
                 )
 
+                session.setHostKeyRepository(
+                    hostKeyStore
+                )
+
                 if (password.isNotEmpty()) {
                     session.setPassword(
                         password.toByteArray()
@@ -123,12 +131,16 @@ class FileTransferClient {
 
                 session.setConfig(
                     "StrictHostKeyChecking",
-                    "no"
+                    "yes"
                 )
 
                 session.setServerAliveInterval(30_000)
                 session.setServerAliveCountMax(3)
-                session.connect(10_000)
+                connectVerifiedSession(
+                    session = session,
+                    host = host,
+                    port = port
+                )
                 val channel =
                     session.openChannel("sftp") as ChannelSftp
                 channel.connect(10_000)
@@ -660,6 +672,10 @@ class FileTransferClient {
                 lastPort
             )
 
+        newSession.setHostKeyRepository(
+            hostKeyStore
+        )
+
         if (lastPassword.isNotEmpty()) {
             newSession.setPassword(
                 lastPassword.toByteArray()
@@ -668,13 +684,17 @@ class FileTransferClient {
 
         newSession.setConfig(
             "StrictHostKeyChecking",
-            "no"
+            "yes"
         )
 
         newSession.setServerAliveInterval(30_000)
         newSession.setServerAliveCountMax(3)
 
-        newSession.connect(10_000)
+        connectVerifiedSession(
+            session = newSession,
+            host = host,
+            port = lastPort
+        )
 
         val newChannel =
             newSession.openChannel("sftp") as ChannelSftp
@@ -685,6 +705,40 @@ class FileTransferClient {
         sftpChannel = newChannel
 
         return newChannel
+    }
+
+    private fun connectVerifiedSession(
+        session: Session,
+        host: String,
+        port: Int
+    ) {
+        try {
+            session.connect(10_000)
+        } catch (error: Exception) {
+            if (
+                error is JSchUnknownHostKeyException ||
+                error is JSchChangedHostKeyException
+            ) {
+                val alias =
+                    SshHostKeyStore.alias(
+                        host,
+                        port
+                    )
+
+                val candidate =
+                    hostKeyStore.pending(alias)
+
+                if (candidate != null) {
+                    throw SshHostKeyVerificationException(
+                        candidate = candidate,
+                        changed =
+                            error is JSchChangedHostKeyException
+                    )
+                }
+            }
+
+            throw error
+        }
     }
 
     private fun disconnectInternal() {

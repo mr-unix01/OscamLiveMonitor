@@ -1898,121 +1898,98 @@ fun Greeting(
     }
 
     serverDaEliminare?.let { serverOriginale ->
-        AlertDialog(
-            onDismissRequest = {
+        EliminaServerDialog(
+            nomeServer = serverOriginale.nome,
+            onDismiss = {
                 serverDaEliminare = null
             },
-            title = {
-                Text("Eliminare server?")
-            },
-            text = {
-                Text(
-                    "Vuoi eliminare definitivamente " +
-                            "\"${serverOriginale.nome}\"?"
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val indice =
-                            serverSalvati.indexOf(
-                                serverOriginale
-                            )
+            onConfirm = {
+                    val indice =
+                        serverSalvati.indexOf(
+                            serverOriginale
+                        )
 
-                        if (indice >= 0) {
-                            val eraSelezionato =
-                                host.trim() == serverOriginale.host &&
-                                        porta.trim() == serverOriginale.porta
+                    if (indice >= 0) {
+                        val eraSelezionato =
+                            host.trim() == serverOriginale.host &&
+                                    porta.trim() == serverOriginale.porta
 
-                            val nuovaLista =
-                                serverSalvati.toMutableList()
+                        val nuovaLista =
+                            serverSalvati.toMutableList()
 
-                            nuovaLista.removeAt(indice)
+                        nuovaLista.removeAt(indice)
 
-                            serverSalvati =
-                                nuovaLista
+                        serverSalvati =
+                            nuovaLista
 
-                            salvaServerSalvati(
-                                preferences = preferences,
-                                server = serverSalvati
-                            )
+                        salvaServerSalvati(
+                            preferences = preferences,
+                            server = serverSalvati
+                        )
 
-                            if (eraSelezionato) {
-                                val nuovoSelezionato =
-                                    serverSalvati.firstOrNull()
+                        if (eraSelezionato) {
+                            val nuovoSelezionato =
+                                serverSalvati.firstOrNull()
 
-                                if (nuovoSelezionato != null) {
-                                    host =
+                            if (nuovoSelezionato != null) {
+                                host =
+                                    nuovoSelezionato.host
+
+                                porta =
+                                    nuovoSelezionato.porta
+
+                                username =
+                                    nuovoSelezionato.username
+
+                                password =
+                                    nuovoSelezionato.password
+
+                                preferences.edit()
+                                    .putString(
+                                        "nome_server",
+                                        nuovoSelezionato.nome
+                                    )
+                                    .putString(
+                                        "host",
                                         nuovoSelezionato.host
-
-                                    porta =
+                                    )
+                                    .putString(
+                                        "porta",
                                         nuovoSelezionato.porta
-
-                                    username =
+                                    )
+                                    .putString(
+                                        "username",
                                         nuovoSelezionato.username
+                                    )
+                                    .putString(
+                                        "password",
+                                        SecurePasswordCrypto.encrypt(
+                                            nuovoSelezionato.password
+                                        )
+                                    )
+                                    .apply()
+                            } else {
+                                host = ""
+                                porta = ""
+                                username = ""
+                                password = ""
 
-                                    password =
-                                        nuovoSelezionato.password
-
-                                    preferences.edit()
-                                        .putString(
-                                            "nome_server",
-                                            nuovoSelezionato.nome
-                                        )
-                                        .putString(
-                                            "host",
-                                            nuovoSelezionato.host
-                                        )
-                                        .putString(
-                                            "porta",
-                                            nuovoSelezionato.porta
-                                        )
-                                        .putString(
-                                            "username",
-                                            nuovoSelezionato.username
-                                        )
-                                        .putString(
-                                            "password",
-                                            SecurePasswordCrypto.encrypt(
-                                                nuovoSelezionato.password
-                                            )
-                                        )
-                                        .apply()
-                                } else {
-                                    host = ""
-                                    porta = ""
-                                    username = ""
-                                    password = ""
-
-                                    preferences.edit()
-                                        .remove("nome_server")
-                                        .remove("host")
-                                        .remove("porta")
-                                        .remove("username")
-                                        .remove("password")
-                                        .apply()
-                                }
+                                preferences.edit()
+                                    .remove("nome_server")
+                                    .remove("host")
+                                    .remove("porta")
+                                    .remove("username")
+                                    .remove("password")
+                                    .apply()
                             }
-
-                            mostraSnackbar(
-                                "Server ${serverOriginale.nome} eliminato"
-                            )
                         }
 
-                        serverDaEliminare = null
+                        mostraSnackbar(
+                            "Server ${serverOriginale.nome} eliminato"
+                        )
                     }
-                ) {
-                    Text("Elimina")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        serverDaEliminare = null
-                    }
-                ) {
-                    Text("Annulla")
-                }
+
+                    serverDaEliminare = null
             }
         )
     }

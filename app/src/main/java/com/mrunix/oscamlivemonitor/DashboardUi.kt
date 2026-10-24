@@ -591,3 +591,30 @@ fun VoceStatoCard(
         }
     }
 }
+
+
+@Composable
+fun RigaDettaglioClient(
+    etichetta: String,
+    valore: String,
+    compatto: Boolean
+) {
+    Row(
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        Text(
+            text = etichetta,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = if (compatto) 10.sp else 11.sp
+        )
+
+        Spacer(modifier = Modifier.width(5.dp))
+
+        Text(
+            text = valore,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Medium,
+            fontSize = if (compatto) 12.sp else 13.sp
+        )
+    }
+}

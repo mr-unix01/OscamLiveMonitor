@@ -662,3 +662,140 @@ fun MiniDatoClient(
         }
     }
 }
+
+
+@Composable
+fun ExpressiveAppHeader(
+    compatto: Boolean,
+    totaleServer: Int,
+    statiServer: Collection<OscamServerConnectionState>
+) {
+    val temaScuroHeader = androidx.compose.foundation.isSystemInDarkTheme()
+
+    val serverAttivi =
+        statiServer.count {
+            it == OscamServerConnectionState.ACTIVE
+        }
+
+    val verificaInCorso =
+        totaleServer > 0 &&
+            (
+                statiServer.size < totaleServer ||
+                statiServer.any {
+                    it == OscamServerConnectionState.CHECKING
+                }
+            )
+
+    val statoHeaderText =
+        if (verificaInCorso) {
+            "$totaleServer server · verifica..."
+        } else {
+            "$totaleServer server · $serverAttivi attivi"
+        }
+
+    val statoHeaderColor =
+        when {
+            verificaInCorso ->
+                MaterialTheme.colorScheme.onSurfaceVariant
+
+            totaleServer > 0 && serverAttivi == totaleServer ->
+                Color(0xFF4CAF50)
+
+            serverAttivi > 0 ->
+                Color(0xFFFFB300)
+
+            totaleServer > 0 ->
+                Color(0xFFEF5350)
+
+            else ->
+                MaterialTheme.colorScheme.onSurfaceVariant
+        }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 20.dp else 24.dp
+        ),
+        border = null,
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = if (compatto) 14.dp else 18.dp,
+                    vertical = if (compatto) 11.dp else 14.dp
+                ),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = if (temaScuroHeader) {
+                    Color(0xFF4CAF50).copy(alpha = 0.16f)
+                } else {
+                    Color(0xFF4CAF50).copy(alpha = 0.12f)
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null,
+                    tint = if (temaScuroHeader) Color(0xFF4CAF50) else Color(0xFF2E7D32),
+                    modifier = Modifier
+                        .padding(if (compatto) 11.dp else 13.dp)
+                        .size(if (compatto) 24.dp else 28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(if (compatto) 12.dp else 16.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "OSCam",
+                        fontSize = if (compatto) 25.sp else 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (temaScuroHeader) MaterialTheme.colorScheme.onSurface else Color(0xFF1F2320)
+                    )
+
+                    Spacer(modifier = Modifier.width(7.dp))
+
+                    Text(
+                        text = "Live Monitor",
+                        fontSize = if (compatto) 25.sp else 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (temaScuroHeader) Color(0xFF4CAF50) else Color(0xFF2E7D32)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                Row(
+                    verticalAlignment =
+                        androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "●",
+                        color = statoHeaderColor,
+                        fontSize = 8.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    Text(
+                        text = statoHeaderText,
+                        fontSize = if (compatto) 13.sp else 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = statoHeaderColor
+                    )
+                }
+            }
+        }
+    }
+}

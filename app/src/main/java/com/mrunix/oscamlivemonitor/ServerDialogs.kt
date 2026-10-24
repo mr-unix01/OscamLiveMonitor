@@ -4,6 +4,23 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
@@ -227,5 +244,288 @@ internal fun RiordinaServerDialog(
                 28.dp
             ),
         tonalElevation = 0.dp
+    )
+}
+
+@Composable
+internal fun ModificaServerDialog(
+    nomeServer: String,
+    onNomeChange: (String) -> Unit,
+    hostServer: String,
+    onHostChange: (String) -> Unit,
+    portaServer: String,
+    onPortaChange: (String) -> Unit,
+    usernameServer: String,
+    onUsernameChange: (String) -> Unit,
+    passwordServer: String,
+    onPasswordChange: (String) -> Unit,
+    mostraPassword: Boolean,
+    onTogglePassword: () -> Unit,
+    dialogSnackbarHostState: SnackbarHostState,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onSave: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.size(34.dp),
+                    shape =
+                        androidx.compose.foundation.shape.CircleShape,
+                    color =
+                        Color(0xFF4CAF50).copy(alpha = 0.18f)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null,
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = "Modifica server OSCam",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    maxLines = 1
+                )
+            }
+        },
+        text = {
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                18.dp
+                            ),
+                        value = nomeServer,
+                        onValueChange = onNomeChange,
+                        label = {
+                            Text("Nome server")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Storage,
+                                contentDescription = null
+                            )
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                18.dp
+                            ),
+                        value = hostServer,
+                        onValueChange = onHostChange,
+                        label = {
+                            Text("Host/IP")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null
+                            )
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                18.dp
+                            ),
+                        value = portaServer,
+                        onValueChange = onPortaChange,
+                        label = {
+                            Text("Porta")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Link,
+                                contentDescription = null
+                            )
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                18.dp
+                            ),
+                        value = usernameServer,
+                        onValueChange = onUsernameChange,
+                        label = {
+                            Text("Username")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null
+                            )
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                18.dp
+                            ),
+                        value = passwordServer,
+                        onValueChange = onPasswordChange,
+                        label = {
+                            Text("Password")
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null
+                            )
+                        },
+                        visualTransformation =
+                            if (mostraPassword) {
+                                VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = onTogglePassword
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        if (mostraPassword) {
+                                            Icons.Default.VisibilityOff
+                                        } else {
+                                            Icons.Default.Visibility
+                                        },
+                                    contentDescription =
+                                        if (mostraPassword) {
+                                            "Nascondi password"
+                                        } else {
+                                            "Mostra password"
+                                        }
+                                )
+                            }
+                        },
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                16.dp
+                            ),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.error.copy(
+                                alpha = 0.55f
+                            )
+                        ),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor =
+                                    MaterialTheme.colorScheme.error,
+                                containerColor =
+                                    MaterialTheme.colorScheme.error.copy(
+                                        alpha = 0.08f
+                                    )
+                            ),
+                        onClick = onDelete
+                    ) {
+                        Row(
+                            verticalAlignment =
+                                Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = "Elimina server",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+
+                SnackbarHost(
+                    hostState = dialogSnackbarHostState,
+                    modifier = Modifier.align(
+                        Alignment.BottomCenter
+                    )
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                shape =
+                    androidx.compose.foundation.shape.RoundedCornerShape(
+                        14.dp
+                    ),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2E7D32),
+                        contentColor = Color.White
+                    ),
+                onClick = onSave
+            ) {
+                Text("Salva")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                shape =
+                    androidx.compose.foundation.shape.RoundedCornerShape(
+                        14.dp
+                    ),
+                onClick = onDismiss
+            ) {
+                Text("Annulla")
+            }
+        }
     )
 }

@@ -1565,333 +1565,137 @@ fun Greeting(
     }
 
     serverDaModificare?.let { serverOriginale ->
-        AlertDialog(
-            onDismissRequest = {
+        ModificaServerDialog(
+            nomeServer = modificaNomeServer,
+            onNomeChange = {
+                modificaNomeServer = it
+            },
+            hostServer = modificaHostServer,
+            onHostChange = {
+                modificaHostServer = it
+            },
+            portaServer = modificaPortaServer,
+            onPortaChange = {
+                modificaPortaServer = it
+            },
+            usernameServer = modificaUsernameServer,
+            onUsernameChange = {
+                modificaUsernameServer = it
+            },
+            passwordServer = modificaPasswordServer,
+            onPasswordChange = {
+                modificaPasswordServer = it
+            },
+            mostraPassword = mostraPasswordModifica,
+            onTogglePassword = {
+                mostraPasswordModifica =
+                    !mostraPasswordModifica
+            },
+            dialogSnackbarHostState = dialogSnackbarHostState,
+            onDismiss = {
                 serverDaModificare = null
             },
-            title = {
-                Row(
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(34.dp),
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        color = Color(0xFF4CAF50).copy(alpha = 0.18f)
-                    ) {
-                        Box(
-                            contentAlignment = androidx.compose.ui.Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = null,
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = "Modifica server OSCam",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        maxLines = 1
-                    )
-                }
+            onDelete = {
+                serverDaEliminare = serverOriginale
+                serverDaModificare = null
             },
-            text = {
-                Box(
-                    modifier = Modifier.fillMaxWidth()
+            onSave = {
+                val nomePulito =
+                    modificaNomeServer.trim()
+
+                val hostPulito =
+                    modificaHostServer.trim()
+
+                val portaPulita =
+                    modificaPortaServer.trim()
+
+                if (
+                    nomePulito.isBlank() ||
+                    hostPulito.isBlank() ||
+                    portaPulita.toIntOrNull() == null
                 ) {
-                    Column(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                        .imePadding()
-                ) {
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaNomeServer,
-                        onValueChange = {
-                            modificaNomeServer = it
-                        },
-                        label = {
-                            Text("Nome server")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Storage,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
+                    mostraSnackbarDialog(
+                        "Inserisci nome, Host/IP e una porta valida"
                     )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaHostServer,
-                        onValueChange = {
-                            modificaHostServer = it
-                        },
-                        label = {
-                            Text("Host/IP")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Language,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaPortaServer,
-                        onValueChange = {
-                            modificaPortaServer = it
-                        },
-                        label = {
-                            Text("Porta")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Link,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaUsernameServer,
-                        onValueChange = {
-                            modificaUsernameServer = it
-                        },
-                        label = {
-                            Text("Username")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaPasswordServer,
-                        onValueChange = {
-                            modificaPasswordServer = it
-                        },
-                        label = {
-                            Text("Password")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = null
-                            )
-                        },
-                        visualTransformation =
-                            if (mostraPasswordModifica) {
-                                androidx.compose.ui.text.input.VisualTransformation.None
-                            } else {
-                                PasswordVisualTransformation()
-                            },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { mostraPasswordModifica = !mostraPasswordModifica }
-                            ) {
-                                Icon(
-                                    imageVector = if (mostraPasswordModifica) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = if (mostraPasswordModifica) "Nascondi password" else "Mostra password"
-                                )
-                            }
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedButton(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.error.copy(alpha = 0.55f)
-                        ),
-                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
-                        ),
-                        onClick = {
-                            serverDaEliminare = serverOriginale
-                            serverDaModificare = null
-                        }
-                    ) {
-                        Row(
-                          verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                      ) {
-                          Icon(
-                              imageVector = Icons.Default.Delete,
-                              contentDescription = null,
-                              tint = MaterialTheme.colorScheme.error,
-                              modifier = Modifier.size(20.dp)
-                          )
-                          Spacer(modifier = Modifier.width(8.dp))
-                          Text(
-                              text = "Elimina server",
-                              color = MaterialTheme.colorScheme.error
-                          )
-                      }
-                    }
-                }
-
-                    SnackbarHost(
-                        hostState = dialogSnackbarHostState,
-                        modifier = Modifier.align(
-                            androidx.compose.ui.Alignment.BottomCenter
+                } else {
+                    val serverAggiornato =
+                        serverOriginale.copy(
+                            nome = nomePulito,
+                            host = hostPulito,
+                            porta = portaPulita,
+                            username = modificaUsernameServer,
+                            password = modificaPasswordServer
                         )
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32),
-                        contentColor = Color.White
-                    ),
-                    onClick = {
-                        val nomePulito =
-                            modificaNomeServer.trim()
 
-                        val hostPulito =
-                            modificaHostServer.trim()
+                    val indice =
+                        serverSalvati.indexOf(
+                            serverOriginale
+                        )
 
-                        val portaPulita =
-                            modificaPortaServer.trim()
+                    if (indice >= 0) {
+                        val nuovaLista =
+                            serverSalvati.toMutableList()
 
-                        if (
-                            nomePulito.isBlank() ||
-                            hostPulito.isBlank() ||
-                            portaPulita.toIntOrNull() == null
-                        ) {
-                            mostraSnackbarDialog(
-                                "Inserisci nome, Host/IP e una porta valida"
-                            )
-                        } else {
-                            val serverAggiornato =
-                                serverOriginale.copy(
-                                    nome = nomePulito,
-                                    host = hostPulito,
-                                    porta = portaPulita,
-                                    username = modificaUsernameServer,
-                                    password = modificaPasswordServer
+                        nuovaLista[indice] =
+                            serverAggiornato
+
+                        serverSalvati =
+                            nuovaLista
+
+                        salvaServerSalvati(
+                            preferences = preferences,
+                            server = serverSalvati
+                        )
+
+                        val eraSelezionato =
+                            host.trim() == serverOriginale.host &&
+                                porta.trim() == serverOriginale.porta
+
+                        if (eraSelezionato) {
+                            host =
+                                serverAggiornato.host
+
+                            porta =
+                                serverAggiornato.porta
+
+                            username =
+                                serverAggiornato.username
+
+                            password =
+                                serverAggiornato.password
+
+                            preferences.edit()
+                                .putString(
+                                    "nome_server",
+                                    serverAggiornato.nome
                                 )
-
-                            val indice =
-                                serverSalvati.indexOf(
-                                    serverOriginale
+                                .putString(
+                                    "host",
+                                    serverAggiornato.host
                                 )
-
-                            if (indice >= 0) {
-                                val nuovaLista =
-                                    serverSalvati.toMutableList()
-
-                                nuovaLista[indice] =
-                                    serverAggiornato
-
-                                serverSalvati =
-                                    nuovaLista
-
-                                salvaServerSalvati(
-                                    preferences = preferences,
-                                    server = serverSalvati
+                                .putString(
+                                    "porta",
+                                    serverAggiornato.porta
                                 )
-
-                                val eraSelezionato =
-                                    host.trim() == serverOriginale.host &&
-                                            porta.trim() == serverOriginale.porta
-
-                                if (eraSelezionato) {
-                                    host =
-                                        serverAggiornato.host
-
-                                    porta =
-                                        serverAggiornato.porta
-
-                                    username =
-                                        serverAggiornato.username
-
-                                    password =
+                                .putString(
+                                    "username",
+                                    serverAggiornato.username
+                                )
+                                .putString(
+                                    "password",
+                                    SecurePasswordCrypto.encrypt(
                                         serverAggiornato.password
-
-                                    preferences.edit()
-                                        .putString(
-                                            "nome_server",
-                                            serverAggiornato.nome
-                                        )
-                                        .putString(
-                                            "host",
-                                            serverAggiornato.host
-                                        )
-                                        .putString(
-                                            "porta",
-                                            serverAggiornato.porta
-                                        )
-                                        .putString(
-                                            "username",
-                                            serverAggiornato.username
-                                        )
-                                        .putString(
-                                            "password",
-                                            SecurePasswordCrypto.encrypt(
-                                                serverAggiornato.password
-                                            )
-                                        )
-                                        .apply()
-                                }
-
-                                mostraSnackbar(
-                                    "Server ${serverAggiornato.nome} modificato"
+                                    )
                                 )
-                            }
-
-                            serverDaModificare = null
+                                .apply()
                         }
+
+                        mostraSnackbar(
+                            "Server ${serverAggiornato.nome} modificato"
+                        )
                     }
-                ) {
-                    Text("Salva")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    onClick = {
-                        serverDaModificare = null
-                    }
-                ) {
-                    Text("Annulla")
+
+                    serverDaModificare = null
                 }
             }
         )

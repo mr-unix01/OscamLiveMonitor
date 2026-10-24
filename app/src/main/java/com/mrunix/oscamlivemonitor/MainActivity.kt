@@ -3471,49 +3471,6 @@ fun ExpressiveAppHeader(
 
 
 @Composable
-fun MiniDatoClient(
-    etichetta: String,
-    valore: String,
-    compatto: Boolean,
-    modifier: Modifier = Modifier
-) {
-    androidx.compose.material3.Surface(
-        modifier = modifier,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.52f),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = if (compatto) 6.dp else 8.dp,
-                vertical = if (compatto) 3.dp else 4.dp
-            ),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-        ) {
-            Text(
-                text = etichetta,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = if (compatto) 9.sp else 10.sp,
-                softWrap = !compatto
-            )
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            Text(
-                text = valore,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-                fontSize = if (compatto) 11.sp else 12.sp,
-                softWrap = !compatto
-            )
-        }
-    }
-}
-
-@Composable
 fun ClientInfoCard(
     testo: String,
     compatto: Boolean,

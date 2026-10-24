@@ -64,7 +64,7 @@ fun ToolsHeader(
                 Icon(
                     imageVector = Icons.Default.Build,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .padding(if (compact) 6.dp else 8.dp)
                         .size(if (compact) 17.dp else 20.dp)

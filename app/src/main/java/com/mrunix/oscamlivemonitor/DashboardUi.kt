@@ -3,12 +3,17 @@ package com.mrunix.oscamlivemonitor
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Card
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -111,6 +116,92 @@ fun ExpressiveMiniInfo(
                     MaterialTheme.colorScheme.onSurfaceVariant
                 }
             )
+        }
+    }
+}
+
+
+@Composable
+fun ExpressiveActiveServerCard(
+    nome: String,
+    host: String,
+    porta: String,
+    compatto: Boolean
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+            if (compatto) 20.dp else 24.dp
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF4CAF50).copy(alpha = 0.10f)
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Color(0xFF4CAF50).copy(alpha = 0.30f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = if (compatto) 14.dp else 18.dp,
+                    vertical = if (compatto) 12.dp else 15.dp
+                ),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                color = Color(0xFF4CAF50).copy(alpha = 0.16f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null,
+                    tint = Color(0xFF4CAF50),
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(if (compatto) 20.dp else 23.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = nome,
+                    fontSize = if (compatto) 17.sp else 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (host.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text =
+                            if (porta.isNotBlank()) "$host:$porta" else host,
+                        fontSize = if (compatto) 12.sp else 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
+                color = Color(0xFF66BB6A).copy(alpha = 0.15f)
+            ) {
+                Text(
+                    text = "LIVE",
+                    color = Color(0xFF66BB6A),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = if (compatto) 10.sp else 11.sp,
+                    modifier = Modifier.padding(
+                        horizontal = 9.dp,
+                        vertical = 5.dp
+                    )
+                )
+            }
         }
     }
 }

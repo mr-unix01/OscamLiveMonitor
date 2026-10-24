@@ -65,9 +65,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("com.github.mwiede:jsch:2.28.5")
-    implementation("commons-net:commons-net:3.13.0")
+    implementation(libs.material.icons.extended)
+    implementation(libs.jsch)
+    implementation(libs.commons.net)
 
     testImplementation(libs.junit)
 

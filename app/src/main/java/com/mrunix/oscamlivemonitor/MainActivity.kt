@@ -1243,983 +1243,473 @@ fun Greeting(
     }
 
     if (mostraAggiungiServer) {
-        AlertDialog(
-            onDismissRequest = {
+        AggiungiServerDialog(
+            nomeServer = nuovoNomeServer,
+            onNomeChange = {
+                nuovoNomeServer = it
+            },
+            hostServer = nuovoHostServer,
+            onHostChange = {
+                nuovoHostServer = it
+            },
+            portaServer = nuovaPortaServer,
+            onPortaChange = {
+                nuovaPortaServer = it
+            },
+            usernameServer = nuovoUsernameServer,
+            onUsernameChange = {
+                nuovoUsernameServer = it
+            },
+            passwordServer = nuovaPasswordServer,
+            onPasswordChange = {
+                nuovaPasswordServer = it
+            },
+            mostraPassword = mostraPasswordNuovo,
+            onTogglePassword = {
+                mostraPasswordNuovo =
+                    !mostraPasswordNuovo
+            },
+            testConnessioneInCorso =
+                testConnessioneNuovoInCorso,
+            dialogSnackbarHostState =
+                dialogSnackbarHostState,
+            onDismiss = {
                 testConnessioneNuovoJob?.cancel()
                 testConnessioneNuovoJob = null
                 testConnessioneNuovoInCorso = false
                 mostraAggiungiServer = false
             },
-            title = {
-                Row(
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(34.dp),
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        color = Color(0xFF4CAF50).copy(alpha = 0.18f)
-                    ) {
-                        Box(
-                            contentAlignment = androidx.compose.ui.Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+            onTestConnection = test@{
+                val hostPulito =
+                    nuovoHostServer.trim()
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                val portaPulita =
+                    nuovaPortaServer.trim()
 
-                    Text(
-                        text = "Aggiungi server OSCam",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        maxLines = 1
+                if (!permessoReteConcesso) {
+                    mostraSnackbarDialog(
+                        "Concedi prima l'accesso alla rete locale"
                     )
-                }
-            },
-            text = {
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                        .imePadding()
-                ) {
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovoNomeServer,
-                        onValueChange = { nuovoNomeServer = it },
-                        label = { Text("Nome server") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Storage,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovoHostServer,
-                        onValueChange = { nuovoHostServer = it },
-                        label = { Text("Host/IP") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Language,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovaPortaServer,
-                        onValueChange = { nuovaPortaServer = it },
-                        label = { Text("Porta") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Link,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovoUsernameServer,
-                        onValueChange = { nuovoUsernameServer = it },
-                        label = { Text("Username") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovaPasswordServer,
-                        onValueChange = { nuovaPasswordServer = it },
-                        label = { Text("Password") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = null
-                            )
-                        },
-                        visualTransformation =
-                            if (mostraPasswordNuovo) {
-                                androidx.compose.ui.text.input.VisualTransformation.None
-                            } else {
-                                PasswordVisualTransformation()
-                            },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { mostraPasswordNuovo = !mostraPasswordNuovo }
-                            ) {
-                                Icon(
-                                    imageVector = if (mostraPasswordNuovo) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = if (mostraPasswordNuovo) "Nascondi password" else "Mostra password"
-                                )
-                            }
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                        enabled = !testConnessioneNuovoInCorso,
-                        onClick = {
-                            val hostPulito = nuovoHostServer.trim()
-                            val portaPulita = nuovaPortaServer.trim()
-
-                            if (!permessoReteConcesso) {
-                                mostraSnackbarDialog(
-                                    "Concedi prima l'accesso alla rete locale"
-                                )
-                                return@OutlinedButton
-                            }
-
-                            if (
-                                hostPulito.isBlank() ||
-                                portaPulita.toIntOrNull() == null
-                            ) {
-                                mostraSnackbarDialog(
-                                    "Inserisci Host/IP e una porta valida"
-                                )
-                                return@OutlinedButton
-                            }
-
-                            testConnessioneNuovoInCorso = true
-
-                            testConnessioneNuovoJob =
-                                coroutineScope.launch {
-                                val risultato =
-                                    withContext(Dispatchers.IO) {
-                                        api.scaricaStatusJson(
-                                            host = hostPulito,
-                                            porta = portaPulita,
-                                            username = nuovoUsernameServer,
-                                            password = nuovaPasswordServer
-                                        )
-                                    }
-
-                                testConnessioneNuovoInCorso = false
-
-                                if (
-                                    risultato.startsWith(
-                                        "ERRORE:",
-                                        ignoreCase = true
-                                    )
-                                ) {
-                                    mostraSnackbarDialog(
-                                        risultato
-                                            .substringAfter(":")
-                                            .trim()
-                                    )
-                                } else if (
-                                    !api.statusJsonOscamValido(risultato)
-                                ) {
-                                    mostraSnackbarDialog(
-                                        "Risposta ricevuta, ma non è un server OSCam valido"
-                                    )
-                                } else {
-                                    mostraSnackbarDialog(
-                                        "Connessione riuscita"
-                                    )
-                                }
-                            }
-                        }
-                    ) {
-                        if (testConnessioneNuovoInCorso) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Text("Connessione...")
-                        } else {
-                            Text("Test connessione")
-                        }
-                    }
+                    return@test
                 }
 
-                    SnackbarHost(
-                        hostState = dialogSnackbarHostState,
-                        modifier = Modifier.align(
-                            androidx.compose.ui.Alignment.BottomCenter
-                        )
+                if (
+                    hostPulito.isBlank() ||
+                    portaPulita.toIntOrNull() == null
+                ) {
+                    mostraSnackbarDialog(
+                        "Inserisci Host/IP e una porta valida"
                     )
+                    return@test
                 }
-            },
-            confirmButton = {
-                Button(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32),
-                        contentColor = Color.White
-                    ),
-                    onClick = {
-                        val nomePulito = nuovoNomeServer.trim()
-                        val hostPulito = nuovoHostServer.trim()
-                        val portaPulita = nuovaPortaServer.trim()
+
+                testConnessioneNuovoInCorso = true
+
+                testConnessioneNuovoJob =
+                    coroutineScope.launch {
+                        val risultato =
+                            withContext(Dispatchers.IO) {
+                                api.scaricaStatusJson(
+                                    host = hostPulito,
+                                    porta = portaPulita,
+                                    username = nuovoUsernameServer,
+                                    password = nuovaPasswordServer
+                                )
+                            }
+
+                        testConnessioneNuovoInCorso = false
 
                         if (
-                            nomePulito.isBlank() ||
-                            hostPulito.isBlank() ||
-                            portaPulita.toIntOrNull() == null
+                            risultato.startsWith(
+                                "ERRORE:",
+                                ignoreCase = true
+                            )
                         ) {
-                            mostraSnackbarDialog("Inserisci nome, Host/IP e una porta valida")
+                            mostraSnackbarDialog(
+                                risultato
+                                    .substringAfter(":")
+                                    .trim()
+                            )
+                        } else if (
+                            !api.statusJsonOscamValido(
+                                risultato
+                            )
+                        ) {
+                            mostraSnackbarDialog(
+                                "Risposta ricevuta, ma non è un server OSCam valido"
+                            )
                         } else {
-                            val nuovoServer = OscamServer(
-                                nome = nomePulito,
-                                host = hostPulito,
-                                porta = portaPulita,
-                                username = nuovoUsernameServer,
-                                password = nuovaPasswordServer
+                            mostraSnackbarDialog(
+                                "Connessione riuscita"
                             )
-
-                            serverSalvati = serverSalvati + nuovoServer
-
-                            salvaServerSalvati(
-                                preferences = preferences,
-                                server = serverSalvati
-                            )
-
-                            host = nuovoServer.host
-                            porta = nuovoServer.porta
-                            username = nuovoServer.username
-                            password = nuovoServer.password
-
-                            preferences.edit()
-                                .putString("nome_server", nuovoServer.nome)
-                                .putString("host", nuovoServer.host)
-                                .putString("porta", nuovoServer.porta)
-                                .putString("username", nuovoServer.username)
-                                .putString(
-                                    "password",
-                                    SecurePasswordCrypto.encrypt(
-                                        nuovoServer.password
-                                    )
-                                )
-                                .apply()
-
-                            nuovoNomeServer = ""
-                            nuovoHostServer = ""
-                            nuovaPortaServer = ""
-                            nuovoUsernameServer = ""
-                            nuovaPasswordServer = ""
-                            testConnessioneNuovoJob?.cancel()
-                            testConnessioneNuovoJob = null
-                            testConnessioneNuovoInCorso = false
-                            mostraAggiungiServer = false
-                            mostraSnackbar("Server ${nuovoServer.nome} aggiunto")
                         }
                     }
-                ) {
-                    Text("Salva")
-                }
             },
-            dismissButton = {
-                OutlinedButton(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    onClick = {
-                        testConnessioneNuovoJob?.cancel()
-                        testConnessioneNuovoJob = null
-                        testConnessioneNuovoInCorso = false
-                        mostraAggiungiServer = false
-                    }
+            onSave = {
+                val nomePulito =
+                    nuovoNomeServer.trim()
+
+                val hostPulito =
+                    nuovoHostServer.trim()
+
+                val portaPulita =
+                    nuovaPortaServer.trim()
+
+                if (
+                    nomePulito.isBlank() ||
+                    hostPulito.isBlank() ||
+                    portaPulita.toIntOrNull() == null
                 ) {
-                    Text("Annulla")
+                    mostraSnackbarDialog(
+                        "Inserisci nome, Host/IP e una porta valida"
+                    )
+                } else {
+                    val nuovoServer =
+                        OscamServer(
+                            nome = nomePulito,
+                            host = hostPulito,
+                            porta = portaPulita,
+                            username =
+                                nuovoUsernameServer,
+                            password =
+                                nuovaPasswordServer
+                        )
+
+                    serverSalvati =
+                        serverSalvati + nuovoServer
+
+                    salvaServerSalvati(
+                        preferences = preferences,
+                        server = serverSalvati
+                    )
+
+                    host = nuovoServer.host
+                    porta = nuovoServer.porta
+                    username = nuovoServer.username
+                    password = nuovoServer.password
+
+                    preferences.edit()
+                        .putString(
+                            "nome_server",
+                            nuovoServer.nome
+                        )
+                        .putString(
+                            "host",
+                            nuovoServer.host
+                        )
+                        .putString(
+                            "porta",
+                            nuovoServer.porta
+                        )
+                        .putString(
+                            "username",
+                            nuovoServer.username
+                        )
+                        .putString(
+                            "password",
+                            SecurePasswordCrypto.encrypt(
+                                nuovoServer.password
+                            )
+                        )
+                        .apply()
+
+                    nuovoNomeServer = ""
+                    nuovoHostServer = ""
+                    nuovaPortaServer = ""
+                    nuovoUsernameServer = ""
+                    nuovaPasswordServer = ""
+
+                    testConnessioneNuovoJob?.cancel()
+                    testConnessioneNuovoJob = null
+                    testConnessioneNuovoInCorso = false
+                    mostraAggiungiServer = false
+
+                    mostraSnackbar(
+                        "Server ${nuovoServer.nome} aggiunto"
+                    )
                 }
             }
         )
     }
 
     serverDaModificare?.let { serverOriginale ->
-        AlertDialog(
-            onDismissRequest = {
+        ModificaServerDialog(
+            nomeServer = modificaNomeServer,
+            onNomeChange = {
+                modificaNomeServer = it
+            },
+            hostServer = modificaHostServer,
+            onHostChange = {
+                modificaHostServer = it
+            },
+            portaServer = modificaPortaServer,
+            onPortaChange = {
+                modificaPortaServer = it
+            },
+            usernameServer = modificaUsernameServer,
+            onUsernameChange = {
+                modificaUsernameServer = it
+            },
+            passwordServer = modificaPasswordServer,
+            onPasswordChange = {
+                modificaPasswordServer = it
+            },
+            mostraPassword = mostraPasswordModifica,
+            onTogglePassword = {
+                mostraPasswordModifica =
+                    !mostraPasswordModifica
+            },
+            dialogSnackbarHostState = dialogSnackbarHostState,
+            onDismiss = {
                 serverDaModificare = null
             },
-            title = {
-                Row(
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(34.dp),
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        color = Color(0xFF4CAF50).copy(alpha = 0.18f)
-                    ) {
-                        Box(
-                            contentAlignment = androidx.compose.ui.Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = null,
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = "Modifica server OSCam",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        maxLines = 1
-                    )
-                }
+            onDelete = {
+                serverDaEliminare = serverOriginale
+                serverDaModificare = null
             },
-            text = {
-                Box(
-                    modifier = Modifier.fillMaxWidth()
+            onSave = {
+                val nomePulito =
+                    modificaNomeServer.trim()
+
+                val hostPulito =
+                    modificaHostServer.trim()
+
+                val portaPulita =
+                    modificaPortaServer.trim()
+
+                if (
+                    nomePulito.isBlank() ||
+                    hostPulito.isBlank() ||
+                    portaPulita.toIntOrNull() == null
                 ) {
-                    Column(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                        .imePadding()
-                ) {
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaNomeServer,
-                        onValueChange = {
-                            modificaNomeServer = it
-                        },
-                        label = {
-                            Text("Nome server")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Storage,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
+                    mostraSnackbarDialog(
+                        "Inserisci nome, Host/IP e una porta valida"
                     )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaHostServer,
-                        onValueChange = {
-                            modificaHostServer = it
-                        },
-                        label = {
-                            Text("Host/IP")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Language,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaPortaServer,
-                        onValueChange = {
-                            modificaPortaServer = it
-                        },
-                        label = {
-                            Text("Porta")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Link,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaUsernameServer,
-                        onValueChange = {
-                            modificaUsernameServer = it
-                        },
-                        label = {
-                            Text("Username")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = modificaPasswordServer,
-                        onValueChange = {
-                            modificaPasswordServer = it
-                        },
-                        label = {
-                            Text("Password")
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = null
-                            )
-                        },
-                        visualTransformation =
-                            if (mostraPasswordModifica) {
-                                androidx.compose.ui.text.input.VisualTransformation.None
-                            } else {
-                                PasswordVisualTransformation()
-                            },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { mostraPasswordModifica = !mostraPasswordModifica }
-                            ) {
-                                Icon(
-                                    imageVector = if (mostraPasswordModifica) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = if (mostraPasswordModifica) "Nascondi password" else "Mostra password"
-                                )
-                            }
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedButton(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.error.copy(alpha = 0.55f)
-                        ),
-                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
-                        ),
-                        onClick = {
-                            serverDaEliminare = serverOriginale
-                            serverDaModificare = null
-                        }
-                    ) {
-                        Row(
-                          verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                      ) {
-                          Icon(
-                              imageVector = Icons.Default.Delete,
-                              contentDescription = null,
-                              tint = MaterialTheme.colorScheme.error,
-                              modifier = Modifier.size(20.dp)
-                          )
-                          Spacer(modifier = Modifier.width(8.dp))
-                          Text(
-                              text = "Elimina server",
-                              color = MaterialTheme.colorScheme.error
-                          )
-                      }
-                    }
-                }
-
-                    SnackbarHost(
-                        hostState = dialogSnackbarHostState,
-                        modifier = Modifier.align(
-                            androidx.compose.ui.Alignment.BottomCenter
+                } else {
+                    val serverAggiornato =
+                        serverOriginale.copy(
+                            nome = nomePulito,
+                            host = hostPulito,
+                            porta = portaPulita,
+                            username = modificaUsernameServer,
+                            password = modificaPasswordServer
                         )
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32),
-                        contentColor = Color.White
-                    ),
-                    onClick = {
-                        val nomePulito =
-                            modificaNomeServer.trim()
 
-                        val hostPulito =
-                            modificaHostServer.trim()
+                    val indice =
+                        serverSalvati.indexOf(
+                            serverOriginale
+                        )
 
-                        val portaPulita =
-                            modificaPortaServer.trim()
+                    if (indice >= 0) {
+                        val nuovaLista =
+                            serverSalvati.toMutableList()
 
-                        if (
-                            nomePulito.isBlank() ||
-                            hostPulito.isBlank() ||
-                            portaPulita.toIntOrNull() == null
-                        ) {
-                            mostraSnackbarDialog(
-                                "Inserisci nome, Host/IP e una porta valida"
-                            )
-                        } else {
-                            val serverAggiornato =
-                                serverOriginale.copy(
-                                    nome = nomePulito,
-                                    host = hostPulito,
-                                    porta = portaPulita,
-                                    username = modificaUsernameServer,
-                                    password = modificaPasswordServer
+                        nuovaLista[indice] =
+                            serverAggiornato
+
+                        serverSalvati =
+                            nuovaLista
+
+                        salvaServerSalvati(
+                            preferences = preferences,
+                            server = serverSalvati
+                        )
+
+                        val eraSelezionato =
+                            host.trim() == serverOriginale.host &&
+                                porta.trim() == serverOriginale.porta
+
+                        if (eraSelezionato) {
+                            host =
+                                serverAggiornato.host
+
+                            porta =
+                                serverAggiornato.porta
+
+                            username =
+                                serverAggiornato.username
+
+                            password =
+                                serverAggiornato.password
+
+                            preferences.edit()
+                                .putString(
+                                    "nome_server",
+                                    serverAggiornato.nome
                                 )
-
-                            val indice =
-                                serverSalvati.indexOf(
-                                    serverOriginale
+                                .putString(
+                                    "host",
+                                    serverAggiornato.host
                                 )
-
-                            if (indice >= 0) {
-                                val nuovaLista =
-                                    serverSalvati.toMutableList()
-
-                                nuovaLista[indice] =
-                                    serverAggiornato
-
-                                serverSalvati =
-                                    nuovaLista
-
-                                salvaServerSalvati(
-                                    preferences = preferences,
-                                    server = serverSalvati
+                                .putString(
+                                    "porta",
+                                    serverAggiornato.porta
                                 )
-
-                                val eraSelezionato =
-                                    host.trim() == serverOriginale.host &&
-                                            porta.trim() == serverOriginale.porta
-
-                                if (eraSelezionato) {
-                                    host =
-                                        serverAggiornato.host
-
-                                    porta =
-                                        serverAggiornato.porta
-
-                                    username =
-                                        serverAggiornato.username
-
-                                    password =
+                                .putString(
+                                    "username",
+                                    serverAggiornato.username
+                                )
+                                .putString(
+                                    "password",
+                                    SecurePasswordCrypto.encrypt(
                                         serverAggiornato.password
-
-                                    preferences.edit()
-                                        .putString(
-                                            "nome_server",
-                                            serverAggiornato.nome
-                                        )
-                                        .putString(
-                                            "host",
-                                            serverAggiornato.host
-                                        )
-                                        .putString(
-                                            "porta",
-                                            serverAggiornato.porta
-                                        )
-                                        .putString(
-                                            "username",
-                                            serverAggiornato.username
-                                        )
-                                        .putString(
-                                            "password",
-                                            SecurePasswordCrypto.encrypt(
-                                                serverAggiornato.password
-                                            )
-                                        )
-                                        .apply()
-                                }
-
-                                mostraSnackbar(
-                                    "Server ${serverAggiornato.nome} modificato"
+                                    )
                                 )
-                            }
-
-                            serverDaModificare = null
+                                .apply()
                         }
+
+                        mostraSnackbar(
+                            "Server ${serverAggiornato.nome} modificato"
+                        )
                     }
-                ) {
-                    Text("Salva")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    onClick = {
-                        serverDaModificare = null
-                    }
-                ) {
-                    Text("Annulla")
+
+                    serverDaModificare = null
                 }
             }
         )
     }
 
     serverDaEliminare?.let { serverOriginale ->
-        AlertDialog(
-            onDismissRequest = {
+        EliminaServerDialog(
+            nomeServer = serverOriginale.nome,
+            onDismiss = {
                 serverDaEliminare = null
             },
-            title = {
-                Text("Eliminare server?")
-            },
-            text = {
-                Text(
-                    "Vuoi eliminare definitivamente " +
-                            "\"${serverOriginale.nome}\"?"
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val indice =
-                            serverSalvati.indexOf(
-                                serverOriginale
-                            )
+            onConfirm = {
+                    val indice =
+                        serverSalvati.indexOf(
+                            serverOriginale
+                        )
 
-                        if (indice >= 0) {
-                            val eraSelezionato =
-                                host.trim() == serverOriginale.host &&
-                                        porta.trim() == serverOriginale.porta
+                    if (indice >= 0) {
+                        val eraSelezionato =
+                            host.trim() == serverOriginale.host &&
+                                    porta.trim() == serverOriginale.porta
 
-                            val nuovaLista =
-                                serverSalvati.toMutableList()
+                        val nuovaLista =
+                            serverSalvati.toMutableList()
 
-                            nuovaLista.removeAt(indice)
+                        nuovaLista.removeAt(indice)
 
-                            serverSalvati =
-                                nuovaLista
+                        serverSalvati =
+                            nuovaLista
 
-                            salvaServerSalvati(
-                                preferences = preferences,
-                                server = serverSalvati
-                            )
+                        salvaServerSalvati(
+                            preferences = preferences,
+                            server = serverSalvati
+                        )
 
-                            if (eraSelezionato) {
-                                val nuovoSelezionato =
-                                    serverSalvati.firstOrNull()
+                        if (eraSelezionato) {
+                            val nuovoSelezionato =
+                                serverSalvati.firstOrNull()
 
-                                if (nuovoSelezionato != null) {
-                                    host =
+                            if (nuovoSelezionato != null) {
+                                host =
+                                    nuovoSelezionato.host
+
+                                porta =
+                                    nuovoSelezionato.porta
+
+                                username =
+                                    nuovoSelezionato.username
+
+                                password =
+                                    nuovoSelezionato.password
+
+                                preferences.edit()
+                                    .putString(
+                                        "nome_server",
+                                        nuovoSelezionato.nome
+                                    )
+                                    .putString(
+                                        "host",
                                         nuovoSelezionato.host
-
-                                    porta =
+                                    )
+                                    .putString(
+                                        "porta",
                                         nuovoSelezionato.porta
-
-                                    username =
+                                    )
+                                    .putString(
+                                        "username",
                                         nuovoSelezionato.username
+                                    )
+                                    .putString(
+                                        "password",
+                                        SecurePasswordCrypto.encrypt(
+                                            nuovoSelezionato.password
+                                        )
+                                    )
+                                    .apply()
+                            } else {
+                                host = ""
+                                porta = ""
+                                username = ""
+                                password = ""
 
-                                    password =
-                                        nuovoSelezionato.password
-
-                                    preferences.edit()
-                                        .putString(
-                                            "nome_server",
-                                            nuovoSelezionato.nome
-                                        )
-                                        .putString(
-                                            "host",
-                                            nuovoSelezionato.host
-                                        )
-                                        .putString(
-                                            "porta",
-                                            nuovoSelezionato.porta
-                                        )
-                                        .putString(
-                                            "username",
-                                            nuovoSelezionato.username
-                                        )
-                                        .putString(
-                                            "password",
-                                            SecurePasswordCrypto.encrypt(
-                                                nuovoSelezionato.password
-                                            )
-                                        )
-                                        .apply()
-                                } else {
-                                    host = ""
-                                    porta = ""
-                                    username = ""
-                                    password = ""
-
-                                    preferences.edit()
-                                        .remove("nome_server")
-                                        .remove("host")
-                                        .remove("porta")
-                                        .remove("username")
-                                        .remove("password")
-                                        .apply()
-                                }
+                                preferences.edit()
+                                    .remove("nome_server")
+                                    .remove("host")
+                                    .remove("porta")
+                                    .remove("username")
+                                    .remove("password")
+                                    .apply()
                             }
-
-                            mostraSnackbar(
-                                "Server ${serverOriginale.nome} eliminato"
-                            )
                         }
 
-                        serverDaEliminare = null
+                        mostraSnackbar(
+                            "Server ${serverOriginale.nome} eliminato"
+                        )
                     }
-                ) {
-                    Text("Elimina")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        serverDaEliminare = null
-                    }
-                ) {
-                    Text("Annulla")
-                }
+
+                    serverDaEliminare = null
             }
         )
     }
 
     if (mostraRiordinaServer) {
-        AlertDialog(
-            onDismissRequest = {
+        RiordinaServerDialog(
+            server = serverSalvati,
+            onDismiss = {
                 mostraRiordinaServer = false
             },
-            title = {
-                Text(
-                    text = "Riordina server",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
+            onMoveUp = { indice ->
+                val nuovaLista =
+                    serverSalvati.toMutableList()
+
+                val elemento =
+                    nuovaLista.removeAt(indice)
+
+                nuovaLista.add(
+                    indice - 1,
+                    elemento
+                )
+
+                serverSalvati = nuovaLista
+
+                salvaServerSalvati(
+                    preferences = preferences,
+                    server = serverSalvati
                 )
             },
-            text = {
-                Column(
-                    verticalArrangement =
-                        Arrangement.spacedBy(10.dp)
-                ) {
-                    serverSalvati.forEachIndexed { indice, server ->
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape =
-                                androidx.compose.foundation.shape.RoundedCornerShape(
-                                    18.dp
-                                ),
-                            color =
-                                MaterialTheme.colorScheme.surfaceVariant
-                                    .copy(alpha = 0.38f)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        horizontal = 12.dp,
-                                        vertical = 10.dp
-                                    ),
-                                verticalAlignment =
-                                    androidx.compose.ui.Alignment.CenterVertically
-                            ) {
-                                Surface(
-                                    modifier = Modifier.size(42.dp),
-                                    shape =
-                                        androidx.compose.foundation.shape.RoundedCornerShape(
-                                            12.dp
-                                        ),
-                                    color =
-                                        MaterialTheme.colorScheme.surface,
-                                    border =
-                                        androidx.compose.foundation.BorderStroke(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.outline
-                                                .copy(alpha = 0.35f)
-                                        )
-                                ) {
-                                    Box(
-                                        contentAlignment =
-                                            androidx.compose.ui.Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector =
-                                                Icons.Default.Storage,
-                                            contentDescription = null,
-                                            modifier =
-                                                Modifier.size(20.dp),
-                                            tint =
-                                                MaterialTheme.colorScheme
-                                                    .onSurfaceVariant
-                                        )
-                                    }
-                                }
+            onMoveDown = { indice ->
+                val nuovaLista =
+                    serverSalvati.toMutableList()
 
-                                Spacer(
-                                    modifier = Modifier.width(12.dp)
-                                )
+                val elemento =
+                    nuovaLista.removeAt(indice)
 
-                                Text(
-                                    text = server.nome,
-                                    modifier = Modifier.weight(1f),
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                nuovaLista.add(
+                    indice + 1,
+                    elemento
+                )
 
-                                IconButton(
-                                    enabled = indice > 0,
-                                    modifier = Modifier.semantics {
-                                        contentDescription =
-                                            "Sposta server su"
-                                    },
-                                    onClick = {
-                                        val nuovaLista =
-                                            serverSalvati.toMutableList()
+                serverSalvati = nuovaLista
 
-                                        val elemento =
-                                            nuovaLista.removeAt(indice)
-
-                                        nuovaLista.add(
-                                            indice - 1,
-                                            elemento
-                                        )
-
-                                        serverSalvati = nuovaLista
-
-                                        salvaServerSalvati(
-                                            preferences = preferences,
-                                            server = serverSalvati
-                                        )
-                                    }
-                                ) {
-                                    Text(
-                                        text = "↑",
-                                        fontSize = 22.sp,
-                                        color =
-                                            if (indice > 0) {
-                                                MaterialTheme.colorScheme.onSurface
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                                    .copy(alpha = 0.25f)
-                                            }
-                                    )
-                                }
-
-                                IconButton(
-                                    enabled =
-                                        indice <
-                                            serverSalvati.lastIndex,
-                                    modifier = Modifier.semantics {
-                                        contentDescription =
-                                            "Sposta server giù"
-                                    },
-                                    onClick = {
-                                        val nuovaLista =
-                                            serverSalvati.toMutableList()
-
-                                        val elemento =
-                                            nuovaLista.removeAt(indice)
-
-                                        nuovaLista.add(
-                                            indice + 1,
-                                            elemento
-                                        )
-
-                                        serverSalvati = nuovaLista
-
-                                        salvaServerSalvati(
-                                            preferences = preferences,
-                                            server = serverSalvati
-                                        )
-                                    }
-                                ) {
-                                    Text(
-                                        text = "↓",
-                                        fontSize = 22.sp,
-                                        color =
-                                            if (
-                                                indice <
-                                                serverSalvati.lastIndex
-                                            ) {
-                                                MaterialTheme.colorScheme.onSurface
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                                    .copy(alpha = 0.25f)
-                                            }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(
-                        modifier = Modifier.height(6.dp)
-                    )
-
-                    Button(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
-                        shape =
-                            androidx.compose.foundation.shape.RoundedCornerShape(
-                                16.dp
-                            ),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor =
-                                    Color(0xFF2E7D32),
-                                contentColor = Color.White
-                            ),
-                        onClick = {
-                            mostraRiordinaServer = false
-                        }
-                    ) {
-                        Text(
-                            text = "Fine",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            },
-            confirmButton = {},
-            shape =
-                androidx.compose.foundation.shape.RoundedCornerShape(
-                    28.dp
-                ),
-            tonalElevation = 0.dp
+                salvaServerSalvati(
+                    preferences = preferences,
+                    server = serverSalvati
+                )
+            }
         )
     }
 
@@ -4989,138 +4479,6 @@ fun StatoColorato(
             color = colore,
             fontWeight = FontWeight.SemiBold
         )
-}
-
-private fun caricaServerSalvati(
-    preferences: android.content.SharedPreferences
-): List<OscamServer> {
-    val risultato = mutableListOf<OscamServer>()
-
-    val jsonSalvato =
-        preferences.getString("server_salvati", "") ?: ""
-
-    if (jsonSalvato.isNotBlank()) {
-        try {
-            val array = org.json.JSONArray(jsonSalvato)
-
-            for (indice in 0 until array.length()) {
-                val oggetto = array.getJSONObject(indice)
-
-                risultato.add(
-                    OscamServer(
-                        nome = oggetto.optString("nome", "Server"),
-                        host = oggetto.optString("host", ""),
-                        porta = oggetto.optString("porta", ""),
-                        username = oggetto.optString("username", ""),
-                        password = SecurePasswordCrypto.decrypt(
-                            oggetto.optString("password", "")
-                        )
-                    )
-                )
-            }
-        } catch (_: Exception) {
-            risultato.clear()
-        }
-    }
-
-    if (risultato.isEmpty()) {
-        val hostEsistente =
-            preferences.getString("host", "") ?: ""
-
-        val portaEsistente =
-            preferences.getString("porta", "") ?: ""
-
-        if (
-            hostEsistente.isNotBlank() &&
-            portaEsistente.isNotBlank()
-        ) {
-            risultato.add(
-                OscamServer(
-                    nome =
-                        preferences.getString(
-                            "nome_server",
-                            "Server principale"
-                        ) ?: "Server principale",
-                    host = hostEsistente,
-                    porta = portaEsistente,
-                    username =
-                        preferences.getString(
-                            "username",
-                            ""
-                        ) ?: "",
-                    password =
-                        SecurePasswordCrypto.decrypt(
-                            preferences.getString(
-                                "password",
-                                ""
-                            ) ?: ""
-                        )
-                )
-            )
-        }
-    }
-
-    return risultato
-}
-
-private fun serverSalvatiRichiedonoMigrazione(
-    json: String
-): Boolean {
-    if (json.isBlank()) {
-        return false
-    }
-
-    return runCatching {
-        val array = org.json.JSONArray(json)
-
-        for (indice in 0 until array.length()) {
-            val password =
-                array.getJSONObject(indice)
-                    .optString(
-                        "password",
-                        ""
-                    )
-
-            if (
-                password.isNotEmpty() &&
-                !SecurePasswordCrypto.isEncrypted(
-                    password
-                )
-            ) {
-                return@runCatching true
-            }
-        }
-
-        false
-    }.getOrDefault(false)
-}
-
-private fun salvaServerSalvati(
-    preferences: android.content.SharedPreferences,
-    server: List<OscamServer>
-) {
-    val array = org.json.JSONArray()
-
-    server.forEach { elemento ->
-        val oggetto = org.json.JSONObject()
-
-        oggetto.put("nome", elemento.nome)
-        oggetto.put("host", elemento.host)
-        oggetto.put("porta", elemento.porta)
-        oggetto.put("username", elemento.username)
-        oggetto.put(
-            "password",
-            SecurePasswordCrypto.encrypt(
-                elemento.password
-            )
-        )
-
-        array.put(oggetto)
-    }
-
-    preferences.edit()
-        .putString("server_salvati", array.toString())
-        .apply()
 }
 
 @Preview(showBackground = true)

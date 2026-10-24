@@ -1243,322 +1243,190 @@ fun Greeting(
     }
 
     if (mostraAggiungiServer) {
-        AlertDialog(
-            onDismissRequest = {
+        AggiungiServerDialog(
+            nomeServer = nuovoNomeServer,
+            onNomeChange = {
+                nuovoNomeServer = it
+            },
+            hostServer = nuovoHostServer,
+            onHostChange = {
+                nuovoHostServer = it
+            },
+            portaServer = nuovaPortaServer,
+            onPortaChange = {
+                nuovaPortaServer = it
+            },
+            usernameServer = nuovoUsernameServer,
+            onUsernameChange = {
+                nuovoUsernameServer = it
+            },
+            passwordServer = nuovaPasswordServer,
+            onPasswordChange = {
+                nuovaPasswordServer = it
+            },
+            mostraPassword = mostraPasswordNuovo,
+            onTogglePassword = {
+                mostraPasswordNuovo =
+                    !mostraPasswordNuovo
+            },
+            testConnessioneInCorso =
+                testConnessioneNuovoInCorso,
+            dialogSnackbarHostState =
+                dialogSnackbarHostState,
+            onDismiss = {
                 testConnessioneNuovoJob?.cancel()
                 testConnessioneNuovoJob = null
                 testConnessioneNuovoInCorso = false
                 mostraAggiungiServer = false
             },
-            title = {
-                Row(
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(34.dp),
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        color = Color(0xFF4CAF50).copy(alpha = 0.18f)
-                    ) {
-                        Box(
-                            contentAlignment = androidx.compose.ui.Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+            onTestConnection = test@{
+                val hostPulito =
+                    nuovoHostServer.trim()
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                val portaPulita =
+                    nuovaPortaServer.trim()
 
-                    Text(
-                        text = "Aggiungi server OSCam",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        maxLines = 1
+                if (!permessoReteConcesso) {
+                    mostraSnackbarDialog(
+                        "Concedi prima l'accesso alla rete locale"
                     )
-                }
-            },
-            text = {
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                        .imePadding()
-                ) {
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovoNomeServer,
-                        onValueChange = { nuovoNomeServer = it },
-                        label = { Text("Nome server") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Storage,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovoHostServer,
-                        onValueChange = { nuovoHostServer = it },
-                        label = { Text("Host/IP") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Language,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovaPortaServer,
-                        onValueChange = { nuovaPortaServer = it },
-                        label = { Text("Porta") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Link,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovoUsernameServer,
-                        onValueChange = { nuovoUsernameServer = it },
-                        label = { Text("Username") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null
-                            )
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                        value = nuovaPasswordServer,
-                        onValueChange = { nuovaPasswordServer = it },
-                        label = { Text("Password") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = null
-                            )
-                        },
-                        visualTransformation =
-                            if (mostraPasswordNuovo) {
-                                androidx.compose.ui.text.input.VisualTransformation.None
-                            } else {
-                                PasswordVisualTransformation()
-                            },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { mostraPasswordNuovo = !mostraPasswordNuovo }
-                            ) {
-                                Icon(
-                                    imageVector = if (mostraPasswordNuovo) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = if (mostraPasswordNuovo) "Nascondi password" else "Mostra password"
-                                )
-                            }
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                        enabled = !testConnessioneNuovoInCorso,
-                        onClick = {
-                            val hostPulito = nuovoHostServer.trim()
-                            val portaPulita = nuovaPortaServer.trim()
-
-                            if (!permessoReteConcesso) {
-                                mostraSnackbarDialog(
-                                    "Concedi prima l'accesso alla rete locale"
-                                )
-                                return@OutlinedButton
-                            }
-
-                            if (
-                                hostPulito.isBlank() ||
-                                portaPulita.toIntOrNull() == null
-                            ) {
-                                mostraSnackbarDialog(
-                                    "Inserisci Host/IP e una porta valida"
-                                )
-                                return@OutlinedButton
-                            }
-
-                            testConnessioneNuovoInCorso = true
-
-                            testConnessioneNuovoJob =
-                                coroutineScope.launch {
-                                val risultato =
-                                    withContext(Dispatchers.IO) {
-                                        api.scaricaStatusJson(
-                                            host = hostPulito,
-                                            porta = portaPulita,
-                                            username = nuovoUsernameServer,
-                                            password = nuovaPasswordServer
-                                        )
-                                    }
-
-                                testConnessioneNuovoInCorso = false
-
-                                if (
-                                    risultato.startsWith(
-                                        "ERRORE:",
-                                        ignoreCase = true
-                                    )
-                                ) {
-                                    mostraSnackbarDialog(
-                                        risultato
-                                            .substringAfter(":")
-                                            .trim()
-                                    )
-                                } else if (
-                                    !api.statusJsonOscamValido(risultato)
-                                ) {
-                                    mostraSnackbarDialog(
-                                        "Risposta ricevuta, ma non è un server OSCam valido"
-                                    )
-                                } else {
-                                    mostraSnackbarDialog(
-                                        "Connessione riuscita"
-                                    )
-                                }
-                            }
-                        }
-                    ) {
-                        if (testConnessioneNuovoInCorso) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Text("Connessione...")
-                        } else {
-                            Text("Test connessione")
-                        }
-                    }
+                    return@test
                 }
 
-                    SnackbarHost(
-                        hostState = dialogSnackbarHostState,
-                        modifier = Modifier.align(
-                            androidx.compose.ui.Alignment.BottomCenter
-                        )
+                if (
+                    hostPulito.isBlank() ||
+                    portaPulita.toIntOrNull() == null
+                ) {
+                    mostraSnackbarDialog(
+                        "Inserisci Host/IP e una porta valida"
                     )
+                    return@test
                 }
-            },
-            confirmButton = {
-                Button(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32),
-                        contentColor = Color.White
-                    ),
-                    onClick = {
-                        val nomePulito = nuovoNomeServer.trim()
-                        val hostPulito = nuovoHostServer.trim()
-                        val portaPulita = nuovaPortaServer.trim()
+
+                testConnessioneNuovoInCorso = true
+
+                testConnessioneNuovoJob =
+                    coroutineScope.launch {
+                        val risultato =
+                            withContext(Dispatchers.IO) {
+                                api.scaricaStatusJson(
+                                    host = hostPulito,
+                                    porta = portaPulita,
+                                    username = nuovoUsernameServer,
+                                    password = nuovaPasswordServer
+                                )
+                            }
+
+                        testConnessioneNuovoInCorso = false
 
                         if (
-                            nomePulito.isBlank() ||
-                            hostPulito.isBlank() ||
-                            portaPulita.toIntOrNull() == null
+                            risultato.startsWith(
+                                "ERRORE:",
+                                ignoreCase = true
+                            )
                         ) {
-                            mostraSnackbarDialog("Inserisci nome, Host/IP e una porta valida")
+                            mostraSnackbarDialog(
+                                risultato
+                                    .substringAfter(":")
+                                    .trim()
+                            )
+                        } else if (
+                            !api.statusJsonOscamValido(
+                                risultato
+                            )
+                        ) {
+                            mostraSnackbarDialog(
+                                "Risposta ricevuta, ma non è un server OSCam valido"
+                            )
                         } else {
-                            val nuovoServer = OscamServer(
-                                nome = nomePulito,
-                                host = hostPulito,
-                                porta = portaPulita,
-                                username = nuovoUsernameServer,
-                                password = nuovaPasswordServer
+                            mostraSnackbarDialog(
+                                "Connessione riuscita"
                             )
-
-                            serverSalvati = serverSalvati + nuovoServer
-
-                            salvaServerSalvati(
-                                preferences = preferences,
-                                server = serverSalvati
-                            )
-
-                            host = nuovoServer.host
-                            porta = nuovoServer.porta
-                            username = nuovoServer.username
-                            password = nuovoServer.password
-
-                            preferences.edit()
-                                .putString("nome_server", nuovoServer.nome)
-                                .putString("host", nuovoServer.host)
-                                .putString("porta", nuovoServer.porta)
-                                .putString("username", nuovoServer.username)
-                                .putString(
-                                    "password",
-                                    SecurePasswordCrypto.encrypt(
-                                        nuovoServer.password
-                                    )
-                                )
-                                .apply()
-
-                            nuovoNomeServer = ""
-                            nuovoHostServer = ""
-                            nuovaPortaServer = ""
-                            nuovoUsernameServer = ""
-                            nuovaPasswordServer = ""
-                            testConnessioneNuovoJob?.cancel()
-                            testConnessioneNuovoJob = null
-                            testConnessioneNuovoInCorso = false
-                            mostraAggiungiServer = false
-                            mostraSnackbar("Server ${nuovoServer.nome} aggiunto")
                         }
                     }
-                ) {
-                    Text("Salva")
-                }
             },
-            dismissButton = {
-                OutlinedButton(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    onClick = {
-                        testConnessioneNuovoJob?.cancel()
-                        testConnessioneNuovoJob = null
-                        testConnessioneNuovoInCorso = false
-                        mostraAggiungiServer = false
-                    }
+            onSave = {
+                val nomePulito =
+                    nuovoNomeServer.trim()
+
+                val hostPulito =
+                    nuovoHostServer.trim()
+
+                val portaPulita =
+                    nuovaPortaServer.trim()
+
+                if (
+                    nomePulito.isBlank() ||
+                    hostPulito.isBlank() ||
+                    portaPulita.toIntOrNull() == null
                 ) {
-                    Text("Annulla")
+                    mostraSnackbarDialog(
+                        "Inserisci nome, Host/IP e una porta valida"
+                    )
+                } else {
+                    val nuovoServer =
+                        OscamServer(
+                            nome = nomePulito,
+                            host = hostPulito,
+                            porta = portaPulita,
+                            username =
+                                nuovoUsernameServer,
+                            password =
+                                nuovaPasswordServer
+                        )
+
+                    serverSalvati =
+                        serverSalvati + nuovoServer
+
+                    salvaServerSalvati(
+                        preferences = preferences,
+                        server = serverSalvati
+                    )
+
+                    host = nuovoServer.host
+                    porta = nuovoServer.porta
+                    username = nuovoServer.username
+                    password = nuovoServer.password
+
+                    preferences.edit()
+                        .putString(
+                            "nome_server",
+                            nuovoServer.nome
+                        )
+                        .putString(
+                            "host",
+                            nuovoServer.host
+                        )
+                        .putString(
+                            "porta",
+                            nuovoServer.porta
+                        )
+                        .putString(
+                            "username",
+                            nuovoServer.username
+                        )
+                        .putString(
+                            "password",
+                            SecurePasswordCrypto.encrypt(
+                                nuovoServer.password
+                            )
+                        )
+                        .apply()
+
+                    nuovoNomeServer = ""
+                    nuovoHostServer = ""
+                    nuovaPortaServer = ""
+                    nuovoUsernameServer = ""
+                    nuovaPasswordServer = ""
+
+                    testConnessioneNuovoJob?.cancel()
+                    testConnessioneNuovoJob = null
+                    testConnessioneNuovoInCorso = false
+                    mostraAggiungiServer = false
+
+                    mostraSnackbar(
+                        "Server ${nuovoServer.nome} aggiunto"
+                    )
                 }
             }
         )

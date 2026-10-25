@@ -3,9 +3,16 @@ package com.mrunix.oscamlivemonitor
 import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 
 class DashboardViewModel(
@@ -14,6 +21,16 @@ class DashboardViewModel(
 ) : ViewModel() {
 
     private val refreshMutex = Mutex()
+
+    private var pollingJob: Job? = null
+
+    private val _connessionePersaEventi =
+        MutableSharedFlow<Unit>(
+            extraBufferCapacity = 1
+        )
+
+    val connessionePersaEventi: SharedFlow<Unit> =
+        _connessionePersaEventi.asSharedFlow()
 
     private val _uiState =
         MutableStateFlow(DashboardUiState())
@@ -231,6 +248,39 @@ class DashboardViewModel(
         } else {
             registraErroreRefresh()
         }
+    }
+
+    fun avviaPolling(
+        host: String,
+        porta: String,
+        username: String,
+        password: String
+    ) {
+        fermaPolling()
+
+        pollingJob =
+            viewModelScope.launch {
+                while (true) {
+                    val conteggioErrori =
+                        aggiornaDashboardPolling(
+                            host = host,
+                            porta = porta,
+                            username = username,
+                            password = password
+                        )
+
+                    if (conteggioErrori == 3) {
+                        _connessionePersaEventi.emit(Unit)
+                    }
+
+                    delay(5000)
+                }
+            }
+    }
+
+    fun fermaPolling() {
+        pollingJob?.cancel()
+        pollingJob = null
     }
 
     fun impostaStato(stato: String) {

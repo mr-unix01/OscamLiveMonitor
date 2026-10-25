@@ -47,6 +47,7 @@ import org.json.JSONObject
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import androidx.compose.foundation.clickable
 
 class MainActivity : ComponentActivity() {
@@ -227,9 +228,6 @@ fun Greeting(
 
     val ultimoAggiornamento =
         dashboardState.ultimoAggiornamento
-
-    val erroriRefreshConsecutivi =
-        dashboardState.erroriRefreshConsecutivi
 
     val versioneOscam = dashboardState.versioneOscam
     val uptime = dashboardState.uptime
@@ -585,7 +583,15 @@ fun Greeting(
         }
     }
 
-    LaunchedEffect(
+    LaunchedEffect(dashboardViewModel) {
+        dashboardViewModel
+            ?.connessionePersaEventi
+            ?.collect {
+                mostraSnackbar("Connessione persa")
+            }
+    }
+
+    DisposableEffect(
         mostraConnessione,
         mostraWebIf,
         mostraLiveLog,
@@ -593,33 +599,30 @@ fun Greeting(
         host,
         porta,
         username,
-        password
+        password,
+        dashboardViewModel
     ) {
-        if (
+        val pollingAttivo =
             !mostraConnessione &&
-            !mostraWebIf &&
-            !mostraLiveLog &&
-            !riavvioInCorso
-        ) {
-            while (true) {
-                // Primo refresh immediato: quando si chiude WebIF/Live Log
-                // la dashboard non aspetta più 5 secondi prima di aggiornarsi.
-                val conteggioErrori =
-                    dashboardViewModel
-                        ?.aggiornaDashboardPolling(
-                            host = host,
-                            porta = porta,
-                            username = username,
-                            password = password
-                        )
-                        ?: 0
+                !mostraWebIf &&
+                !mostraLiveLog &&
+                !riavvioInCorso
 
-                if (conteggioErrori == 3) {
-                    mostraSnackbar("Connessione persa")
-                }
+        if (pollingAttivo) {
+            // Primo refresh immediato: quando si chiude WebIF/Live Log
+            // la dashboard non aspetta più 5 secondi prima di aggiornarsi.
+            dashboardViewModel?.avviaPolling(
+                host = host,
+                porta = porta,
+                username = username,
+                password = password
+            )
+        } else {
+            dashboardViewModel?.fermaPolling()
+        }
 
-                kotlinx.coroutines.delay(5000)
-            }
+        onDispose {
+            dashboardViewModel?.fermaPolling()
         }
     }
 

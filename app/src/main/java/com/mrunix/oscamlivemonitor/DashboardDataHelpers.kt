@@ -377,3 +377,9 @@ fun filtraTipiReaderProxyValidi(
     tipi.filterValues { tipo ->
         tipo == "r" || tipo == "p"
     }
+
+fun oraAggiornamentoDashboard(): String =
+    java.text.SimpleDateFormat(
+        "HH:mm:ss",
+        java.util.Locale.getDefault()
+    ).format(java.util.Date())

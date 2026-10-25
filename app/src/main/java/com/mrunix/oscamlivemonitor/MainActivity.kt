@@ -479,10 +479,7 @@ fun Greeting(
             dettagliStatus.elencoClients
 
         ultimoAggiornamento =
-            java.text.SimpleDateFormat(
-                "HH:mm:ss",
-                java.util.Locale.getDefault()
-            ).format(java.util.Date())
+            oraAggiornamentoDashboard()
 
         erroriRefreshConsecutivi = 0
         stato = "Connesso"

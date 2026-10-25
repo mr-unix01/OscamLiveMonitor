@@ -205,20 +205,25 @@ fun Greeting(
     var refreshManualeInCorso by remember { mutableStateOf(false) }
     var erroriRefreshConsecutivi by rememberSaveable { mutableStateOf(0) }
 
-    var versioneOscam by rememberSaveable { mutableStateOf("") }
-    var uptime by rememberSaveable { mutableStateOf("") }
-    var cpuOscam by rememberSaveable { mutableStateOf("") }
-    var ramOscam by rememberSaveable { mutableStateOf("") }
+    val dashboardState =
+        if (dashboardViewModel != null) {
+            dashboardViewModel.uiState.collectAsState().value
+        } else {
+            DashboardUiState()
+        }
 
-    var servers by rememberSaveable { mutableStateOf("") }
+    val versioneOscam = dashboardState.versioneOscam
+    val uptime = dashboardState.uptime
+    val cpuOscam = dashboardState.cpuOscam
+    val ramOscam = dashboardState.ramOscam
+
+    val servers = dashboardState.servers
     var readers by rememberSaveable { mutableStateOf("") }
     var proxies by rememberSaveable { mutableStateOf("") }
-    var clients by rememberSaveable { mutableStateOf("") }
-    var users by rememberSaveable { mutableStateOf("") }
+    val clients = dashboardState.clients
+    val users = dashboardState.users
 
-    var elencoServers by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val elencoServers = dashboardState.elencoServers
 
     var elencoReaders by rememberSaveable {
         mutableStateOf(emptyList<String>())
@@ -228,9 +233,7 @@ fun Greeting(
         mutableStateOf(emptyList<String>())
     }
 
-    var elencoClients by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val elencoClients = dashboardState.elencoClients
 
     var elencoUsers by rememberSaveable {
         mutableStateOf(emptyList<String>())
@@ -376,53 +379,44 @@ fun Greeting(
                 mostraErroreSubito = mostraErroreSubito
             )
 
-        val dashboardState =
+        val refreshedState =
             viewModel.uiState.value
 
         if (!aggiornato) {
             if (
                 mostraErroreSubito &&
-                dashboardState.stato.startsWith(
+                refreshedState.stato.startsWith(
                     "ERRORE:",
                     ignoreCase = true
                 )
             ) {
-                stato = dashboardState.stato
+                stato = refreshedState.stato
                 mostraSnackbar(stato)
             }
 
             return false
         }
 
-        stato = dashboardState.stato
-        versioneOscam = dashboardState.versioneOscam
-        uptime = dashboardState.uptime
-        cpuOscam = dashboardState.cpuOscam
-        ramOscam = dashboardState.ramOscam
+        stato = refreshedState.stato
 
-        servers = dashboardState.servers
-        readers = dashboardState.readers
-        proxies = dashboardState.proxies
-        clients = dashboardState.clients
-        users = dashboardState.users
+        readers = refreshedState.readers
+        proxies = refreshedState.proxies
 
-        elencoServers = dashboardState.elencoServers
-        elencoReaders = dashboardState.elencoReaders
-        elencoProxies = dashboardState.elencoProxies
-        elencoClients = dashboardState.elencoClients
-        elencoUsers = dashboardState.elencoUsers
+        elencoReaders = refreshedState.elencoReaders
+        elencoProxies = refreshedState.elencoProxies
+        elencoUsers = refreshedState.elencoUsers
 
         readerAbilitati =
-            dashboardState.readerAbilitati
+            refreshedState.readerAbilitati
 
         userAbilitati =
-            dashboardState.userAbilitati
+            refreshedState.userAbilitati
 
         ultimoAggiornamento =
-            dashboardState.ultimoAggiornamento
+            refreshedState.ultimoAggiornamento
 
         erroriRefreshConsecutivi =
-            dashboardState.erroriRefreshConsecutivi
+            refreshedState.erroriRefreshConsecutivi
 
         return true
     }
@@ -1393,21 +1387,12 @@ fun Greeting(
                             .apply()
 
                         stato = "Connessione..."
-                        versioneOscam = ""
-                        uptime = ""
-                        cpuOscam = ""
-                        ramOscam = ""
 
-                        servers = ""
                         readers = ""
                         proxies = ""
-                        clients = ""
-                        users = ""
 
-                        elencoServers = emptyList()
                         elencoReaders = emptyList()
                         elencoProxies = emptyList()
-                        elencoClients = emptyList()
                         elencoUsers = emptyList()
                         dashboardViewModel?.resetDashboardState()
 
@@ -1618,21 +1603,12 @@ fun Greeting(
                         onClick = {
                             mostraConnessione = true
                             stato = ""
-                            versioneOscam = ""
-                            uptime = ""
-                            cpuOscam = ""
-                            ramOscam = ""
 
-                            servers = ""
                             readers = ""
                             proxies = ""
-                            clients = ""
-                            users = ""
 
-                            elencoServers = emptyList()
                             elencoReaders = emptyList()
                             elencoProxies = emptyList()
-                            elencoClients = emptyList()
                             elencoUsers = emptyList()
                             dashboardViewModel?.resetDashboardState()
 

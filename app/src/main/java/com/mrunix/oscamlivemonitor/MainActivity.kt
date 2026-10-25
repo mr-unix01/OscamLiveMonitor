@@ -350,14 +350,14 @@ fun Greeting(
         refreshMutex.lock()
 
         try {
-        val risultato = withContext(Dispatchers.IO) {
-            api.scaricaStatusJson(
-                host = host.trim(),
-                porta = porta.trim(),
+        val risultato =
+            caricaStatusDashboard(
+                api = api,
+                host = host,
+                porta = porta,
                 username = username,
                 password = password
             )
-        }
 
         if (risultato.startsWith("ERRORE:")) {
             if (mostraErroreSubito) {
@@ -367,479 +367,110 @@ fun Greeting(
             return false
         }
 
-        versioneOscam =
-            api.estraiVersioneJson(risultato)
+        val datiStatus =
+            estraiDatiStatusDashboard(
+                api = api,
+                risultato = risultato
+            )
 
-        uptime =
-            api.estraiRuntimeJson(risultato)
+        versioneOscam = datiStatus.versioneOscam
+        uptime = datiStatus.uptime
+        cpuOscam = datiStatus.cpuOscam
+        ramOscam = datiStatus.ramOscam
+        servers = datiStatus.servers
+        readers = datiStatus.readers
+        proxies = datiStatus.proxies
+        clients = datiStatus.clients
 
-        cpuOscam =
-            api.estraiCpuJson(risultato)
+        val datiUsers =
+            caricaDashboardUsers(
+                api = api,
+                host = host,
+                porta = porta,
+                username = username,
+                password = password
+            )
 
-        ramOscam =
-            api.estraiMemoriaUsataJson(risultato)
+        if (datiUsers != null) {
+            users = datiUsers.users
 
-        servers =
-            api.estraiServersJson(risultato)
-
-        readers =
-            api.estraiReadersJson(risultato)
-
-        proxies =
-            api.estraiProxiesJson(risultato)
-
-        clients =
-            api.estraiClientsJson(risultato)
-
-        val risultatoUserStats =
-            withContext(Dispatchers.IO) {
-                api.scaricaUserStatsJson(
-                    host = host.trim(),
-                    porta = porta.trim(),
-                    username = username,
-                    password = password
-                )
-            }
-
-        if (!risultatoUserStats.startsWith("ERRORE:")) {
-            users =
-                api.estraiUsersJson(risultatoUserStats)
-
-            val paginaUserConfig =
-                withContext(Dispatchers.IO) {
-                    api.scaricaUserConfig(
-                        host = host.trim(),
-                        porta = porta.trim(),
-                        username = username,
-                        password = password
-                    )
-                }
-
-            if (!paginaUserConfig.startsWith("ERRORE:")) {
-                elencoUsers =
-                    api.estraiElencoUsersJson(
-                        json = risultatoUserStats,
-                        htmlUserConfig = paginaUserConfig
-                    )
-
-                userAbilitati =
-                    api.estraiAbilitazioneUsersHtml(
-                        paginaUserConfig
-                    )
+            if (
+                datiUsers.elencoUsers != null &&
+                datiUsers.userAbilitati != null
+            ) {
+                elencoUsers = datiUsers.elencoUsers
+                userAbilitati = datiUsers.userAbilitati
             }
         }
 
-        val elencoServersOriginale =
-            api.estraiElencoServersJson(risultato)
-
-        elencoServers =
-            elencoServersOriginale.mapIndexed { indice, server ->
-                val statoServer =
-                    server
-                        .substringAfterLast("—", "")
-                        .trim()
-                        .ifBlank {
-                            when {
-                                server.contains(
-                                    "NOT OK",
-                                    ignoreCase = true
-                                ) ->
-                                    "NOT OK"
-
-                                server.contains(
-                                    "OFFLINE",
-                                    ignoreCase = true
-                                ) ->
-                                    "OFFLINE"
-
-                                server.contains(
-                                    "ERROR",
-                                    ignoreCase = true
-                                ) ->
-                                    "ERROR"
-
-                                server.contains(
-                                    "OK",
-                                    ignoreCase = true
-                                ) ->
-                                    "OK"
-
-                                else ->
-                                    "Stato sconosciuto"
-                            }
-                        }
-
-                when (indice) {
-                    0 ->
-                        "OSCam Core — $statoServer"
-
-                    1 ->
-                        "WebIF — $statoServer"
-
-                    else ->
-                        server
-                }
-            }
+        elencoServers = datiStatus.elencoServers
 
         val elencoReadersStatus =
-            api.estraiElencoReadersJson(risultato)
+            datiStatus.elencoReaders
 
         val elencoProxiesStatus =
-            api.estraiElencoProxiesJson(risultato)
-
-        val risultatoReaderList =
-            withContext(Dispatchers.IO) {
-                api.scaricaReaderListJson(
-                    host = host.trim(),
-                    porta = porta.trim(),
-                    username = username,
-                    password = password
-                )
-            }
-
-        val readerList =
-            if (!risultatoReaderList.startsWith("ERRORE:")) {
-                api.estraiReaderListJson(risultatoReaderList)
-            } else {
-                emptyList()
-            }
-
-        fun chiaveNomeReaderProxy(nome: String): String =
-            nome.trim().lowercase(java.util.Locale.ROOT)
+            datiStatus.elencoProxies
 
         val chiaveTipiReaderProxy =
-            "reader_proxy_types_v2_" +
-                host.trim() + "_" +
-                porta.trim()
+            chiaveTipiReaderProxyDashboard(
+                host = host,
+                porta = porta
+            )
 
-        val tipiReaderProxySalvati =
-            mutableMapOf<String, String>()
+        val risoluzioneReaderProxy =
+            risolviDashboardReaderProxy(
+                api = api,
+                host = host,
+                porta = porta,
+                username = username,
+                password = password,
+                tipiSalvati =
+                    decodificaTipiReaderProxy(
+                        preferences.getString(
+                            chiaveTipiReaderProxy,
+                            null
+                        )
+                    ),
+                elencoReadersStatus = elencoReadersStatus,
+                elencoProxiesStatus = elencoProxiesStatus
+            )
 
-        preferences
-            .getString(chiaveTipiReaderProxy, null)
-            ?.let { jsonSalvato ->
-                try {
-                    val json =
-                        org.json.JSONObject(jsonSalvato)
-
-                    val chiavi = json.keys()
-
-                    while (chiavi.hasNext()) {
-                        val nome = chiavi.next()
-
-                        val tipo =
-                            json.optString(nome, "")
-                                .trim()
-                                .lowercase()
-
-                        if (tipo == "r" || tipo == "p") {
-                            tipiReaderProxySalvati[nome] = tipo
-                        }
-                    }
-                } catch (_: Exception) {
-                    Unit
-                }
-            }
-
-        /*
-         * Lo status JSON e' la fonte piu' affidabile per distinguere
-         * reader fisici/locali (r) e proxy di rete (p) quando sono attivi.
-         */
-        elencoReadersStatus.forEach { voce ->
-            val nome =
-                voce.substringBeforeLast("—", voce).trim()
-
-            tipiReaderProxySalvati[
-                chiaveNomeReaderProxy(nome)
-            ] = "r"
-        }
-
-        elencoProxiesStatus.forEach { voce ->
-            val nome =
-                voce.substringBeforeLast("—", voce).trim()
-
-            tipiReaderProxySalvati[
-                chiaveNomeReaderProxy(nome)
-            ] = "p"
-        }
-
-        /*
-         * readerlist contiene anche gli elementi disabilitati.
-         * Quando OSCam fornisce type=r/p lo memorizziamo, cosi'
-         * la categoria resta disponibile anche dopo uscita/rientro.
-         */
-        readerList.forEach { voce ->
-            if (
-                voce.abilitato &&
-                (voce.tipo == "r" || voce.tipo == "p")
-            ) {
-                tipiReaderProxySalvati[
-                    chiaveNomeReaderProxy(voce.nome)
-                ] = voce.tipo
-            }
-        }
-
-        fun tipoDaProtocolloReaderProxy(
-            protocollo: String
-        ): String {
-            return when (
-                protocollo.trim().lowercase()
-            ) {
-                /*
-                 * Reader locali / fisici.
-                 */
-                "internal",
-                "mouse",
-                "mp35",
-                "pcsc",
-                "sc8in1",
-                "smargo",
-                "smartreader",
-                "serial",
-                "drecas",
-                "emu",
-                "stapi",
-                "stapi5",
-                "stinger",
-                "phoenix" -> "r"
-
-                /*
-                 * Reader di rete: nella Status WebIF
-                 * vengono mostrati come Proxy.
-                 */
-                "camd33",
-                "camd35",
-                "cs357x",
-                "cs378x",
-                "newcamd",
-                "newcamd525",
-                "newcamd524",
-                "cccam",
-                "cccam_ext",
-                "gbox",
-                "radegast",
-                "scam",
-                "ghttp",
-                "constcw",
-                "csp",
-                "pandora" -> "p"
-
-                else -> ""
-            }
-        }
-
-        /*
-         * Per una voce disabilitata e mai classificata
-         * non ci fidiamo di readerlist.type:
-         * leggiamo una sola volta il protocollo reale
-         * dalla configurazione OSCam.
-         *
-         * Questo rende la classificazione indipendente
-         * dal nome del reader/proxy.
-         */
-        val vociDisabilitateSenzaTipo =
-            readerList.filter { voce ->
-                !voce.abilitato &&
-                    tipiReaderProxySalvati[
-                        chiaveNomeReaderProxy(voce.nome)
-                    ].isNullOrBlank()
-            }
-
-        if (vociDisabilitateSenzaTipo.isNotEmpty()) {
-            val tipiDaConfigurazione =
-                withContext(Dispatchers.IO) {
-                    vociDisabilitateSenzaTipo.associate { voce ->
-                        val html =
-                            api.scaricaReaderConfigHtml(
-                                host = host.trim(),
-                                porta = porta.trim(),
-                                username = username,
-                                password = password,
-                                nomeReader = voce.nome
-                            )
-
-                        val protocollo =
-                            if (!html.startsWith("ERRORE:")) {
-                                api.estraiProtocolloReaderConfigHtml(
-                                    html
-                                )
-                            } else {
-                                ""
-                            }
-
-                        chiaveNomeReaderProxy(voce.nome) to
-                            tipoDaProtocolloReaderProxy(protocollo)
-                    }
-                }
-
-            tipiDaConfigurazione.forEach { (nome, tipo) ->
-                if (tipo == "r" || tipo == "p") {
-                    tipiReaderProxySalvati[nome] = tipo
-                }
-            }
-        }
-
-        if (tipiReaderProxySalvati.isNotEmpty()) {
-            val jsonTipi =
-                org.json.JSONObject()
-
-            tipiReaderProxySalvati.forEach { (nome, tipo) ->
-                jsonTipi.put(nome, tipo)
-            }
-
+        if (
+            risoluzioneReaderProxy
+                .tipiReaderProxySalvati
+                .isNotEmpty()
+        ) {
             preferences.edit()
                 .putString(
                     chiaveTipiReaderProxy,
-                    jsonTipi.toString()
+                    codificaTipiReaderProxy(
+                        risoluzioneReaderProxy
+                            .tipiReaderProxySalvati
+                    )
                 )
                 .apply()
         }
 
-        val readersStatusPerNome =
-            elencoReadersStatus.associateBy { voce ->
-                chiaveNomeReaderProxy(
-                    voce.substringBeforeLast("—", voce).trim()
-                )
-            }
+        elencoReaders =
+            risoluzioneReaderProxy.elencoReaders
 
-        val proxiesStatusPerNome =
-            elencoProxiesStatus.associateBy { voce ->
-                chiaveNomeReaderProxy(
-                    voce.substringBeforeLast("—", voce).trim()
-                )
-            }
+        elencoProxies =
+            risoluzioneReaderProxy.elencoProxies
 
-        fun tipoEffettivo(
-            voce: OscamApi.ReaderListVoce
-        ): String {
-            val tipoSalvato =
-                tipiReaderProxySalvati[
-                    chiaveNomeReaderProxy(voce.nome)
-                ].orEmpty()
+        val datiReaderProxy =
+            risoluzioneReaderProxy.datiReaderProxy
 
-            return when {
-                !voce.abilitato ->
-                    tipoSalvato
-
-                voce.tipo == "r" || voce.tipo == "p" ->
-                    voce.tipo
-
-                else ->
-                    tipoSalvato
-            }
-        }
-
-        fun voceDashboard(
-            voce: OscamApi.ReaderListVoce,
-            voceStatus: String?
-        ): String {
-            if (!voce.abilitato) {
-                return "${voce.nome} — DISABILITATO"
-            }
-
-            if (!voceStatus.isNullOrBlank()) {
-                return voceStatus
-            }
-
-            val statoFallback =
-                voce.stato
-                    .ifBlank { "OFFLINE" }
-
-            return "${voce.nome} — $statoFallback"
-        }
-
-        if (readerList.isNotEmpty()) {
-            readerAbilitati =
-                readerList.associate { voce ->
-                    voce.nome to voce.abilitato
-                }
-
-            val catalogoReaders =
-                readerList.filter { voce ->
-                    tipoEffettivo(voce) == "r"
-                }
-
-            val catalogoProxies =
-                readerList.filter { voce ->
-                    tipoEffettivo(voce) == "p"
-                }
-
-            elencoReaders =
-                catalogoReaders.map { voce ->
-                    voceDashboard(
-                        voce = voce,
-                        voceStatus =
-                            readersStatusPerNome[
-                                chiaveNomeReaderProxy(voce.nome)
-                            ]
-                    )
-                }
-
-            elencoProxies =
-                catalogoProxies.map { voce ->
-                    voceDashboard(
-                        voce = voce,
-                        voceStatus =
-                            proxiesStatusPerNome[
-                                chiaveNomeReaderProxy(voce.nome)
-                            ]
-                    )
-                }
-
-            fun statoAttivo(voce: String?): Boolean {
-                val statoVoce =
-                    voce
-                        ?.substringAfterLast("—", "")
-                        ?.trim()
-                        ?.uppercase()
-                        .orEmpty()
-
-                return statoVoce == "OK" ||
-                    statoVoce == "ACTIVE" ||
-                    statoVoce == "CONNECTED" ||
-                    statoVoce == "CARDOK"
-            }
-
-            val readersAttivi =
-                catalogoReaders.count { voce ->
-                    statoAttivo(
-                        readersStatusPerNome[
-                            chiaveNomeReaderProxy(voce.nome)
-                        ]
-                    )
-                }
-
-            val proxiesAttivi =
-                catalogoProxies.count { voce ->
-                    statoAttivo(
-                        proxiesStatusPerNome[
-                            chiaveNomeReaderProxy(voce.nome)
-                        ]
-                    )
-                }
-
-            readers =
-                "$readersAttivi/${catalogoReaders.size}"
-
-            proxies =
-                "$proxiesAttivi/${catalogoProxies.size}"
-        } else {
-            /*
-             * Fallback: se readerlist non risponde, manteniamo
-             * il comportamento precedente basato sullo status.
-             */
-            elencoReaders = elencoReadersStatus
-            elencoProxies = elencoProxiesStatus
+        if (datiReaderProxy != null) {
+            readerAbilitati = datiReaderProxy.readerAbilitati
+            readers = datiReaderProxy.readers
+            proxies = datiReaderProxy.proxies
         }
 
         elencoClients =
-            api.estraiElencoClientsJson(risultato)
+            datiStatus.elencoClients
 
         ultimoAggiornamento =
-            java.text.SimpleDateFormat(
-                "HH:mm:ss",
-                java.util.Locale.getDefault()
-            ).format(java.util.Date())
+            oraAggiornamentoDashboard()
 
         erroriRefreshConsecutivi = 0
         stato = "Connesso"
@@ -1073,7 +704,7 @@ fun Greeting(
         val serverAttivo =
             serverSalvati.firstOrNull { server ->
                 server.host.trim() == host.trim() &&
-                        server.porta.trim() == porta.trim()
+                    server.porta.trim() == porta.trim()
             }
 
         val nomeServerAttivo =
@@ -1081,163 +712,110 @@ fun Greeting(
                 ?: host.trim()
                     .ifBlank { "server attivo" }
 
-        AlertDialog(
+        RiavviaOscamDialog(
+            nomeServer = nomeServerAttivo,
+            host = host.trim(),
+            porta = porta.trim(),
             onDismissRequest = {
                 if (!riavvioInCorso) {
                     mostraConfermaRiavvio = false
                 }
             },
-            title = {
-                Text(
-                    "Riavviare $nomeServerAttivo?"
-                )
+            onCancel = {
+                mostraConfermaRiavvio = false
             },
-            text = {
-                Text(
-                    "Verrà riavviato SOLO il server OSCam attivo:\n\n" +
-                            "$nomeServerAttivo\n" +
-                            "${host.trim()}:${porta.trim()}\n\n" +
-                            "Gli altri server salvati non verranno toccati. " +
-                            "I client di questo server verranno temporaneamente " +
-                            "disconnessi e OSCam Live Monitor proverà a riconnettersi " +
-                            "automaticamente."
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFFFF7043)
-                    ),
-                    onClick = {
-                        mostraConfermaRiavvio = false
+            onConfirm = {
+                mostraConfermaRiavvio = false
 
-                        if (host.isBlank() || porta.isBlank()) {
-                            stato =
-                                "Inserisci prima Host/IP e Porta"
-                            mostraSnackbar(stato)
-                            return@TextButton
-                        }
+                if (host.isBlank() || porta.isBlank()) {
+                    stato =
+                        "Inserisci prima Host/IP e Porta"
+                    mostraSnackbar(stato)
+                } else {
+                    riavvioInCorso = true
+                    stato = "Riavvio OSCam..."
 
-                        riavvioInCorso = true
-                        stato = "Riavvio OSCam..."
-
-                        coroutineScope.launch {
-                            val risultatoRiavvio =
-                                withContext(Dispatchers.IO) {
-                                    api.riavviaOscam(
-                                        host = host.trim(),
-                                        porta = porta.trim(),
-                                        username = username,
-                                        password = password
-                                    )
-                                }
-
-                            if (
-                                risultatoRiavvio.startsWith(
-                                    "ERRORE:",
-                                    ignoreCase = true
+                    coroutineScope.launch {
+                        val risultatoRiavvio =
+                            withContext(Dispatchers.IO) {
+                                api.riavviaOscam(
+                                    host = host.trim(),
+                                    porta = porta.trim(),
+                                    username = username,
+                                    password = password
                                 )
-                            ) {
-                                riavvioInCorso = false
-                                stato = risultatoRiavvio
-                                mostraSnackbar(risultatoRiavvio)
-                                return@launch
                             }
 
-                            // OSCam ha ricevuto il comando: ora può restare offline
-                            // per alcuni secondi mentre il WebIF viene riavviato.
-                            // Manteniamo gli ultimi dati della dashboard e non mostriamo
-                            // gli errori transitori dei singoli tentativi.
-                            stato = "Riconnessione OSCam..."
-                            kotlinx.coroutines.delay(3000)
-
-                            var riconnesso = false
-
-                            for (tentativo in 1..10) {
-                                val aggiornato =
-                                    aggiornaDashboardDaOscam(
-                                        mostraErroreSubito = false
-                                    )
-
-                                if (aggiornato) {
-                                    riconnesso = true
-                                    break
-                                }
-
-                                if (tentativo < 10) {
-                                    stato = "Riconnessione OSCam... ($tentativo/10)"
-                                    kotlinx.coroutines.delay(2000)
-                                }
-                            }
-
+                        if (
+                            risultatoRiavvio.startsWith(
+                                "ERRORE:",
+                                ignoreCase = true
+                            )
+                        ) {
                             riavvioInCorso = false
+                            stato = risultatoRiavvio
+                            mostraSnackbar(risultatoRiavvio)
+                            return@launch
+                        }
 
-                            if (riconnesso) {
-                                mostraConnessione = false
-                                stato = "Connesso"
-                            } else {
+                        stato = "Riconnessione OSCam..."
+                        kotlinx.coroutines.delay(3000)
+
+                        var riconnesso = false
+
+                        for (tentativo in 1..10) {
+                            val aggiornato =
+                                aggiornaDashboardDaOscam(
+                                    mostraErroreSubito = false
+                                )
+
+                            if (aggiornato) {
+                                riconnesso = true
+                                break
+                            }
+
+                            if (tentativo < 10) {
                                 stato =
-                                    "ERRORE: OSCam non raggiungibile dopo il riavvio"
-                                mostraSnackbar(stato)
+                                    "Riconnessione OSCam... ($tentativo/10)"
+                                kotlinx.coroutines.delay(2000)
                             }
                         }
+
+                        riavvioInCorso = false
+
+                        if (riconnesso) {
+                            mostraConnessione = false
+                            stato = "Connesso"
+                        } else {
+                            stato =
+                                "ERRORE: OSCam non raggiungibile dopo il riavvio"
+                            mostraSnackbar(stato)
+                        }
                     }
-                ) {
-                    Text("Riavvia $nomeServerAttivo")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        mostraConfermaRiavvio = false
-                    }
-                ) {
-                    Text("Annulla")
                 }
             }
         )
     }
 
     if (mostraSpiegazionePermesso) {
-        AlertDialog(
-            onDismissRequest = {
+        SpiegazionePermessoReteDialog(
+            onDismiss = {
                 mostraSpiegazionePermesso = false
             },
-            title = {
-                Text("Accesso alla rete locale")
-            },
-            text = {
-                Text(
-                    "OSCam Live Monitor deve accedere alla rete locale " +
-                            "per collegarsi al WebIF di OSCam."
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        mostraSpiegazionePermesso = false
+            onContinue = {
+                mostraSpiegazionePermesso = false
 
-                        if (Build.VERSION.SDK_INT >= 37) {
-                            richiestaPermessoRete.launch(
-                                Manifest.permission.ACCESS_LOCAL_NETWORK
-                            )
-                        }
-                    }
-                ) {
-                    Text("Continua")
+                if (Build.VERSION.SDK_INT >= 37) {
+                    richiestaPermessoRete.launch(
+                        Manifest.permission.ACCESS_LOCAL_NETWORK
+                    )
                 }
             },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        mostraSpiegazionePermesso = false
-                        stato =
-                            "Permesso rete locale necessario per OSCam"
-                        mostraSnackbar(stato)
-                    }
-                ) {
-                    Text("Non ora")
-                }
+            onNotNow = {
+                mostraSpiegazionePermesso = false
+                stato =
+                    "Permesso rete locale necessario per OSCam"
+                mostraSnackbar(stato)
             }
         )
     }
@@ -4439,46 +4017,6 @@ fun WebIfScreen(
             }
         )
     }
-}
-
-@Composable
-fun StatoColorato(
-    testo: String
-) {
-    val colore = when {
-        testo.contains("NOT FOUND", ignoreCase = true) ->
-            Color(0xFFF44336)
-
-        testo.contains("ERROR", ignoreCase = true) ->
-            Color(0xFFF44336)
-
-        testo.contains("OFFLINE", ignoreCase = true) ->
-            Color(0xFFF44336)
-
-        testo.contains("DISABLED", ignoreCase = true) ->
-            Color(0xFFF44336)
-
-        testo.contains("TIMEOUT", ignoreCase = true) ->
-            Color(0xFFFF9800)
-
-        testo.contains("CARDOK", ignoreCase = true) ->
-            Color(0xFF4CAF50)
-
-        testo.contains("CONNECTED", ignoreCase = true) ->
-            Color(0xFF4CAF50)
-
-        testo.contains("OK", ignoreCase = true) ->
-            Color(0xFF4CAF50)
-
-        else ->
-            MaterialTheme.colorScheme.onBackground
-    }
-
-    Text(
-            text = testo,
-            color = colore,
-            fontWeight = FontWeight.SemiBold
-        )
 }
 
 @Preview(showBackground = true)

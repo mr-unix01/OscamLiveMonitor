@@ -494,30 +494,14 @@ fun Greeting(
 
         if (vociDisabilitateSenzaTipo.isNotEmpty()) {
             val tipiDaConfigurazione =
-                withContext(Dispatchers.IO) {
-                    vociDisabilitateSenzaTipo.associate { voce ->
-                        val html =
-                            api.scaricaReaderConfigHtml(
-                                host = host.trim(),
-                                porta = porta.trim(),
-                                username = username,
-                                password = password,
-                                nomeReader = voce.nome
-                            )
-
-                        val protocollo =
-                            if (!html.startsWith("ERRORE:")) {
-                                api.estraiProtocolloReaderConfigHtml(
-                                    html
-                                )
-                            } else {
-                                ""
-                            }
-
-                        chiaveNomeReaderProxy(voce.nome) to
-                            tipoDaProtocolloReaderProxy(protocollo)
-                    }
-                }
+                risolviTipiReaderProxyDaConfigurazione(
+                    api = api,
+                    host = host,
+                    porta = porta,
+                    username = username,
+                    password = password,
+                    voci = vociDisabilitateSenzaTipo
+                )
 
             tipiReaderProxySalvati.putAll(
                 filtraTipiReaderProxyValidi(

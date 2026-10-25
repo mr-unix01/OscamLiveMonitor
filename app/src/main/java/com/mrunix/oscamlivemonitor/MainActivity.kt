@@ -367,29 +367,20 @@ fun Greeting(
             return false
         }
 
-        versioneOscam =
-            api.estraiVersioneJson(risultato)
+        val riepilogoStatus =
+            estraiRiepilogoStatusDashboard(
+                api = api,
+                risultato = risultato
+            )
 
-        uptime =
-            api.estraiRuntimeJson(risultato)
-
-        cpuOscam =
-            api.estraiCpuJson(risultato)
-
-        ramOscam =
-            api.estraiMemoriaUsataJson(risultato)
-
-        servers =
-            api.estraiServersJson(risultato)
-
-        readers =
-            api.estraiReadersJson(risultato)
-
-        proxies =
-            api.estraiProxiesJson(risultato)
-
-        clients =
-            api.estraiClientsJson(risultato)
+        versioneOscam = riepilogoStatus.versioneOscam
+        uptime = riepilogoStatus.uptime
+        cpuOscam = riepilogoStatus.cpuOscam
+        ramOscam = riepilogoStatus.ramOscam
+        servers = riepilogoStatus.servers
+        readers = riepilogoStatus.readers
+        proxies = riepilogoStatus.proxies
+        clients = riepilogoStatus.clients
 
         val datiUsers =
             caricaDashboardUsers(

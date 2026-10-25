@@ -18,3 +18,37 @@ suspend fun caricaStatusDashboard(
             password = password
         )
     }
+
+data class DashboardStatusSummary(
+    val versioneOscam: String,
+    val uptime: String,
+    val cpuOscam: String,
+    val ramOscam: String,
+    val servers: String,
+    val readers: String,
+    val proxies: String,
+    val clients: String
+)
+
+fun estraiRiepilogoStatusDashboard(
+    api: OscamApi,
+    risultato: String
+): DashboardStatusSummary =
+    DashboardStatusSummary(
+        versioneOscam =
+            api.estraiVersioneJson(risultato),
+        uptime =
+            api.estraiRuntimeJson(risultato),
+        cpuOscam =
+            api.estraiCpuJson(risultato),
+        ramOscam =
+            api.estraiMemoriaUsataJson(risultato),
+        servers =
+            api.estraiServersJson(risultato),
+        readers =
+            api.estraiReadersJson(risultato),
+        proxies =
+            api.estraiProxiesJson(risultato),
+        clients =
+            api.estraiClientsJson(risultato)
+    )

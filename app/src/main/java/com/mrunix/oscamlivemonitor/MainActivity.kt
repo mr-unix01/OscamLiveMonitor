@@ -367,20 +367,20 @@ fun Greeting(
             return false
         }
 
-        val riepilogoStatus =
-            estraiRiepilogoStatusDashboard(
+        val datiStatus =
+            estraiDatiStatusDashboard(
                 api = api,
                 risultato = risultato
             )
 
-        versioneOscam = riepilogoStatus.versioneOscam
-        uptime = riepilogoStatus.uptime
-        cpuOscam = riepilogoStatus.cpuOscam
-        ramOscam = riepilogoStatus.ramOscam
-        servers = riepilogoStatus.servers
-        readers = riepilogoStatus.readers
-        proxies = riepilogoStatus.proxies
-        clients = riepilogoStatus.clients
+        versioneOscam = datiStatus.versioneOscam
+        uptime = datiStatus.uptime
+        cpuOscam = datiStatus.cpuOscam
+        ramOscam = datiStatus.ramOscam
+        servers = datiStatus.servers
+        readers = datiStatus.readers
+        proxies = datiStatus.proxies
+        clients = datiStatus.clients
 
         val datiUsers =
             caricaDashboardUsers(
@@ -403,19 +403,13 @@ fun Greeting(
             }
         }
 
-        val dettagliStatus =
-            estraiDettagliStatusDashboard(
-                api = api,
-                risultato = risultato
-            )
-
-        elencoServers = dettagliStatus.elencoServers
+        elencoServers = datiStatus.elencoServers
 
         val elencoReadersStatus =
-            dettagliStatus.elencoReaders
+            datiStatus.elencoReaders
 
         val elencoProxiesStatus =
-            dettagliStatus.elencoProxies
+            datiStatus.elencoProxies
 
         val chiaveTipiReaderProxy =
             chiaveTipiReaderProxyDashboard(
@@ -473,7 +467,7 @@ fun Greeting(
         }
 
         elencoClients =
-            dettagliStatus.elencoClients
+            datiStatus.elencoClients
 
         ultimoAggiornamento =
             oraAggiornamentoDashboard()

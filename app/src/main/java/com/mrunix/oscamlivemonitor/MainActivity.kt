@@ -457,22 +457,19 @@ fun Greeting(
                 .apply()
         }
 
+        elencoReaders =
+            risoluzioneReaderProxy.elencoReaders
+
+        elencoProxies =
+            risoluzioneReaderProxy.elencoProxies
+
         val datiReaderProxy =
             risoluzioneReaderProxy.datiReaderProxy
 
         if (datiReaderProxy != null) {
             readerAbilitati = datiReaderProxy.readerAbilitati
-            elencoReaders = datiReaderProxy.elencoReaders
-            elencoProxies = datiReaderProxy.elencoProxies
             readers = datiReaderProxy.readers
             proxies = datiReaderProxy.proxies
-        } else {
-            /*
-             * Fallback: se readerlist non risponde, manteniamo
-             * il comportamento precedente basato sullo status.
-             */
-            elencoReaders = elencoReadersStatus
-            elencoProxies = elencoProxiesStatus
         }
 
         elencoClients =

@@ -61,7 +61,9 @@ suspend fun caricaReaderListDashboard(
 
 data class DashboardReaderProxyResolution(
     val tipiReaderProxySalvati: Map<String, String>,
-    val datiReaderProxy: DashboardReaderProxyData?
+    val datiReaderProxy: DashboardReaderProxyData?,
+    val elencoReaders: List<String>,
+    val elencoProxies: List<String>
 )
 
 suspend fun risolviDashboardReaderProxy(
@@ -145,6 +147,12 @@ suspend fun risolviDashboardReaderProxy(
     return DashboardReaderProxyResolution(
         tipiReaderProxySalvati =
             tipiReaderProxySalvati.toMap(),
-        datiReaderProxy = datiReaderProxy
+        datiReaderProxy = datiReaderProxy,
+        elencoReaders =
+            datiReaderProxy?.elencoReaders
+                ?: elencoReadersStatus,
+        elencoProxies =
+            datiReaderProxy?.elencoProxies
+                ?: elencoProxiesStatus
     )
 }

@@ -4388,46 +4388,6 @@ fun WebIfScreen(
     }
 }
 
-@Composable
-fun StatoColorato(
-    testo: String
-) {
-    val colore = when {
-        testo.contains("NOT FOUND", ignoreCase = true) ->
-            Color(0xFFF44336)
-
-        testo.contains("ERROR", ignoreCase = true) ->
-            Color(0xFFF44336)
-
-        testo.contains("OFFLINE", ignoreCase = true) ->
-            Color(0xFFF44336)
-
-        testo.contains("DISABLED", ignoreCase = true) ->
-            Color(0xFFF44336)
-
-        testo.contains("TIMEOUT", ignoreCase = true) ->
-            Color(0xFFFF9800)
-
-        testo.contains("CARDOK", ignoreCase = true) ->
-            Color(0xFF4CAF50)
-
-        testo.contains("CONNECTED", ignoreCase = true) ->
-            Color(0xFF4CAF50)
-
-        testo.contains("OK", ignoreCase = true) ->
-            Color(0xFF4CAF50)
-
-        else ->
-            MaterialTheme.colorScheme.onBackground
-    }
-
-    Text(
-            text = testo,
-            color = colore,
-            fontWeight = FontWeight.SemiBold
-        )
-}
-
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {

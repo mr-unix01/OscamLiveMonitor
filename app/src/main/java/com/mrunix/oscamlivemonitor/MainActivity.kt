@@ -218,34 +218,24 @@ fun Greeting(
     val ramOscam = dashboardState.ramOscam
 
     val servers = dashboardState.servers
-    var readers by rememberSaveable { mutableStateOf("") }
-    var proxies by rememberSaveable { mutableStateOf("") }
+    val readers = dashboardState.readers
+    val proxies = dashboardState.proxies
     val clients = dashboardState.clients
     val users = dashboardState.users
 
     val elencoServers = dashboardState.elencoServers
 
-    var elencoReaders by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val elencoReaders = dashboardState.elencoReaders
 
-    var elencoProxies by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val elencoProxies = dashboardState.elencoProxies
 
     val elencoClients = dashboardState.elencoClients
 
-    var elencoUsers by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val elencoUsers = dashboardState.elencoUsers
 
-    var readerAbilitati by remember {
-        mutableStateOf(emptyMap<String, Boolean>())
-    }
+    val readerAbilitati = dashboardState.readerAbilitati
 
-    var userAbilitati by remember {
-        mutableStateOf(emptyMap<String, Boolean>())
-    }
+    val userAbilitati = dashboardState.userAbilitati
 
     var toggleReadersInCorso by remember {
         mutableStateOf(emptySet<String>())
@@ -399,18 +389,7 @@ fun Greeting(
 
         stato = refreshedState.stato
 
-        readers = refreshedState.readers
-        proxies = refreshedState.proxies
 
-        elencoReaders = refreshedState.elencoReaders
-        elencoProxies = refreshedState.elencoProxies
-        elencoUsers = refreshedState.elencoUsers
-
-        readerAbilitati =
-            refreshedState.readerAbilitati
-
-        userAbilitati =
-            refreshedState.userAbilitati
 
         ultimoAggiornamento =
             refreshedState.ultimoAggiornamento
@@ -1388,12 +1367,7 @@ fun Greeting(
 
                         stato = "Connessione..."
 
-                        readers = ""
-                        proxies = ""
 
-                        elencoReaders = emptyList()
-                        elencoProxies = emptyList()
-                        elencoUsers = emptyList()
                         dashboardViewModel?.resetDashboardState()
 
                         mostraServers = true
@@ -1604,12 +1578,7 @@ fun Greeting(
                             mostraConnessione = true
                             stato = ""
 
-                            readers = ""
-                            proxies = ""
 
-                            elencoReaders = emptyList()
-                            elencoProxies = emptyList()
-                            elencoUsers = emptyList()
                             dashboardViewModel?.resetDashboardState()
 
                             mostraServers = true
@@ -1946,28 +1915,11 @@ fun Greeting(
                                     val nuovoStato =
                                         !attualmenteAbilitato
 
-                                    readerAbilitati =
-                                        readerAbilitati +
-                                                (nomeReader to nuovoStato)
-
-                                    elencoReaders =
-                                        elencoReaders.map { voce ->
-                                            val nome =
-                                                voce.substringBeforeLast(
-                                                    "—",
-                                                    voce
-                                                ).trim()
-
-                                            if (nome == nomeReader) {
-                                                "$nomeReader — " +
-                                                    if (nuovoStato)
-                                                        "OFFLINE"
-                                                    else
-                                                        "DISABILITATO"
-                                            } else {
-                                                voce
-                                            }
-                                        }
+                                    dashboardViewModel
+                                        ?.aggiornaReaderAbilitatoLocale(
+                                            nomeReader = nomeReader,
+                                            abilitato = nuovoStato
+                                        )
 
                                     kotlinx.coroutines.delay(400)
 
@@ -2040,28 +1992,11 @@ fun Greeting(
                                     val nuovoStato =
                                         !attualmenteAbilitato
 
-                                    readerAbilitati =
-                                        readerAbilitati +
-                                                (nomeProxy to nuovoStato)
-
-                                    elencoProxies =
-                                        elencoProxies.map { voce ->
-                                            val nome =
-                                                voce.substringBeforeLast(
-                                                    "—",
-                                                    voce
-                                                ).trim()
-
-                                            if (nome == nomeProxy) {
-                                                "$nomeProxy — " +
-                                                    if (nuovoStato)
-                                                        "OFFLINE"
-                                                    else
-                                                        "DISABILITATO"
-                                            } else {
-                                                voce
-                                            }
-                                        }
+                                    dashboardViewModel
+                                        ?.aggiornaProxyAbilitatoLocale(
+                                            nomeProxy = nomeProxy,
+                                            abilitato = nuovoStato
+                                        )
 
                                     kotlinx.coroutines.delay(400)
 
@@ -2140,12 +2075,12 @@ fun Greeting(
                                     }
 
                                 if (!esito.startsWith("ERRORE:")) {
-                                    userAbilitati =
-                                        userAbilitati +
-                                                (
-                                                    nomeUser to
-                                                        !attualmenteAbilitato
-                                                )
+                                    dashboardViewModel
+                                        ?.aggiornaUserAbilitatoLocale(
+                                            nomeUser = nomeUser,
+                                            abilitato =
+                                                !attualmenteAbilitato
+                                        )
 
                                     kotlinx.coroutines.delay(1500)
 

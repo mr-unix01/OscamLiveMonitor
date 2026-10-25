@@ -417,23 +417,19 @@ fun Greeting(
         val elencoProxiesStatus =
             dettagliStatus.elencoProxies
 
-        val readerList =
-            caricaReaderListDashboard(
-                api = api,
-                host = host,
-                porta = porta,
-                username = username,
-                password = password
-            )
-
         val chiaveTipiReaderProxy =
             chiaveTipiReaderProxyDashboard(
                 host = host,
                 porta = porta
             )
 
-        val tipiReaderProxySalvati =
-            integraTipiReaderProxyDashboard(
+        val risoluzioneReaderProxy =
+            risolviDashboardReaderProxy(
+                api = api,
+                host = host,
+                porta = porta,
+                username = username,
+                password = password,
                 tipiSalvati =
                     decodificaTipiReaderProxy(
                         preferences.getString(
@@ -442,67 +438,27 @@ fun Greeting(
                         )
                     ),
                 elencoReadersStatus = elencoReadersStatus,
-                elencoProxiesStatus = elencoProxiesStatus,
-                readerList = readerList
+                elencoProxiesStatus = elencoProxiesStatus
             )
 
-        /*
-         * Per una voce disabilitata e mai classificata
-         * non ci fidiamo di readerlist.type:
-         * leggiamo una sola volta il protocollo reale
-         * dalla configurazione OSCam.
-         *
-         * Questo rende la classificazione indipendente
-         * dal nome del reader/proxy.
-         */
-        val vociDisabilitateSenzaTipo =
-            readerDisabilitatiSenzaTipo(
-                readerList = readerList,
-                tipiReaderProxySalvati = tipiReaderProxySalvati
-            )
-
-        if (vociDisabilitateSenzaTipo.isNotEmpty()) {
-            val tipiDaConfigurazione =
-                risolviTipiReaderProxyDaConfigurazione(
-                    api = api,
-                    host = host,
-                    porta = porta,
-                    username = username,
-                    password = password,
-                    voci = vociDisabilitateSenzaTipo
-                )
-
-            tipiReaderProxySalvati.putAll(
-                filtraTipiReaderProxyValidi(
-                    tipiDaConfigurazione
-                )
-            )
-        }
-
-        if (tipiReaderProxySalvati.isNotEmpty()) {
+        if (
+            risoluzioneReaderProxy
+                .tipiReaderProxySalvati
+                .isNotEmpty()
+        ) {
             preferences.edit()
                 .putString(
                     chiaveTipiReaderProxy,
                     codificaTipiReaderProxy(
-                        tipiReaderProxySalvati
+                        risoluzioneReaderProxy
+                            .tipiReaderProxySalvati
                     )
                 )
                 .apply()
         }
 
-        val readersStatusPerNome =
-            indicizzaStatusReaderProxy(elencoReadersStatus)
-
-        val proxiesStatusPerNome =
-            indicizzaStatusReaderProxy(elencoProxiesStatus)
-
         val datiReaderProxy =
-            costruisciDashboardReaderProxy(
-                readerList = readerList,
-                tipiReaderProxySalvati = tipiReaderProxySalvati,
-                readersStatusPerNome = readersStatusPerNome,
-                proxiesStatusPerNome = proxiesStatusPerNome
-            )
+            risoluzioneReaderProxy.datiReaderProxy
 
         if (datiReaderProxy != null) {
             readerAbilitati = datiReaderProxy.readerAbilitati

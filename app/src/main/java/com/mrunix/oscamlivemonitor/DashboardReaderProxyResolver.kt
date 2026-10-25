@@ -58,3 +58,93 @@ suspend fun caricaReaderListDashboard(
             emptyList()
         }
     }
+
+data class DashboardReaderProxyResolution(
+    val tipiReaderProxySalvati: Map<String, String>,
+    val datiReaderProxy: DashboardReaderProxyData?
+)
+
+suspend fun risolviDashboardReaderProxy(
+    api: OscamApi,
+    host: String,
+    porta: String,
+    username: String,
+    password: String,
+    tipiSalvati: Map<String, String>,
+    elencoReadersStatus: List<String>,
+    elencoProxiesStatus: List<String>
+): DashboardReaderProxyResolution {
+    val readerList =
+        caricaReaderListDashboard(
+            api = api,
+            host = host,
+            porta = porta,
+            username = username,
+            password = password
+        )
+
+    val tipiReaderProxySalvati =
+        integraTipiReaderProxyDashboard(
+            tipiSalvati = tipiSalvati,
+            elencoReadersStatus = elencoReadersStatus,
+            elencoProxiesStatus = elencoProxiesStatus,
+            readerList = readerList
+        )
+
+    /*
+     * Per una voce disabilitata e mai classificata
+     * non ci fidiamo di readerlist.type:
+     * leggiamo una sola volta il protocollo reale
+     * dalla configurazione OSCam.
+     *
+     * Questo rende la classificazione indipendente
+     * dal nome del reader/proxy.
+     */
+    val vociDisabilitateSenzaTipo =
+        readerDisabilitatiSenzaTipo(
+            readerList = readerList,
+            tipiReaderProxySalvati = tipiReaderProxySalvati
+        )
+
+    if (vociDisabilitateSenzaTipo.isNotEmpty()) {
+        val tipiDaConfigurazione =
+            risolviTipiReaderProxyDaConfigurazione(
+                api = api,
+                host = host,
+                porta = porta,
+                username = username,
+                password = password,
+                voci = vociDisabilitateSenzaTipo
+            )
+
+        tipiReaderProxySalvati.putAll(
+            filtraTipiReaderProxyValidi(
+                tipiDaConfigurazione
+            )
+        )
+    }
+
+    val readersStatusPerNome =
+        indicizzaStatusReaderProxy(
+            elencoReadersStatus
+        )
+
+    val proxiesStatusPerNome =
+        indicizzaStatusReaderProxy(
+            elencoProxiesStatus
+        )
+
+    val datiReaderProxy =
+        costruisciDashboardReaderProxy(
+            readerList = readerList,
+            tipiReaderProxySalvati = tipiReaderProxySalvati,
+            readersStatusPerNome = readersStatusPerNome,
+            proxiesStatusPerNome = proxiesStatusPerNome
+        )
+
+    return DashboardReaderProxyResolution(
+        tipiReaderProxySalvati =
+            tipiReaderProxySalvati.toMap(),
+        datiReaderProxy = datiReaderProxy
+    )
+}

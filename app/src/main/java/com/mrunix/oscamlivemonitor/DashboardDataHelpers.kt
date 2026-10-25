@@ -1,0 +1,54 @@
+package com.mrunix.oscamlivemonitor
+
+fun chiaveNomeReaderProxy(nome: String): String =
+    nome.trim().lowercase(java.util.Locale.ROOT)
+
+fun tipoDaProtocolloReaderProxy(
+    protocollo: String
+): String {
+    return when (
+        protocollo.trim().lowercase()
+    ) {
+        /*
+         * Reader locali / fisici.
+         */
+        "internal",
+        "mouse",
+        "mp35",
+        "pcsc",
+        "sc8in1",
+        "smargo",
+        "smartreader",
+        "serial",
+        "drecas",
+        "emu",
+        "stapi",
+        "stapi5",
+        "stinger",
+        "phoenix" -> "r"
+
+        /*
+         * Reader di rete: nella Status WebIF
+         * vengono mostrati come Proxy.
+         */
+        "camd33",
+        "camd35",
+        "cs357x",
+        "cs378x",
+        "newcamd",
+        "newcamd525",
+        "newcamd524",
+        "cccam",
+        "cccam_ext",
+        "gbox",
+        "radegast",
+        "scam",
+        "ghttp",
+        "constcw",
+        "csp",
+        "pandora" -> "p"
+
+        else -> ""
+    }
+}
+

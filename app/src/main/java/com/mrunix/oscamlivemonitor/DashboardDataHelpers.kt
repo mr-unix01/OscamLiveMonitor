@@ -359,3 +359,21 @@ fun integraTipiReaderProxyDashboard(
 
     return tipi
 }
+
+fun readerDisabilitatiSenzaTipo(
+    readerList: List<OscamApi.ReaderListVoce>,
+    tipiReaderProxySalvati: Map<String, String>
+): List<OscamApi.ReaderListVoce> =
+    readerList.filter { voce ->
+        !voce.abilitato &&
+            tipiReaderProxySalvati[
+                chiaveNomeReaderProxy(voce.nome)
+            ].isNullOrBlank()
+    }
+
+fun filtraTipiReaderProxyValidi(
+    tipi: Map<String, String>
+): Map<String, String> =
+    tipi.filterValues { tipo ->
+        tipo == "r" || tipo == "p"
+    }

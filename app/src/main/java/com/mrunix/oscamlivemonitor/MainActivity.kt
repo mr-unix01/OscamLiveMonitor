@@ -487,12 +487,10 @@ fun Greeting(
          * dal nome del reader/proxy.
          */
         val vociDisabilitateSenzaTipo =
-            readerList.filter { voce ->
-                !voce.abilitato &&
-                    tipiReaderProxySalvati[
-                        chiaveNomeReaderProxy(voce.nome)
-                    ].isNullOrBlank()
-            }
+            readerDisabilitatiSenzaTipo(
+                readerList = readerList,
+                tipiReaderProxySalvati = tipiReaderProxySalvati
+            )
 
         if (vociDisabilitateSenzaTipo.isNotEmpty()) {
             val tipiDaConfigurazione =
@@ -521,11 +519,11 @@ fun Greeting(
                     }
                 }
 
-            tipiDaConfigurazione.forEach { (nome, tipo) ->
-                if (tipo == "r" || tipo == "p") {
-                    tipiReaderProxySalvati[nome] = tipo
-                }
-            }
+            tipiReaderProxySalvati.putAll(
+                filtraTipiReaderProxyValidi(
+                    tipiDaConfigurazione
+                )
+            )
         }
 
         if (tipiReaderProxySalvati.isNotEmpty()) {

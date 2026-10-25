@@ -1073,7 +1073,7 @@ fun Greeting(
         val serverAttivo =
             serverSalvati.firstOrNull { server ->
                 server.host.trim() == host.trim() &&
-                        server.porta.trim() == porta.trim()
+                    server.porta.trim() == porta.trim()
             }
 
         val nomeServerAttivo =
@@ -1081,118 +1081,86 @@ fun Greeting(
                 ?: host.trim()
                     .ifBlank { "server attivo" }
 
-        AlertDialog(
+        RiavviaOscamDialog(
+            nomeServer = nomeServerAttivo,
+            host = host.trim(),
+            porta = porta.trim(),
             onDismissRequest = {
                 if (!riavvioInCorso) {
                     mostraConfermaRiavvio = false
                 }
             },
-            title = {
-                Text(
-                    "Riavviare $nomeServerAttivo?"
-                )
+            onCancel = {
+                mostraConfermaRiavvio = false
             },
-            text = {
-                Text(
-                    "Verrà riavviato SOLO il server OSCam attivo:\n\n" +
-                            "$nomeServerAttivo\n" +
-                            "${host.trim()}:${porta.trim()}\n\n" +
-                            "Gli altri server salvati non verranno toccati. " +
-                            "I client di questo server verranno temporaneamente " +
-                            "disconnessi e OSCam Live Monitor proverà a riconnettersi " +
-                            "automaticamente."
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFFFF7043)
-                    ),
-                    onClick = {
-                        mostraConfermaRiavvio = false
+            onConfirm = {
+                mostraConfermaRiavvio = false
 
-                        if (host.isBlank() || porta.isBlank()) {
-                            stato =
-                                "Inserisci prima Host/IP e Porta"
-                            mostraSnackbar(stato)
-                            return@TextButton
-                        }
+                if (host.isBlank() || porta.isBlank()) {
+                    stato =
+                        "Inserisci prima Host/IP e Porta"
+                    mostraSnackbar(stato)
+                } else {
+                    riavvioInCorso = true
+                    stato = "Riavvio OSCam..."
 
-                        riavvioInCorso = true
-                        stato = "Riavvio OSCam..."
-
-                        coroutineScope.launch {
-                            val risultatoRiavvio =
-                                withContext(Dispatchers.IO) {
-                                    api.riavviaOscam(
-                                        host = host.trim(),
-                                        porta = porta.trim(),
-                                        username = username,
-                                        password = password
-                                    )
-                                }
-
-                            if (
-                                risultatoRiavvio.startsWith(
-                                    "ERRORE:",
-                                    ignoreCase = true
+                    coroutineScope.launch {
+                        val risultatoRiavvio =
+                            withContext(Dispatchers.IO) {
+                                api.riavviaOscam(
+                                    host = host.trim(),
+                                    porta = porta.trim(),
+                                    username = username,
+                                    password = password
                                 )
-                            ) {
-                                riavvioInCorso = false
-                                stato = risultatoRiavvio
-                                mostraSnackbar(risultatoRiavvio)
-                                return@launch
                             }
 
-                            // OSCam ha ricevuto il comando: ora può restare offline
-                            // per alcuni secondi mentre il WebIF viene riavviato.
-                            // Manteniamo gli ultimi dati della dashboard e non mostriamo
-                            // gli errori transitori dei singoli tentativi.
-                            stato = "Riconnessione OSCam..."
-                            kotlinx.coroutines.delay(3000)
-
-                            var riconnesso = false
-
-                            for (tentativo in 1..10) {
-                                val aggiornato =
-                                    aggiornaDashboardDaOscam(
-                                        mostraErroreSubito = false
-                                    )
-
-                                if (aggiornato) {
-                                    riconnesso = true
-                                    break
-                                }
-
-                                if (tentativo < 10) {
-                                    stato = "Riconnessione OSCam... ($tentativo/10)"
-                                    kotlinx.coroutines.delay(2000)
-                                }
-                            }
-
+                        if (
+                            risultatoRiavvio.startsWith(
+                                "ERRORE:",
+                                ignoreCase = true
+                            )
+                        ) {
                             riavvioInCorso = false
+                            stato = risultatoRiavvio
+                            mostraSnackbar(risultatoRiavvio)
+                            return@launch
+                        }
 
-                            if (riconnesso) {
-                                mostraConnessione = false
-                                stato = "Connesso"
-                            } else {
+                        stato = "Riconnessione OSCam..."
+                        kotlinx.coroutines.delay(3000)
+
+                        var riconnesso = false
+
+                        for (tentativo in 1..10) {
+                            val aggiornato =
+                                aggiornaDashboardDaOscam(
+                                    mostraErroreSubito = false
+                                )
+
+                            if (aggiornato) {
+                                riconnesso = true
+                                break
+                            }
+
+                            if (tentativo < 10) {
                                 stato =
-                                    "ERRORE: OSCam non raggiungibile dopo il riavvio"
-                                mostraSnackbar(stato)
+                                    "Riconnessione OSCam... ($tentativo/10)"
+                                kotlinx.coroutines.delay(2000)
                             }
                         }
+
+                        riavvioInCorso = false
+
+                        if (riconnesso) {
+                            mostraConnessione = false
+                            stato = "Connesso"
+                        } else {
+                            stato =
+                                "ERRORE: OSCam non raggiungibile dopo il riavvio"
+                            mostraSnackbar(stato)
+                        }
                     }
-                ) {
-                    Text("Riavvia $nomeServerAttivo")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        mostraConfermaRiavvio = false
-                    }
-                ) {
-                    Text("Annulla")
                 }
             }
         )

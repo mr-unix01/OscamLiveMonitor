@@ -309,3 +309,53 @@ fun codificaTipiReaderProxy(
 
     return json.toString()
 }
+
+fun integraTipiReaderProxyDashboard(
+    tipiSalvati: Map<String, String>,
+    elencoReadersStatus: List<String>,
+    elencoProxiesStatus: List<String>,
+    readerList: List<OscamApi.ReaderListVoce>
+): MutableMap<String, String> {
+    val tipi =
+        tipiSalvati.toMutableMap()
+
+    /*
+     * Lo status JSON e' la fonte piu' affidabile per distinguere
+     * reader fisici/locali (r) e proxy di rete (p) quando sono attivi.
+     */
+    elencoReadersStatus.forEach { voce ->
+        val nome =
+            voce.substringBeforeLast("—", voce).trim()
+
+        tipi[
+            chiaveNomeReaderProxy(nome)
+        ] = "r"
+    }
+
+    elencoProxiesStatus.forEach { voce ->
+        val nome =
+            voce.substringBeforeLast("—", voce).trim()
+
+        tipi[
+            chiaveNomeReaderProxy(nome)
+        ] = "p"
+    }
+
+    /*
+     * readerlist contiene anche gli elementi disabilitati.
+     * Quando OSCam fornisce type=r/p lo memorizziamo, cosi'
+     * la categoria resta disponibile anche dopo uscita/rientro.
+     */
+    readerList.forEach { voce ->
+        if (
+            voce.abilitato &&
+            (voce.tipo == "r" || voce.tipo == "p")
+        ) {
+            tipi[
+                chiaveNomeReaderProxy(voce.nome)
+            ] = voce.tipo
+        }
+    }
+
+    return tipi
+}

@@ -464,50 +464,18 @@ fun Greeting(
             )
 
         val tipiReaderProxySalvati =
-            decodificaTipiReaderProxy(
-                preferences.getString(
-                    chiaveTipiReaderProxy,
-                    null
-                )
+            integraTipiReaderProxyDashboard(
+                tipiSalvati =
+                    decodificaTipiReaderProxy(
+                        preferences.getString(
+                            chiaveTipiReaderProxy,
+                            null
+                        )
+                    ),
+                elencoReadersStatus = elencoReadersStatus,
+                elencoProxiesStatus = elencoProxiesStatus,
+                readerList = readerList
             )
-
-        /*
-         * Lo status JSON e' la fonte piu' affidabile per distinguere
-         * reader fisici/locali (r) e proxy di rete (p) quando sono attivi.
-         */
-        elencoReadersStatus.forEach { voce ->
-            val nome =
-                voce.substringBeforeLast("—", voce).trim()
-
-            tipiReaderProxySalvati[
-                chiaveNomeReaderProxy(nome)
-            ] = "r"
-        }
-
-        elencoProxiesStatus.forEach { voce ->
-            val nome =
-                voce.substringBeforeLast("—", voce).trim()
-
-            tipiReaderProxySalvati[
-                chiaveNomeReaderProxy(nome)
-            ] = "p"
-        }
-
-        /*
-         * readerlist contiene anche gli elementi disabilitati.
-         * Quando OSCam fornisce type=r/p lo memorizziamo, cosi'
-         * la categoria resta disponibile anche dopo uscita/rientro.
-         */
-        readerList.forEach { voce ->
-            if (
-                voce.abilitato &&
-                (voce.tipo == "r" || voce.tipo == "p")
-            ) {
-                tipiReaderProxySalvati[
-                    chiaveNomeReaderProxy(voce.nome)
-                ] = voce.tipo
-            }
-        }
 
         /*
          * Per una voce disabilitata e mai classificata

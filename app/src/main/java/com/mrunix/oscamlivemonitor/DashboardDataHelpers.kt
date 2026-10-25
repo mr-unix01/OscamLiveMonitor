@@ -52,3 +52,53 @@ fun tipoDaProtocolloReaderProxy(
     }
 }
 
+fun normalizzaElencoServersDashboard(
+    elencoServersOriginale: List<String>
+): List<String> =
+    elencoServersOriginale.mapIndexed { indice, server ->
+        val statoServer =
+            server
+                .substringAfterLast("—", "")
+                .trim()
+                .ifBlank {
+                    when {
+                        server.contains(
+                            "NOT OK",
+                            ignoreCase = true
+                        ) ->
+                            "NOT OK"
+
+                        server.contains(
+                            "OFFLINE",
+                            ignoreCase = true
+                        ) ->
+                            "OFFLINE"
+
+                        server.contains(
+                            "ERROR",
+                            ignoreCase = true
+                        ) ->
+                            "ERROR"
+
+                        server.contains(
+                            "OK",
+                            ignoreCase = true
+                        ) ->
+                            "OK"
+
+                        else ->
+                            "Stato sconosciuto"
+                    }
+                }
+
+        when (indice) {
+            0 ->
+                "OSCam Core — $statoServer"
+
+            1 ->
+                "WebIF — $statoServer"
+
+            else ->
+                server
+        }
+    }

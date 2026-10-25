@@ -403,16 +403,19 @@ fun Greeting(
             }
         }
 
-        elencoServers =
-            normalizzaElencoServersDashboard(
-                api.estraiElencoServersJson(risultato)
+        val dettagliStatus =
+            estraiDettagliStatusDashboard(
+                api = api,
+                risultato = risultato
             )
 
+        elencoServers = dettagliStatus.elencoServers
+
         val elencoReadersStatus =
-            api.estraiElencoReadersJson(risultato)
+            dettagliStatus.elencoReaders
 
         val elencoProxiesStatus =
-            api.estraiElencoProxiesJson(risultato)
+            dettagliStatus.elencoProxies
 
         val readerList =
             caricaReaderListDashboard(

@@ -52,3 +52,24 @@ fun estraiRiepilogoStatusDashboard(
         clients =
             api.estraiClientsJson(risultato)
     )
+
+data class DashboardStatusDetails(
+    val elencoServers: List<String>,
+    val elencoReaders: List<String>,
+    val elencoProxies: List<String>
+)
+
+fun estraiDettagliStatusDashboard(
+    api: OscamApi,
+    risultato: String
+): DashboardStatusDetails =
+    DashboardStatusDetails(
+        elencoServers =
+            normalizzaElencoServersDashboard(
+                api.estraiElencoServersJson(risultato)
+            ),
+        elencoReaders =
+            api.estraiElencoReadersJson(risultato),
+        elencoProxies =
+            api.estraiElencoProxiesJson(risultato)
+    )

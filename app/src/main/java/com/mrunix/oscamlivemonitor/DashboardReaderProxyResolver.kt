@@ -35,3 +35,26 @@ suspend fun risolviTipiReaderProxyDaConfigurazione(
                 tipoDaProtocolloReaderProxy(protocollo)
         }
     }
+
+suspend fun caricaReaderListDashboard(
+    api: OscamApi,
+    host: String,
+    porta: String,
+    username: String,
+    password: String
+): List<OscamApi.ReaderListVoce> =
+    withContext(Dispatchers.IO) {
+        val risultato =
+            api.scaricaReaderListJson(
+                host = host.trim(),
+                porta = porta.trim(),
+                username = username,
+                password = password
+            )
+
+        if (!risultato.startsWith("ERRORE:")) {
+            api.estraiReaderListJson(risultato)
+        } else {
+            emptyList()
+        }
+    }

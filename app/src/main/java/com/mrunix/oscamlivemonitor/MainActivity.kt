@@ -440,22 +440,14 @@ fun Greeting(
         val elencoProxiesStatus =
             api.estraiElencoProxiesJson(risultato)
 
-        val risultatoReaderList =
-            withContext(Dispatchers.IO) {
-                api.scaricaReaderListJson(
-                    host = host.trim(),
-                    porta = porta.trim(),
-                    username = username,
-                    password = password
-                )
-            }
-
         val readerList =
-            if (!risultatoReaderList.startsWith("ERRORE:")) {
-                api.estraiReaderListJson(risultatoReaderList)
-            } else {
-                emptyList()
-            }
+            caricaReaderListDashboard(
+                api = api,
+                host = host,
+                porta = porta,
+                username = username,
+                password = password
+            )
 
         val chiaveTipiReaderProxy =
             chiaveTipiReaderProxyDashboard(

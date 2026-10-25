@@ -47,11 +47,25 @@ import org.json.JSONObject
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import androidx.compose.foundation.clickable
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val dashboardViewModel =
+            androidx.lifecycle.ViewModelProvider(
+                this,
+                DashboardViewModel.Factory(
+                    api = OscamApi(),
+                    preferences =
+                        getSharedPreferences(
+                            "oscam_monitor",
+                            android.content.Context.MODE_PRIVATE
+                        )
+                )
+            )[DashboardViewModel::class.java]
+
         enableEdgeToEdge()
         setContent {
             OscamLiveMonitorTheme {
@@ -97,6 +111,7 @@ class MainActivity : ComponentActivity() {
                     Greeting(
                         name = "OSCam Live Monitor",
                         modifier = Modifier.padding(innerPadding),
+                        dashboardViewModel = dashboardViewModel,
                         onEditorLandscapeImeChange = {
                             editorLandscapeIme = it
                         }
@@ -111,6 +126,7 @@ class MainActivity : ComponentActivity() {
 fun Greeting(
     name: String,
     modifier: Modifier = Modifier,
+    dashboardViewModel: DashboardViewModel? = null,
     onEditorLandscapeImeChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -184,50 +200,59 @@ fun Greeting(
         )
     }
 
-    var stato by rememberSaveable { mutableStateOf("") }
-    var ultimoAggiornamento by rememberSaveable { mutableStateOf("") }
+    var statoPreview by rememberSaveable { mutableStateOf("") }
     var mostraRepositoryGitHub by rememberSaveable { mutableStateOf(false) }
     var refreshManualeInCorso by remember { mutableStateOf(false) }
-    var erroriRefreshConsecutivi by rememberSaveable { mutableStateOf(0) }
 
-    var versioneOscam by rememberSaveable { mutableStateOf("") }
-    var uptime by rememberSaveable { mutableStateOf("") }
-    var cpuOscam by rememberSaveable { mutableStateOf("") }
-    var ramOscam by rememberSaveable { mutableStateOf("") }
+    val dashboardState =
+        if (dashboardViewModel != null) {
+            dashboardViewModel.uiState.collectAsState().value
+        } else {
+            DashboardUiState()
+        }
 
-    var servers by rememberSaveable { mutableStateOf("") }
-    var readers by rememberSaveable { mutableStateOf("") }
-    var proxies by rememberSaveable { mutableStateOf("") }
-    var clients by rememberSaveable { mutableStateOf("") }
-    var users by rememberSaveable { mutableStateOf("") }
+    val stato =
+        if (dashboardViewModel != null) {
+            dashboardState.stato
+        } else {
+            statoPreview
+        }
 
-    var elencoServers by rememberSaveable {
-        mutableStateOf(emptyList<String>())
+    fun impostaStatoDashboard(nuovoStato: String) {
+        if (dashboardViewModel != null) {
+            dashboardViewModel.impostaStato(nuovoStato)
+        } else {
+            statoPreview = nuovoStato
+        }
     }
 
-    var elencoReaders by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val ultimoAggiornamento =
+        dashboardState.ultimoAggiornamento
 
-    var elencoProxies by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val versioneOscam = dashboardState.versioneOscam
+    val uptime = dashboardState.uptime
+    val cpuOscam = dashboardState.cpuOscam
+    val ramOscam = dashboardState.ramOscam
 
-    var elencoClients by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val servers = dashboardState.servers
+    val readers = dashboardState.readers
+    val proxies = dashboardState.proxies
+    val clients = dashboardState.clients
+    val users = dashboardState.users
 
-    var elencoUsers by rememberSaveable {
-        mutableStateOf(emptyList<String>())
-    }
+    val elencoServers = dashboardState.elencoServers
 
-    var readerAbilitati by remember {
-        mutableStateOf(emptyMap<String, Boolean>())
-    }
+    val elencoReaders = dashboardState.elencoReaders
 
-    var userAbilitati by remember {
-        mutableStateOf(emptyMap<String, Boolean>())
-    }
+    val elencoProxies = dashboardState.elencoProxies
+
+    val elencoClients = dashboardState.elencoClients
+
+    val elencoUsers = dashboardState.elencoUsers
+
+    val readerAbilitati = dashboardState.readerAbilitati
+
+    val userAbilitati = dashboardState.userAbilitati
 
     var toggleReadersInCorso by remember {
         mutableStateOf(emptySet<String>())
@@ -318,7 +343,6 @@ fun Greeting(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val dialogSnackbarHostState = remember { SnackbarHostState() }
-    val refreshMutex = remember { kotlinx.coroutines.sync.Mutex() }
 
     fun mostraSnackbar(messaggio: String) {
         val testo = if (messaggio.startsWith("ERRORE:", ignoreCase = true)) {
@@ -346,138 +370,37 @@ fun Greeting(
         }
     }
 
-    suspend fun aggiornaDashboardDaOscam(mostraErroreSubito: Boolean = true): Boolean {
-        refreshMutex.lock()
+    suspend fun aggiornaDashboardDaOscam(
+        mostraErroreSubito: Boolean = true
+    ): Boolean {
+        val viewModel =
+            dashboardViewModel
+                ?: return false
 
-        try {
-        val risultato =
-            caricaStatusDashboard(
-                api = api,
-                host = host,
-                porta = porta,
-                username = username,
-                password = password
-            )
-
-        if (risultato.startsWith("ERRORE:")) {
-            if (mostraErroreSubito) {
-                stato = risultato
-                mostraSnackbar(risultato)
-            }
-            return false
-        }
-
-        val datiStatus =
-            estraiDatiStatusDashboard(
-                api = api,
-                risultato = risultato
-            )
-
-        versioneOscam = datiStatus.versioneOscam
-        uptime = datiStatus.uptime
-        cpuOscam = datiStatus.cpuOscam
-        ramOscam = datiStatus.ramOscam
-        servers = datiStatus.servers
-        readers = datiStatus.readers
-        proxies = datiStatus.proxies
-        clients = datiStatus.clients
-
-        val datiUsers =
-            caricaDashboardUsers(
-                api = api,
-                host = host,
-                porta = porta,
-                username = username,
-                password = password
-            )
-
-        if (datiUsers != null) {
-            users = datiUsers.users
-
-            if (
-                datiUsers.elencoUsers != null &&
-                datiUsers.userAbilitati != null
-            ) {
-                elencoUsers = datiUsers.elencoUsers
-                userAbilitati = datiUsers.userAbilitati
-            }
-        }
-
-        elencoServers = datiStatus.elencoServers
-
-        val elencoReadersStatus =
-            datiStatus.elencoReaders
-
-        val elencoProxiesStatus =
-            datiStatus.elencoProxies
-
-        val chiaveTipiReaderProxy =
-            chiaveTipiReaderProxyDashboard(
-                host = host,
-                porta = porta
-            )
-
-        val risoluzioneReaderProxy =
-            risolviDashboardReaderProxy(
-                api = api,
+        val aggiornato =
+            viewModel.aggiornaDashboard(
                 host = host,
                 porta = porta,
                 username = username,
                 password = password,
-                tipiSalvati =
-                    decodificaTipiReaderProxy(
-                        preferences.getString(
-                            chiaveTipiReaderProxy,
-                            null
-                        )
-                    ),
-                elencoReadersStatus = elencoReadersStatus,
-                elencoProxiesStatus = elencoProxiesStatus
+                mostraErroreSubito = mostraErroreSubito
             )
 
-        if (
-            risoluzioneReaderProxy
-                .tipiReaderProxySalvati
-                .isNotEmpty()
-        ) {
-            preferences.edit()
-                .putString(
-                    chiaveTipiReaderProxy,
-                    codificaTipiReaderProxy(
-                        risoluzioneReaderProxy
-                            .tipiReaderProxySalvati
-                    )
+        if (!aggiornato && mostraErroreSubito) {
+            val statoErrore =
+                viewModel.uiState.value.stato
+
+            if (
+                statoErrore.startsWith(
+                    "ERRORE:",
+                    ignoreCase = true
                 )
-                .apply()
+            ) {
+                mostraSnackbar(statoErrore)
+            }
         }
 
-        elencoReaders =
-            risoluzioneReaderProxy.elencoReaders
-
-        elencoProxies =
-            risoluzioneReaderProxy.elencoProxies
-
-        val datiReaderProxy =
-            risoluzioneReaderProxy.datiReaderProxy
-
-        if (datiReaderProxy != null) {
-            readerAbilitati = datiReaderProxy.readerAbilitati
-            readers = datiReaderProxy.readers
-            proxies = datiReaderProxy.proxies
-        }
-
-        elencoClients =
-            datiStatus.elencoClients
-
-        ultimoAggiornamento =
-            oraAggiornamentoDashboard()
-
-        erroriRefreshConsecutivi = 0
-        stato = "Connesso"
-        return true
-        } finally {
-            refreshMutex.unlock()
-        }
+        return aggiornato
     }
 
     val richiestaPermessoRete = rememberLauncherForActivityResult(
@@ -485,12 +408,15 @@ fun Greeting(
     ) { concesso ->
         permessoReteConcesso = concesso
 
-        stato = if (concesso) {
-            "Accesso alla rete locale consentito"
-        } else {
-            "Permesso rete locale necessario per collegarsi a OSCam"
-        }
-        mostraSnackbar(stato)
+        val nuovoStato =
+            if (concesso) {
+                "Accesso alla rete locale consentito"
+            } else {
+                "Permesso rete locale necessario per collegarsi a OSCam"
+            }
+
+        impostaStatoDashboard(nuovoStato)
+        mostraSnackbar(nuovoStato)
     }
 
     LaunchedEffect(Unit) {
@@ -619,7 +545,7 @@ fun Greeting(
                                 chiave == host.trim() + ":" + porta.trim() &&
                                 stato.startsWith("ERRORE:", ignoreCase = true)
                             ) {
-                                stato = ""
+                                impostaStatoDashboard("")
                             }
 
                             if (
@@ -657,7 +583,15 @@ fun Greeting(
         }
     }
 
-    LaunchedEffect(
+    LaunchedEffect(dashboardViewModel) {
+        dashboardViewModel
+            ?.connessionePersaEventi
+            ?.collect {
+                mostraSnackbar("Connessione persa")
+            }
+    }
+
+    DisposableEffect(
         mostraConnessione,
         mostraWebIf,
         mostraLiveLog,
@@ -665,38 +599,30 @@ fun Greeting(
         host,
         porta,
         username,
-        password
+        password,
+        dashboardViewModel
     ) {
-        if (
+        val pollingAttivo =
             !mostraConnessione &&
-            !mostraWebIf &&
-            !mostraLiveLog &&
-            !riavvioInCorso
-        ) {
-            while (true) {
-                // Primo refresh immediato: quando si chiude WebIF/Live Log
-                // la dashboard non aspetta più 5 secondi prima di aggiornarsi.
-                val aggiornato =
-                    aggiornaDashboardDaOscam(
-                        mostraErroreSubito = false
-                    )
+                !mostraWebIf &&
+                !mostraLiveLog &&
+                !riavvioInCorso
 
-                if (aggiornato) {
-                    erroriRefreshConsecutivi = 0
-                } else {
-                    erroriRefreshConsecutivi += 1
+        if (pollingAttivo) {
+            // Primo refresh immediato: quando si chiude WebIF/Live Log
+            // la dashboard non aspetta più 5 secondi prima di aggiornarsi.
+            dashboardViewModel?.avviaPolling(
+                host = host,
+                porta = porta,
+                username = username,
+                password = password
+            )
+        } else {
+            dashboardViewModel?.fermaPolling()
+        }
 
-                    if (erroriRefreshConsecutivi >= 3) {
-                        stato = "Connessione persa"
-
-                        if (erroriRefreshConsecutivi == 3) {
-                            mostraSnackbar(stato)
-                        }
-                    }
-                }
-
-                kotlinx.coroutines.delay(5000)
-            }
+        onDispose {
+            dashboardViewModel?.fermaPolling()
         }
     }
 
@@ -728,12 +654,13 @@ fun Greeting(
                 mostraConfermaRiavvio = false
 
                 if (host.isBlank() || porta.isBlank()) {
-                    stato =
+                    val messaggio =
                         "Inserisci prima Host/IP e Porta"
-                    mostraSnackbar(stato)
+                    impostaStatoDashboard(messaggio)
+                    mostraSnackbar(messaggio)
                 } else {
                     riavvioInCorso = true
-                    stato = "Riavvio OSCam..."
+                    impostaStatoDashboard("Riavvio OSCam...")
 
                     coroutineScope.launch {
                         val risultatoRiavvio =
@@ -753,12 +680,14 @@ fun Greeting(
                             )
                         ) {
                             riavvioInCorso = false
-                            stato = risultatoRiavvio
+                            impostaStatoDashboard(risultatoRiavvio)
                             mostraSnackbar(risultatoRiavvio)
                             return@launch
                         }
 
-                        stato = "Riconnessione OSCam..."
+                        impostaStatoDashboard(
+                            "Riconnessione OSCam..."
+                        )
                         kotlinx.coroutines.delay(3000)
 
                         var riconnesso = false
@@ -775,8 +704,9 @@ fun Greeting(
                             }
 
                             if (tentativo < 10) {
-                                stato =
+                                impostaStatoDashboard(
                                     "Riconnessione OSCam... ($tentativo/10)"
+                                )
                                 kotlinx.coroutines.delay(2000)
                             }
                         }
@@ -785,11 +715,12 @@ fun Greeting(
 
                         if (riconnesso) {
                             mostraConnessione = false
-                            stato = "Connesso"
+                            impostaStatoDashboard("Connesso")
                         } else {
-                            stato =
+                            val messaggio =
                                 "ERRORE: OSCam non raggiungibile dopo il riavvio"
-                            mostraSnackbar(stato)
+                            impostaStatoDashboard(messaggio)
+                            mostraSnackbar(messaggio)
                         }
                     }
                 }
@@ -813,9 +744,10 @@ fun Greeting(
             },
             onNotNow = {
                 mostraSpiegazionePermesso = false
-                stato =
+                val messaggio =
                     "Permesso rete locale necessario per OSCam"
-                mostraSnackbar(stato)
+                impostaStatoDashboard(messaggio)
+                mostraSnackbar(messaggio)
             }
         )
     }
@@ -1383,7 +1315,7 @@ fun Greeting(
                                     )
                                     .apply()
 
-                                stato = ""
+                                impostaStatoDashboard("")
                             },
                             onEdit = {
                                 serverDaModificare = server
@@ -1422,16 +1354,19 @@ fun Greeting(
                     ),
                     onClick = {
                         if (!permessoReteConcesso) {
-                            stato =
+                            val messaggio =
                                 "Concedi prima l'accesso alla rete locale"
-                            mostraSnackbar(stato)
+                            impostaStatoDashboard(messaggio)
+                            mostraSnackbar(messaggio)
                             mostraSpiegazionePermesso = true
                             return@Button
                         }
 
                         if (host.isBlank() || porta.isBlank()) {
-                            stato = "Inserisci Host/IP e Porta"
-                            mostraSnackbar(stato)
+                            val messaggio =
+                                "Inserisci Host/IP e Porta"
+                            impostaStatoDashboard(messaggio)
+                            mostraSnackbar(messaggio)
                             return@Button
                         }
 
@@ -1445,23 +1380,8 @@ fun Greeting(
                             )
                             .apply()
 
-                        stato = "Connessione..."
-                        versioneOscam = ""
-                        uptime = ""
-                        cpuOscam = ""
-                        ramOscam = ""
-
-                        servers = ""
-                        readers = ""
-                        proxies = ""
-                        clients = ""
-                        users = ""
-
-                        elencoServers = emptyList()
-                        elencoReaders = emptyList()
-                        elencoProxies = emptyList()
-                        elencoClients = emptyList()
-                        elencoUsers = emptyList()
+                        dashboardViewModel?.resetDashboardState()
+                        impostaStatoDashboard("Connessione...")
 
                         mostraServers = true
                         mostraReaders = true
@@ -1669,23 +1589,8 @@ fun Greeting(
                         coloreAccento = Color(0xFF29B6F6),
                         onClick = {
                             mostraConnessione = true
-                            stato = ""
-                            versioneOscam = ""
-                            uptime = ""
-                            cpuOscam = ""
-                            ramOscam = ""
-
-                            servers = ""
-                            readers = ""
-                            proxies = ""
-                            clients = ""
-                            users = ""
-
-                            elencoServers = emptyList()
-                            elencoReaders = emptyList()
-                            elencoProxies = emptyList()
-                            elencoClients = emptyList()
-                            elencoUsers = emptyList()
+                            dashboardViewModel?.resetDashboardState()
+                            impostaStatoDashboard("")
 
                             mostraServers = true
                             mostraReaders = true
@@ -1735,8 +1640,10 @@ fun Greeting(
                     riavvioInCorso = riavvioInCorso,
                     onRiavviaClick = {
                         if (host.isBlank() || porta.isBlank()) {
-                            stato = "Inserisci prima Host/IP e Porta"
-                            mostraSnackbar(stato)
+                            val messaggio =
+                                "Inserisci prima Host/IP e Porta"
+                            impostaStatoDashboard(messaggio)
+                            mostraSnackbar(messaggio)
                         } else {
                             mostraConfermaRiavvio = true
                         }
@@ -2021,28 +1928,11 @@ fun Greeting(
                                     val nuovoStato =
                                         !attualmenteAbilitato
 
-                                    readerAbilitati =
-                                        readerAbilitati +
-                                                (nomeReader to nuovoStato)
-
-                                    elencoReaders =
-                                        elencoReaders.map { voce ->
-                                            val nome =
-                                                voce.substringBeforeLast(
-                                                    "—",
-                                                    voce
-                                                ).trim()
-
-                                            if (nome == nomeReader) {
-                                                "$nomeReader — " +
-                                                    if (nuovoStato)
-                                                        "OFFLINE"
-                                                    else
-                                                        "DISABILITATO"
-                                            } else {
-                                                voce
-                                            }
-                                        }
+                                    dashboardViewModel
+                                        ?.aggiornaReaderAbilitatoLocale(
+                                            nomeReader = nomeReader,
+                                            abilitato = nuovoStato
+                                        )
 
                                     kotlinx.coroutines.delay(400)
 
@@ -2115,28 +2005,11 @@ fun Greeting(
                                     val nuovoStato =
                                         !attualmenteAbilitato
 
-                                    readerAbilitati =
-                                        readerAbilitati +
-                                                (nomeProxy to nuovoStato)
-
-                                    elencoProxies =
-                                        elencoProxies.map { voce ->
-                                            val nome =
-                                                voce.substringBeforeLast(
-                                                    "—",
-                                                    voce
-                                                ).trim()
-
-                                            if (nome == nomeProxy) {
-                                                "$nomeProxy — " +
-                                                    if (nuovoStato)
-                                                        "OFFLINE"
-                                                    else
-                                                        "DISABILITATO"
-                                            } else {
-                                                voce
-                                            }
-                                        }
+                                    dashboardViewModel
+                                        ?.aggiornaProxyAbilitatoLocale(
+                                            nomeProxy = nomeProxy,
+                                            abilitato = nuovoStato
+                                        )
 
                                     kotlinx.coroutines.delay(400)
 
@@ -2215,12 +2088,12 @@ fun Greeting(
                                     }
 
                                 if (!esito.startsWith("ERRORE:")) {
-                                    userAbilitati =
-                                        userAbilitati +
-                                                (
-                                                    nomeUser to
-                                                        !attualmenteAbilitato
-                                                )
+                                    dashboardViewModel
+                                        ?.aggiornaUserAbilitatoLocale(
+                                            nomeUser = nomeUser,
+                                            abilitato =
+                                                !attualmenteAbilitato
+                                        )
 
                                     kotlinx.coroutines.delay(1500)
 

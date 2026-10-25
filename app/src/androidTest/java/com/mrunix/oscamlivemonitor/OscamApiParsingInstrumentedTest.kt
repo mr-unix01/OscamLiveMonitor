@@ -104,4 +104,79 @@ class OscamApiParsingInstrumentedTest {
         )
         assertEquals("0/0", api.estraiReadersJson("non-json"))
     }
+
+    @Test
+    fun datiStatusDashboard_mantengonoMappingCompleto() {
+        val dati =
+            estraiDatiStatusDashboard(
+                api = api,
+                risultato = statusJson
+            )
+
+        assertEquals("2.26.10-11968", dati.versioneOscam)
+        assertEquals("12345", dati.uptime)
+        assertEquals("Sconosciuta", dati.cpuOscam)
+        assertEquals("Sconosciuta", dati.ramOscam)
+
+        assertEquals("2/2", dati.servers)
+        assertEquals("1/2", dati.readers)
+        assertEquals("1/1", dati.proxies)
+        assertEquals("1/1", dati.clients)
+
+        assertEquals(
+            listOf(
+                "OSCam Core — OK",
+                "WebIF — CONNECTED"
+            ),
+            dati.elencoServers
+        )
+
+        assertEquals(
+            listOf(
+                "Reader+Uno — CARDOK",
+                "ReaderDue — OFFLINE"
+            ),
+            dati.elencoReaders
+        )
+
+        assertEquals(
+            listOf(
+                "ProxyUno — ACTIVE"
+            ),
+            dati.elencoProxies
+        )
+
+        assertEquals(
+            listOf(
+                "dm920 — CONNECTED"
+            ),
+            dati.elencoClients
+        )
+    }
+
+    @Test
+    fun cacheTipiReaderProxy_roundTripMantieneReaderEProxy() {
+        val originale =
+            mapOf(
+                "readeruno" to "r",
+                "proxyuno" to "p"
+            )
+
+        assertEquals(
+            originale,
+            decodificaTipiReaderProxy(
+                codificaTipiReaderProxy(originale)
+            )
+        )
+    }
+
+    @Test
+    fun cacheTipiReaderProxy_jsonNonValido_restituisceMappaVuota() {
+        assertTrue(
+            decodificaTipiReaderProxy(
+                "non-json"
+            ).isEmpty()
+        )
+    }
+
 }

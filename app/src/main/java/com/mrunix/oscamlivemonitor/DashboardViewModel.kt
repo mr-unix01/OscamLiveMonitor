@@ -211,6 +211,82 @@ class DashboardViewModel(
         }
     }
 
+    fun aggiornaReaderAbilitatoLocale(
+        nomeReader: String,
+        abilitato: Boolean
+    ) {
+        val statoCorrente = _uiState.value
+
+        _uiState.value =
+            statoCorrente.copy(
+                readerAbilitati =
+                    statoCorrente.readerAbilitati +
+                        (nomeReader to abilitato),
+                elencoReaders =
+                    aggiornaVoceReaderProxyLocale(
+                        elenco = statoCorrente.elencoReaders,
+                        nome = nomeReader,
+                        abilitato = abilitato
+                    )
+            )
+    }
+
+    fun aggiornaProxyAbilitatoLocale(
+        nomeProxy: String,
+        abilitato: Boolean
+    ) {
+        val statoCorrente = _uiState.value
+
+        _uiState.value =
+            statoCorrente.copy(
+                readerAbilitati =
+                    statoCorrente.readerAbilitati +
+                        (nomeProxy to abilitato),
+                elencoProxies =
+                    aggiornaVoceReaderProxyLocale(
+                        elenco = statoCorrente.elencoProxies,
+                        nome = nomeProxy,
+                        abilitato = abilitato
+                    )
+            )
+    }
+
+    fun aggiornaUserAbilitatoLocale(
+        nomeUser: String,
+        abilitato: Boolean
+    ) {
+        _uiState.value =
+            _uiState.value.copy(
+                userAbilitati =
+                    _uiState.value.userAbilitati +
+                        (nomeUser to abilitato)
+            )
+    }
+
+    private fun aggiornaVoceReaderProxyLocale(
+        elenco: List<String>,
+        nome: String,
+        abilitato: Boolean
+    ): List<String> =
+        elenco.map { voce ->
+            val nomeVoce =
+                voce.substringBeforeLast(
+                    "—",
+                    voce
+                ).trim()
+
+            if (nomeVoce == nome) {
+                "$nome — " +
+                    if (abilitato) {
+                        "OFFLINE"
+                    } else {
+                        "DISABILITATO"
+                    }
+            } else {
+                voce
+            }
+        }
+
     class Factory(
         private val api: OscamApi,
         private val preferences: SharedPreferences

@@ -391,8 +391,8 @@ fun Greeting(
         clients =
             api.estraiClientsJson(risultato)
 
-        val risultatoUserStats =
-            caricaUserStatsDashboard(
+        val datiUsers =
+            caricaDashboardUsers(
                 api = api,
                 host = host,
                 porta = porta,
@@ -400,30 +400,15 @@ fun Greeting(
                 password = password
             )
 
-        if (!risultatoUserStats.startsWith("ERRORE:")) {
-            users =
-                api.estraiUsersJson(risultatoUserStats)
+        if (datiUsers != null) {
+            users = datiUsers.users
 
-            val paginaUserConfig =
-                caricaUserConfigDashboard(
-                    api = api,
-                    host = host,
-                    porta = porta,
-                    username = username,
-                    password = password
-                )
-
-            if (!paginaUserConfig.startsWith("ERRORE:")) {
-                elencoUsers =
-                    api.estraiElencoUsersJson(
-                        json = risultatoUserStats,
-                        htmlUserConfig = paginaUserConfig
-                    )
-
-                userAbilitati =
-                    api.estraiAbilitazioneUsersHtml(
-                        paginaUserConfig
-                    )
+            if (
+                datiUsers.elencoUsers != null &&
+                datiUsers.userAbilitati != null
+            ) {
+                elencoUsers = datiUsers.elencoUsers
+                userAbilitati = datiUsers.userAbilitati
             }
         }
 

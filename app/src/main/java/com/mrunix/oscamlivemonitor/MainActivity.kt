@@ -1199,45 +1199,24 @@ fun Greeting(
     }
 
     if (mostraSpiegazionePermesso) {
-        AlertDialog(
-            onDismissRequest = {
+        SpiegazionePermessoReteDialog(
+            onDismiss = {
                 mostraSpiegazionePermesso = false
             },
-            title = {
-                Text("Accesso alla rete locale")
-            },
-            text = {
-                Text(
-                    "OSCam Live Monitor deve accedere alla rete locale " +
-                            "per collegarsi al WebIF di OSCam."
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        mostraSpiegazionePermesso = false
+            onContinue = {
+                mostraSpiegazionePermesso = false
 
-                        if (Build.VERSION.SDK_INT >= 37) {
-                            richiestaPermessoRete.launch(
-                                Manifest.permission.ACCESS_LOCAL_NETWORK
-                            )
-                        }
-                    }
-                ) {
-                    Text("Continua")
+                if (Build.VERSION.SDK_INT >= 37) {
+                    richiestaPermessoRete.launch(
+                        Manifest.permission.ACCESS_LOCAL_NETWORK
+                    )
                 }
             },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        mostraSpiegazionePermesso = false
-                        stato =
-                            "Permesso rete locale necessario per OSCam"
-                        mostraSnackbar(stato)
-                    }
-                ) {
-                    Text("Non ora")
-                }
+            onNotNow = {
+                mostraSpiegazionePermesso = false
+                stato =
+                    "Permesso rete locale necessario per OSCam"
+                mostraSnackbar(stato)
             }
         )
     }

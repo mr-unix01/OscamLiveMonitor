@@ -350,14 +350,14 @@ fun Greeting(
         refreshMutex.lock()
 
         try {
-        val risultato = withContext(Dispatchers.IO) {
-            api.scaricaStatusJson(
-                host = host.trim(),
-                porta = porta.trim(),
+        val risultato =
+            caricaStatusDashboard(
+                api = api,
+                host = host,
+                porta = porta,
                 username = username,
                 password = password
             )
-        }
 
         if (risultato.startsWith("ERRORE:")) {
             if (mostraErroreSubito) {

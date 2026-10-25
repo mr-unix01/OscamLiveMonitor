@@ -199,7 +199,7 @@ fun Greeting(
         )
     }
 
-    var stato by rememberSaveable { mutableStateOf("") }
+    var statoPreview by rememberSaveable { mutableStateOf("") }
     var mostraRepositoryGitHub by rememberSaveable { mutableStateOf(false) }
     var refreshManualeInCorso by remember { mutableStateOf(false) }
 
@@ -209,6 +209,21 @@ fun Greeting(
         } else {
             DashboardUiState()
         }
+
+    val stato =
+        if (dashboardViewModel != null) {
+            dashboardState.stato
+        } else {
+            statoPreview
+        }
+
+    fun impostaStatoDashboard(nuovoStato: String) {
+        if (dashboardViewModel != null) {
+            dashboardViewModel.impostaStato(nuovoStato)
+        } else {
+            statoPreview = nuovoStato
+        }
+    }
 
     val ultimoAggiornamento =
         dashboardState.ultimoAggiornamento
@@ -384,16 +399,11 @@ fun Greeting(
                     ignoreCase = true
                 )
             ) {
-                stato = refreshedState.stato
-                mostraSnackbar(stato)
+                mostraSnackbar(refreshedState.stato)
             }
 
             return false
         }
-
-        stato = refreshedState.stato
-
-
 
         return true
     }
@@ -403,12 +413,15 @@ fun Greeting(
     ) { concesso ->
         permessoReteConcesso = concesso
 
-        stato = if (concesso) {
-            "Accesso alla rete locale consentito"
-        } else {
-            "Permesso rete locale necessario per collegarsi a OSCam"
-        }
-        mostraSnackbar(stato)
+        val nuovoStato =
+            if (concesso) {
+                "Accesso alla rete locale consentito"
+            } else {
+                "Permesso rete locale necessario per collegarsi a OSCam"
+            }
+
+        impostaStatoDashboard(nuovoStato)
+        mostraSnackbar(nuovoStato)
     }
 
     LaunchedEffect(Unit) {
@@ -537,7 +550,7 @@ fun Greeting(
                                 chiave == host.trim() + ":" + porta.trim() &&
                                 stato.startsWith("ERRORE:", ignoreCase = true)
                             ) {
-                                stato = ""
+                                impostaStatoDashboard("")
                             }
 
                             if (
@@ -605,12 +618,8 @@ fun Greeting(
                             ?.registraErroreRefresh()
                             ?: 0
 
-                    if (conteggioErrori >= 3) {
-                        stato = "Connessione persa"
-
-                        if (conteggioErrori == 3) {
-                            mostraSnackbar(stato)
-                        }
+                    if (conteggioErrori == 3) {
+                        mostraSnackbar("Connessione persa")
                     }
                 }
 
@@ -647,12 +656,13 @@ fun Greeting(
                 mostraConfermaRiavvio = false
 
                 if (host.isBlank() || porta.isBlank()) {
-                    stato =
+                    val messaggio =
                         "Inserisci prima Host/IP e Porta"
-                    mostraSnackbar(stato)
+                    impostaStatoDashboard(messaggio)
+                    mostraSnackbar(messaggio)
                 } else {
                     riavvioInCorso = true
-                    stato = "Riavvio OSCam..."
+                    impostaStatoDashboard("Riavvio OSCam...")
 
                     coroutineScope.launch {
                         val risultatoRiavvio =
@@ -672,12 +682,14 @@ fun Greeting(
                             )
                         ) {
                             riavvioInCorso = false
-                            stato = risultatoRiavvio
+                            impostaStatoDashboard(risultatoRiavvio)
                             mostraSnackbar(risultatoRiavvio)
                             return@launch
                         }
 
-                        stato = "Riconnessione OSCam..."
+                        impostaStatoDashboard(
+                            "Riconnessione OSCam..."
+                        )
                         kotlinx.coroutines.delay(3000)
 
                         var riconnesso = false
@@ -694,8 +706,9 @@ fun Greeting(
                             }
 
                             if (tentativo < 10) {
-                                stato =
+                                impostaStatoDashboard(
                                     "Riconnessione OSCam... ($tentativo/10)"
+                                )
                                 kotlinx.coroutines.delay(2000)
                             }
                         }
@@ -704,11 +717,12 @@ fun Greeting(
 
                         if (riconnesso) {
                             mostraConnessione = false
-                            stato = "Connesso"
+                            impostaStatoDashboard("Connesso")
                         } else {
-                            stato =
+                            val messaggio =
                                 "ERRORE: OSCam non raggiungibile dopo il riavvio"
-                            mostraSnackbar(stato)
+                            impostaStatoDashboard(messaggio)
+                            mostraSnackbar(messaggio)
                         }
                     }
                 }
@@ -732,9 +746,10 @@ fun Greeting(
             },
             onNotNow = {
                 mostraSpiegazionePermesso = false
-                stato =
+                val messaggio =
                     "Permesso rete locale necessario per OSCam"
-                mostraSnackbar(stato)
+                impostaStatoDashboard(messaggio)
+                mostraSnackbar(messaggio)
             }
         )
     }
@@ -1302,7 +1317,7 @@ fun Greeting(
                                     )
                                     .apply()
 
-                                stato = ""
+                                impostaStatoDashboard("")
                             },
                             onEdit = {
                                 serverDaModificare = server
@@ -1341,16 +1356,19 @@ fun Greeting(
                     ),
                     onClick = {
                         if (!permessoReteConcesso) {
-                            stato =
+                            val messaggio =
                                 "Concedi prima l'accesso alla rete locale"
-                            mostraSnackbar(stato)
+                            impostaStatoDashboard(messaggio)
+                            mostraSnackbar(messaggio)
                             mostraSpiegazionePermesso = true
                             return@Button
                         }
 
                         if (host.isBlank() || porta.isBlank()) {
-                            stato = "Inserisci Host/IP e Porta"
-                            mostraSnackbar(stato)
+                            val messaggio =
+                                "Inserisci Host/IP e Porta"
+                            impostaStatoDashboard(messaggio)
+                            mostraSnackbar(messaggio)
                             return@Button
                         }
 
@@ -1364,10 +1382,8 @@ fun Greeting(
                             )
                             .apply()
 
-                        stato = "Connessione..."
-
-
                         dashboardViewModel?.resetDashboardState()
+                        impostaStatoDashboard("Connessione...")
 
                         mostraServers = true
                         mostraReaders = true
@@ -1575,10 +1591,8 @@ fun Greeting(
                         coloreAccento = Color(0xFF29B6F6),
                         onClick = {
                             mostraConnessione = true
-                            stato = ""
-
-
                             dashboardViewModel?.resetDashboardState()
+                            impostaStatoDashboard("")
 
                             mostraServers = true
                             mostraReaders = true
@@ -1628,8 +1642,10 @@ fun Greeting(
                     riavvioInCorso = riavvioInCorso,
                     onRiavviaClick = {
                         if (host.isBlank() || porta.isBlank()) {
-                            stato = "Inserisci prima Host/IP e Porta"
-                            mostraSnackbar(stato)
+                            val messaggio =
+                                "Inserisci prima Host/IP e Porta"
+                            impostaStatoDashboard(messaggio)
+                            mostraSnackbar(messaggio)
                         } else {
                             mostraConfermaRiavvio = true
                         }

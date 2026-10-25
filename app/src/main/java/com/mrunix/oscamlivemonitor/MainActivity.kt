@@ -52,6 +52,19 @@ import androidx.compose.foundation.clickable
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val dashboardViewModel =
+            androidx.lifecycle.ViewModelProvider(
+                this,
+                DashboardViewModel.Factory(
+                    api = OscamApi(),
+                    preferences =
+                        getSharedPreferences(
+                            "oscam_monitor",
+                            android.content.Context.MODE_PRIVATE
+                        )
+                )
+            )[DashboardViewModel::class.java]
+
         enableEdgeToEdge()
         setContent {
             OscamLiveMonitorTheme {
@@ -97,6 +110,7 @@ class MainActivity : ComponentActivity() {
                     Greeting(
                         name = "OSCam Live Monitor",
                         modifier = Modifier.padding(innerPadding),
+                        dashboardViewModel = dashboardViewModel,
                         onEditorLandscapeImeChange = {
                             editorLandscapeIme = it
                         }
@@ -111,6 +125,7 @@ class MainActivity : ComponentActivity() {
 fun Greeting(
     name: String,
     modifier: Modifier = Modifier,
+    dashboardViewModel: DashboardViewModel? = null,
     onEditorLandscapeImeChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -1462,6 +1477,7 @@ fun Greeting(
                         elencoProxies = emptyList()
                         elencoClients = emptyList()
                         elencoUsers = emptyList()
+                        dashboardViewModel?.resetDashboardState()
 
                         mostraServers = true
                         mostraReaders = true
@@ -1686,6 +1702,7 @@ fun Greeting(
                             elencoProxies = emptyList()
                             elencoClients = emptyList()
                             elencoUsers = emptyList()
+                            dashboardViewModel?.resetDashboardState()
 
                             mostraServers = true
                             mostraReaders = true

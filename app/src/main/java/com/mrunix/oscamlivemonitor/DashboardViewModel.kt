@@ -21,6 +21,10 @@ class DashboardViewModel(
     val uiState: StateFlow<DashboardUiState> =
         _uiState.asStateFlow()
 
+    fun resetDashboardState() {
+        _uiState.value = DashboardUiState()
+    }
+
     suspend fun aggiornaDashboard(
         host: String,
         porta: String,

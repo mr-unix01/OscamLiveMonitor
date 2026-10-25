@@ -200,10 +200,8 @@ fun Greeting(
     }
 
     var stato by rememberSaveable { mutableStateOf("") }
-    var ultimoAggiornamento by rememberSaveable { mutableStateOf("") }
     var mostraRepositoryGitHub by rememberSaveable { mutableStateOf(false) }
     var refreshManualeInCorso by remember { mutableStateOf(false) }
-    var erroriRefreshConsecutivi by rememberSaveable { mutableStateOf(0) }
 
     val dashboardState =
         if (dashboardViewModel != null) {
@@ -211,6 +209,12 @@ fun Greeting(
         } else {
             DashboardUiState()
         }
+
+    val ultimoAggiornamento =
+        dashboardState.ultimoAggiornamento
+
+    val erroriRefreshConsecutivi =
+        dashboardState.erroriRefreshConsecutivi
 
     val versioneOscam = dashboardState.versioneOscam
     val uptime = dashboardState.uptime
@@ -390,12 +394,6 @@ fun Greeting(
         stato = refreshedState.stato
 
 
-
-        ultimoAggiornamento =
-            refreshedState.ultimoAggiornamento
-
-        erroriRefreshConsecutivi =
-            refreshedState.erroriRefreshConsecutivi
 
         return true
     }
@@ -601,15 +599,16 @@ fun Greeting(
                         mostraErroreSubito = false
                     )
 
-                if (aggiornato) {
-                    erroriRefreshConsecutivi = 0
-                } else {
-                    erroriRefreshConsecutivi += 1
+                if (!aggiornato) {
+                    val conteggioErrori =
+                        dashboardViewModel
+                            ?.registraErroreRefresh()
+                            ?: 0
 
-                    if (erroriRefreshConsecutivi >= 3) {
+                    if (conteggioErrori >= 3) {
                         stato = "Connessione persa"
 
-                        if (erroriRefreshConsecutivi == 3) {
+                        if (conteggioErrori == 3) {
                             mostraSnackbar(stato)
                         }
                     }

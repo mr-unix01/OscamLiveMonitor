@@ -211,6 +211,28 @@ class DashboardViewModel(
         }
     }
 
+    suspend fun aggiornaDashboardPolling(
+        host: String,
+        porta: String,
+        username: String,
+        password: String
+    ): Int {
+        val aggiornato =
+            aggiornaDashboard(
+                host = host,
+                porta = porta,
+                username = username,
+                password = password,
+                mostraErroreSubito = false
+            )
+
+        return if (aggiornato) {
+            0
+        } else {
+            registraErroreRefresh()
+        }
+    }
+
     fun impostaStato(stato: String) {
         _uiState.value =
             _uiState.value.copy(

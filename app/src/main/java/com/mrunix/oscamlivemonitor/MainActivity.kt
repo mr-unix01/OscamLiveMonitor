@@ -604,20 +604,18 @@ fun Greeting(
             while (true) {
                 // Primo refresh immediato: quando si chiude WebIF/Live Log
                 // la dashboard non aspetta più 5 secondi prima di aggiornarsi.
-                val aggiornato =
-                    aggiornaDashboardDaOscam(
-                        mostraErroreSubito = false
-                    )
+                val conteggioErrori =
+                    dashboardViewModel
+                        ?.aggiornaDashboardPolling(
+                            host = host,
+                            porta = porta,
+                            username = username,
+                            password = password
+                        )
+                        ?: 0
 
-                if (!aggiornato) {
-                    val conteggioErrori =
-                        dashboardViewModel
-                            ?.registraErroreRefresh()
-                            ?: 0
-
-                    if (conteggioErrori == 3) {
-                        mostraSnackbar("Connessione persa")
-                    }
+                if (conteggioErrori == 3) {
+                    mostraSnackbar("Connessione persa")
                 }
 
                 kotlinx.coroutines.delay(5000)

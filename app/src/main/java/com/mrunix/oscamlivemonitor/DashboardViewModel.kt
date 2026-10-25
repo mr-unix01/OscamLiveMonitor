@@ -211,6 +211,31 @@ class DashboardViewModel(
         }
     }
 
+    fun impostaStato(stato: String) {
+        _uiState.value =
+            _uiState.value.copy(
+                stato = stato
+            )
+    }
+
+    fun registraErroreRefresh(): Int {
+        val nuovoConteggio =
+            _uiState.value.erroriRefreshConsecutivi + 1
+
+        _uiState.value =
+            _uiState.value.copy(
+                erroriRefreshConsecutivi = nuovoConteggio,
+                stato =
+                    if (nuovoConteggio >= 3) {
+                        "Connessione persa"
+                    } else {
+                        _uiState.value.stato
+                    }
+            )
+
+        return nuovoConteggio
+    }
+
     fun aggiornaReaderAbilitatoLocale(
         nomeReader: String,
         abilitato: Boolean

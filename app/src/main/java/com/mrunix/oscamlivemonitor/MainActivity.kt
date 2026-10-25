@@ -333,7 +333,6 @@ fun Greeting(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val dialogSnackbarHostState = remember { SnackbarHostState() }
-    val refreshMutex = remember { kotlinx.coroutines.sync.Mutex() }
 
     fun mostraSnackbar(messaggio: String) {
         val testo = if (messaggio.startsWith("ERRORE:", ignoreCase = true)) {
@@ -361,138 +360,71 @@ fun Greeting(
         }
     }
 
-    suspend fun aggiornaDashboardDaOscam(mostraErroreSubito: Boolean = true): Boolean {
-        refreshMutex.lock()
+    suspend fun aggiornaDashboardDaOscam(
+        mostraErroreSubito: Boolean = true
+    ): Boolean {
+        val viewModel =
+            dashboardViewModel
+                ?: return false
 
-        try {
-        val risultato =
-            caricaStatusDashboard(
-                api = api,
-                host = host,
-                porta = porta,
-                username = username,
-                password = password
-            )
-
-        if (risultato.startsWith("ERRORE:")) {
-            if (mostraErroreSubito) {
-                stato = risultato
-                mostraSnackbar(risultato)
-            }
-            return false
-        }
-
-        val datiStatus =
-            estraiDatiStatusDashboard(
-                api = api,
-                risultato = risultato
-            )
-
-        versioneOscam = datiStatus.versioneOscam
-        uptime = datiStatus.uptime
-        cpuOscam = datiStatus.cpuOscam
-        ramOscam = datiStatus.ramOscam
-        servers = datiStatus.servers
-        readers = datiStatus.readers
-        proxies = datiStatus.proxies
-        clients = datiStatus.clients
-
-        val datiUsers =
-            caricaDashboardUsers(
-                api = api,
-                host = host,
-                porta = porta,
-                username = username,
-                password = password
-            )
-
-        if (datiUsers != null) {
-            users = datiUsers.users
-
-            if (
-                datiUsers.elencoUsers != null &&
-                datiUsers.userAbilitati != null
-            ) {
-                elencoUsers = datiUsers.elencoUsers
-                userAbilitati = datiUsers.userAbilitati
-            }
-        }
-
-        elencoServers = datiStatus.elencoServers
-
-        val elencoReadersStatus =
-            datiStatus.elencoReaders
-
-        val elencoProxiesStatus =
-            datiStatus.elencoProxies
-
-        val chiaveTipiReaderProxy =
-            chiaveTipiReaderProxyDashboard(
-                host = host,
-                porta = porta
-            )
-
-        val risoluzioneReaderProxy =
-            risolviDashboardReaderProxy(
-                api = api,
+        val aggiornato =
+            viewModel.aggiornaDashboard(
                 host = host,
                 porta = porta,
                 username = username,
                 password = password,
-                tipiSalvati =
-                    decodificaTipiReaderProxy(
-                        preferences.getString(
-                            chiaveTipiReaderProxy,
-                            null
-                        )
-                    ),
-                elencoReadersStatus = elencoReadersStatus,
-                elencoProxiesStatus = elencoProxiesStatus
+                mostraErroreSubito = mostraErroreSubito
             )
 
-        if (
-            risoluzioneReaderProxy
-                .tipiReaderProxySalvati
-                .isNotEmpty()
-        ) {
-            preferences.edit()
-                .putString(
-                    chiaveTipiReaderProxy,
-                    codificaTipiReaderProxy(
-                        risoluzioneReaderProxy
-                            .tipiReaderProxySalvati
-                    )
+        val dashboardState =
+            viewModel.uiState.value
+
+        if (!aggiornato) {
+            if (
+                mostraErroreSubito &&
+                dashboardState.stato.startsWith(
+                    "ERRORE:",
+                    ignoreCase = true
                 )
-                .apply()
+            ) {
+                stato = dashboardState.stato
+                mostraSnackbar(stato)
+            }
+
+            return false
         }
 
-        elencoReaders =
-            risoluzioneReaderProxy.elencoReaders
+        stato = dashboardState.stato
+        versioneOscam = dashboardState.versioneOscam
+        uptime = dashboardState.uptime
+        cpuOscam = dashboardState.cpuOscam
+        ramOscam = dashboardState.ramOscam
 
-        elencoProxies =
-            risoluzioneReaderProxy.elencoProxies
+        servers = dashboardState.servers
+        readers = dashboardState.readers
+        proxies = dashboardState.proxies
+        clients = dashboardState.clients
+        users = dashboardState.users
 
-        val datiReaderProxy =
-            risoluzioneReaderProxy.datiReaderProxy
+        elencoServers = dashboardState.elencoServers
+        elencoReaders = dashboardState.elencoReaders
+        elencoProxies = dashboardState.elencoProxies
+        elencoClients = dashboardState.elencoClients
+        elencoUsers = dashboardState.elencoUsers
 
-        if (datiReaderProxy != null) {
-            readerAbilitati = datiReaderProxy.readerAbilitati
-            readers = datiReaderProxy.readers
-            proxies = datiReaderProxy.proxies
-        }
+        readerAbilitati =
+            dashboardState.readerAbilitati
 
-        elencoClients =
-            datiStatus.elencoClients
+        userAbilitati =
+            dashboardState.userAbilitati
 
         ultimoAggiornamento =
-            oraAggiornamentoDashboard()
+            dashboardState.ultimoAggiornamento
 
-        erroriRefreshConsecutivi = 0
-        stato = "Connesso"
+        erroriRefreshConsecutivi =
+            dashboardState.erroriRefreshConsecutivi
+
         return true
-        } finally {
-            refreshMutex.unlock()
-        }
     }
 
     val richiestaPermessoRete = rememberLauncherForActivityResult(

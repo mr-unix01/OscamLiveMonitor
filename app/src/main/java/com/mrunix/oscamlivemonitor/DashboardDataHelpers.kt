@@ -253,3 +253,59 @@ fun costruisciDashboardReaderProxy(
         proxies = "$proxiesAttivi/${catalogoProxies.size}"
     )
 }
+
+fun chiaveTipiReaderProxyDashboard(
+    host: String,
+    porta: String
+): String =
+    "reader_proxy_types_v2_" +
+        host.trim() + "_" +
+        porta.trim()
+
+fun decodificaTipiReaderProxy(
+    jsonSalvato: String?
+): MutableMap<String, String> {
+    val tipi =
+        mutableMapOf<String, String>()
+
+    if (jsonSalvato.isNullOrBlank()) {
+        return tipi
+    }
+
+    try {
+        val json =
+            org.json.JSONObject(jsonSalvato)
+
+        val chiavi = json.keys()
+
+        while (chiavi.hasNext()) {
+            val nome = chiavi.next()
+
+            val tipo =
+                json.optString(nome, "")
+                    .trim()
+                    .lowercase()
+
+            if (tipo == "r" || tipo == "p") {
+                tipi[nome] = tipo
+            }
+        }
+    } catch (_: Exception) {
+        Unit
+    }
+
+    return tipi
+}
+
+fun codificaTipiReaderProxy(
+    tipi: Map<String, String>
+): String {
+    val json =
+        org.json.JSONObject()
+
+    tipi.forEach { (nome, tipo) ->
+        json.put(nome, tipo)
+    }
+
+    return json.toString()
+}

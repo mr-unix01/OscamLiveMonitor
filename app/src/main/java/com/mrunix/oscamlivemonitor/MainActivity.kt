@@ -458,38 +458,18 @@ fun Greeting(
             }
 
         val chiaveTipiReaderProxy =
-            "reader_proxy_types_v2_" +
-                host.trim() + "_" +
-                porta.trim()
+            chiaveTipiReaderProxyDashboard(
+                host = host,
+                porta = porta
+            )
 
         val tipiReaderProxySalvati =
-            mutableMapOf<String, String>()
-
-        preferences
-            .getString(chiaveTipiReaderProxy, null)
-            ?.let { jsonSalvato ->
-                try {
-                    val json =
-                        org.json.JSONObject(jsonSalvato)
-
-                    val chiavi = json.keys()
-
-                    while (chiavi.hasNext()) {
-                        val nome = chiavi.next()
-
-                        val tipo =
-                            json.optString(nome, "")
-                                .trim()
-                                .lowercase()
-
-                        if (tipo == "r" || tipo == "p") {
-                            tipiReaderProxySalvati[nome] = tipo
-                        }
-                    }
-                } catch (_: Exception) {
-                    Unit
-                }
-            }
+            decodificaTipiReaderProxy(
+                preferences.getString(
+                    chiaveTipiReaderProxy,
+                    null
+                )
+            )
 
         /*
          * Lo status JSON e' la fonte piu' affidabile per distinguere
@@ -581,17 +561,12 @@ fun Greeting(
         }
 
         if (tipiReaderProxySalvati.isNotEmpty()) {
-            val jsonTipi =
-                org.json.JSONObject()
-
-            tipiReaderProxySalvati.forEach { (nome, tipo) ->
-                jsonTipi.put(nome, tipo)
-            }
-
             preferences.edit()
                 .putString(
                     chiaveTipiReaderProxy,
-                    jsonTipi.toString()
+                    codificaTipiReaderProxy(
+                        tipiReaderProxySalvati
+                    )
                 )
                 .apply()
         }

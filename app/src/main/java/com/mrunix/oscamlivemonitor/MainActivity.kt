@@ -610,45 +610,6 @@ fun Greeting(
                 )
             }
 
-        fun tipoEffettivo(
-            voce: OscamApi.ReaderListVoce
-        ): String {
-            val tipoSalvato =
-                tipiReaderProxySalvati[
-                    chiaveNomeReaderProxy(voce.nome)
-                ].orEmpty()
-
-            return when {
-                !voce.abilitato ->
-                    tipoSalvato
-
-                voce.tipo == "r" || voce.tipo == "p" ->
-                    voce.tipo
-
-                else ->
-                    tipoSalvato
-            }
-        }
-
-        fun voceDashboard(
-            voce: OscamApi.ReaderListVoce,
-            voceStatus: String?
-        ): String {
-            if (!voce.abilitato) {
-                return "${voce.nome} — DISABILITATO"
-            }
-
-            if (!voceStatus.isNullOrBlank()) {
-                return voceStatus
-            }
-
-            val statoFallback =
-                voce.stato
-                    .ifBlank { "OFFLINE" }
-
-            return "${voce.nome} — $statoFallback"
-        }
-
         if (readerList.isNotEmpty()) {
             readerAbilitati =
                 readerList.associate { voce ->
@@ -657,12 +618,12 @@ fun Greeting(
 
             val catalogoReaders =
                 readerList.filter { voce ->
-                    tipoEffettivo(voce) == "r"
+                    tipoEffettivo(voce, tipiReaderProxySalvati) == "r"
                 }
 
             val catalogoProxies =
                 readerList.filter { voce ->
-                    tipoEffettivo(voce) == "p"
+                    tipoEffettivo(voce, tipiReaderProxySalvati) == "p"
                 }
 
             elencoReaders =
@@ -686,20 +647,6 @@ fun Greeting(
                             ]
                     )
                 }
-
-            fun statoAttivo(voce: String?): Boolean {
-                val statoVoce =
-                    voce
-                        ?.substringAfterLast("—", "")
-                        ?.trim()
-                        ?.uppercase()
-                        .orEmpty()
-
-                return statoVoce == "OK" ||
-                    statoVoce == "ACTIVE" ||
-                    statoVoce == "CONNECTED" ||
-                    statoVoce == "CARDOK"
-            }
 
             val readersAttivi =
                 catalogoReaders.count { voce ->

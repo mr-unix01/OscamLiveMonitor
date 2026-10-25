@@ -102,3 +102,57 @@ fun normalizzaElencoServersDashboard(
                 server
         }
     }
+
+fun tipoEffettivo(
+    voce: OscamApi.ReaderListVoce,
+    tipiReaderProxySalvati: Map<String, String>
+): String {
+    val tipoSalvato =
+        tipiReaderProxySalvati[
+            chiaveNomeReaderProxy(voce.nome)
+        ].orEmpty()
+
+    return when {
+        !voce.abilitato ->
+            tipoSalvato
+
+        voce.tipo == "r" || voce.tipo == "p" ->
+            voce.tipo
+
+        else ->
+            tipoSalvato
+    }
+}
+
+fun voceDashboard(
+    voce: OscamApi.ReaderListVoce,
+    voceStatus: String?
+): String {
+    if (!voce.abilitato) {
+        return "${voce.nome} — DISABILITATO"
+    }
+
+    if (!voceStatus.isNullOrBlank()) {
+        return voceStatus
+    }
+
+    val statoFallback =
+        voce.stato
+            .ifBlank { "OFFLINE" }
+
+    return "${voce.nome} — $statoFallback"
+}
+
+fun statoAttivo(voce: String?): Boolean {
+    val statoVoce =
+        voce
+            ?.substringAfterLast("—", "")
+            ?.trim()
+            ?.uppercase()
+            .orEmpty()
+
+    return statoVoce == "OK" ||
+        statoVoce == "ACTIVE" ||
+        statoVoce == "CONNECTED" ||
+        statoVoce == "CARDOK"
+}

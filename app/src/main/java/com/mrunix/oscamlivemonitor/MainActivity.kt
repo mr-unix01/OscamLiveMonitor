@@ -602,67 +602,20 @@ fun Greeting(
         val proxiesStatusPerNome =
             indicizzaStatusReaderProxy(elencoProxiesStatus)
 
-        if (readerList.isNotEmpty()) {
-            readerAbilitati =
-                readerList.associate { voce ->
-                    voce.nome to voce.abilitato
-                }
+        val datiReaderProxy =
+            costruisciDashboardReaderProxy(
+                readerList = readerList,
+                tipiReaderProxySalvati = tipiReaderProxySalvati,
+                readersStatusPerNome = readersStatusPerNome,
+                proxiesStatusPerNome = proxiesStatusPerNome
+            )
 
-            val catalogoReaders =
-                readerList.filter { voce ->
-                    tipoEffettivo(voce, tipiReaderProxySalvati) == "r"
-                }
-
-            val catalogoProxies =
-                readerList.filter { voce ->
-                    tipoEffettivo(voce, tipiReaderProxySalvati) == "p"
-                }
-
-            elencoReaders =
-                catalogoReaders.map { voce ->
-                    voceDashboard(
-                        voce = voce,
-                        voceStatus =
-                            readersStatusPerNome[
-                                chiaveNomeReaderProxy(voce.nome)
-                            ]
-                    )
-                }
-
-            elencoProxies =
-                catalogoProxies.map { voce ->
-                    voceDashboard(
-                        voce = voce,
-                        voceStatus =
-                            proxiesStatusPerNome[
-                                chiaveNomeReaderProxy(voce.nome)
-                            ]
-                    )
-                }
-
-            val readersAttivi =
-                catalogoReaders.count { voce ->
-                    statoAttivo(
-                        readersStatusPerNome[
-                            chiaveNomeReaderProxy(voce.nome)
-                        ]
-                    )
-                }
-
-            val proxiesAttivi =
-                catalogoProxies.count { voce ->
-                    statoAttivo(
-                        proxiesStatusPerNome[
-                            chiaveNomeReaderProxy(voce.nome)
-                        ]
-                    )
-                }
-
-            readers =
-                "$readersAttivi/${catalogoReaders.size}"
-
-            proxies =
-                "$proxiesAttivi/${catalogoProxies.size}"
+        if (datiReaderProxy != null) {
+            readerAbilitati = datiReaderProxy.readerAbilitati
+            elencoReaders = datiReaderProxy.elencoReaders
+            elencoProxies = datiReaderProxy.elencoProxies
+            readers = datiReaderProxy.readers
+            proxies = datiReaderProxy.proxies
         } else {
             /*
              * Fallback: se readerlist non risponde, manteniamo

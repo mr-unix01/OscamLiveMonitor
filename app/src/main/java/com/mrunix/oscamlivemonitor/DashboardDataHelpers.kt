@@ -165,3 +165,91 @@ fun indicizzaStatusReaderProxy(
             voce.substringBeforeLast("—", voce).trim()
         )
     }
+
+data class DashboardReaderProxyData(
+    val readerAbilitati: Map<String, Boolean>,
+    val elencoReaders: List<String>,
+    val elencoProxies: List<String>,
+    val readers: String,
+    val proxies: String
+)
+
+fun costruisciDashboardReaderProxy(
+    readerList: List<OscamApi.ReaderListVoce>,
+    tipiReaderProxySalvati: Map<String, String>,
+    readersStatusPerNome: Map<String, String>,
+    proxiesStatusPerNome: Map<String, String>
+): DashboardReaderProxyData? {
+    if (readerList.isEmpty()) {
+        return null
+    }
+
+    val readerAbilitati =
+        readerList.associate { voce ->
+            voce.nome to voce.abilitato
+        }
+
+    val catalogoReaders =
+        readerList.filter { voce ->
+            tipoEffettivo(
+                voce,
+                tipiReaderProxySalvati
+            ) == "r"
+        }
+
+    val catalogoProxies =
+        readerList.filter { voce ->
+            tipoEffettivo(
+                voce,
+                tipiReaderProxySalvati
+            ) == "p"
+        }
+
+    val elencoReaders =
+        catalogoReaders.map { voce ->
+            voceDashboard(
+                voce = voce,
+                voceStatus =
+                    readersStatusPerNome[
+                        chiaveNomeReaderProxy(voce.nome)
+                    ]
+            )
+        }
+
+    val elencoProxies =
+        catalogoProxies.map { voce ->
+            voceDashboard(
+                voce = voce,
+                voceStatus =
+                    proxiesStatusPerNome[
+                        chiaveNomeReaderProxy(voce.nome)
+                    ]
+            )
+        }
+
+    val readersAttivi =
+        catalogoReaders.count { voce ->
+            statoAttivo(
+                readersStatusPerNome[
+                    chiaveNomeReaderProxy(voce.nome)
+                ]
+            )
+        }
+
+    val proxiesAttivi =
+        catalogoProxies.count { voce ->
+            statoAttivo(
+                proxiesStatusPerNome[
+                    chiaveNomeReaderProxy(voce.nome)
+                ]
+            )
+        }
+
+    return DashboardReaderProxyData(
+        readerAbilitati = readerAbilitati,
+        elencoReaders = elencoReaders,
+        elencoProxies = elencoProxies,
+        readers = "$readersAttivi/${catalogoReaders.size}",
+        proxies = "$proxiesAttivi/${catalogoProxies.size}"
+    )
+}

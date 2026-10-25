@@ -388,24 +388,21 @@ fun Greeting(
                 mostraErroreSubito = mostraErroreSubito
             )
 
-        val refreshedState =
-            viewModel.uiState.value
+        if (!aggiornato && mostraErroreSubito) {
+            val statoErrore =
+                viewModel.uiState.value.stato
 
-        if (!aggiornato) {
             if (
-                mostraErroreSubito &&
-                refreshedState.stato.startsWith(
+                statoErrore.startsWith(
                     "ERRORE:",
                     ignoreCase = true
                 )
             ) {
-                mostraSnackbar(refreshedState.stato)
+                mostraSnackbar(statoErrore)
             }
-
-            return false
         }
 
-        return true
+        return aggiornato
     }
 
     val richiestaPermessoRete = rememberLauncherForActivityResult(

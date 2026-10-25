@@ -156,3 +156,12 @@ fun statoAttivo(voce: String?): Boolean {
         statoVoce == "CONNECTED" ||
         statoVoce == "CARDOK"
 }
+
+fun indicizzaStatusReaderProxy(
+    voci: List<String>
+): Map<String, String> =
+    voci.associateBy { voce ->
+        chiaveNomeReaderProxy(
+            voce.substringBeforeLast("—", voce).trim()
+        )
+    }

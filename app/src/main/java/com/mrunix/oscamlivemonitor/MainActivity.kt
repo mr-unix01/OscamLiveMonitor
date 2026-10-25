@@ -597,18 +597,10 @@ fun Greeting(
         }
 
         val readersStatusPerNome =
-            elencoReadersStatus.associateBy { voce ->
-                chiaveNomeReaderProxy(
-                    voce.substringBeforeLast("—", voce).trim()
-                )
-            }
+            indicizzaStatusReaderProxy(elencoReadersStatus)
 
         val proxiesStatusPerNome =
-            elencoProxiesStatus.associateBy { voce ->
-                chiaveNomeReaderProxy(
-                    voce.substringBeforeLast("—", voce).trim()
-                )
-            }
+            indicizzaStatusReaderProxy(elencoProxiesStatus)
 
         if (readerList.isNotEmpty()) {
             readerAbilitati =

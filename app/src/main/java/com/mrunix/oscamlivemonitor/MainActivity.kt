@@ -476,7 +476,7 @@ fun Greeting(
         }
 
         elencoClients =
-            api.estraiElencoClientsJson(risultato)
+            dettagliStatus.elencoClients
 
         ultimoAggiornamento =
             java.text.SimpleDateFormat(

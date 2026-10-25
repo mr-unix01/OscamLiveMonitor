@@ -56,7 +56,8 @@ fun estraiRiepilogoStatusDashboard(
 data class DashboardStatusDetails(
     val elencoServers: List<String>,
     val elencoReaders: List<String>,
-    val elencoProxies: List<String>
+    val elencoProxies: List<String>,
+    val elencoClients: List<String>
 )
 
 fun estraiDettagliStatusDashboard(
@@ -71,5 +72,7 @@ fun estraiDettagliStatusDashboard(
         elencoReaders =
             api.estraiElencoReadersJson(risultato),
         elencoProxies =
-            api.estraiElencoProxiesJson(risultato)
+            api.estraiElencoProxiesJson(risultato),
+        elencoClients =
+            api.estraiElencoClientsJson(risultato)
     )

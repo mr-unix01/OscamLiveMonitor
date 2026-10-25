@@ -392,28 +392,26 @@ fun Greeting(
             api.estraiClientsJson(risultato)
 
         val risultatoUserStats =
-            withContext(Dispatchers.IO) {
-                api.scaricaUserStatsJson(
-                    host = host.trim(),
-                    porta = porta.trim(),
-                    username = username,
-                    password = password
-                )
-            }
+            caricaUserStatsDashboard(
+                api = api,
+                host = host,
+                porta = porta,
+                username = username,
+                password = password
+            )
 
         if (!risultatoUserStats.startsWith("ERRORE:")) {
             users =
                 api.estraiUsersJson(risultatoUserStats)
 
             val paginaUserConfig =
-                withContext(Dispatchers.IO) {
-                    api.scaricaUserConfig(
-                        host = host.trim(),
-                        porta = porta.trim(),
-                        username = username,
-                        password = password
-                    )
-                }
+                caricaUserConfigDashboard(
+                    api = api,
+                    host = host,
+                    porta = porta,
+                    username = username,
+                    password = password
+                )
 
             if (!paginaUserConfig.startsWith("ERRORE:")) {
                 elencoUsers =

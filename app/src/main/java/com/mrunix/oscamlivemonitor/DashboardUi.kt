@@ -696,11 +696,14 @@ fun ExpressiveAppHeader(
                 }
             )
 
+    val etichettaServerAttivi =
+        if (serverAttivi == 1) "attivo" else "attivi"
+
     val statoHeaderText =
         if (verificaInCorso) {
             "$totaleServer server · verifica..."
         } else {
-            "$totaleServer server · $serverAttivi attivi"
+            "$totaleServer server · $serverAttivi $etichettaServerAttivi"
         }
 
     val statoHeaderColor =

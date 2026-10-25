@@ -408,15 +408,15 @@ fun Greeting(
     ) { concesso ->
         permessoReteConcesso = concesso
 
-        val nuovoStato =
-            if (concesso) {
-                "Accesso alla rete locale consentito"
-            } else {
-                "Permesso rete locale necessario per collegarsi a OSCam"
-            }
+        if (concesso) {
+            mostraSnackbar("Permesso di accesso alla rete locale concesso")
+        } else {
+            val nuovoStato =
+                "Permesso di accesso alla rete locale necessario per collegarsi a OSCam"
 
-        impostaStatoDashboard(nuovoStato)
-        mostraSnackbar(nuovoStato)
+            impostaStatoDashboard(nuovoStato)
+            mostraSnackbar(nuovoStato)
+        }
     }
 
     LaunchedEffect(Unit) {

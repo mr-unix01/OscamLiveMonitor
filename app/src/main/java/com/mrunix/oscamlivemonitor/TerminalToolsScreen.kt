@@ -2094,6 +2094,93 @@ val filePickerLauncher =
 
                             sshTrustPrompt = null
 
+                            if (
+                                prompt.target ==
+                                SshTrustTarget.SFTP
+                            ) {
+                                val parsedFilePort =
+                                    filePort.trim().toIntOrNull()
+
+                                if (parsedFilePort == null) {
+                                    fileStatus =
+                                        "Porta SFTP non valida"
+                                    return@Button
+                                }
+
+                                fileStatus =
+                                    "Connessione SFTP..."
+
+                                scope.launch {
+                                    fileClient.disconnect()
+
+                                    val connessione =
+                                        fileClient.connectSftp(
+                                            host =
+                                                fileHost.trim(),
+                                            port =
+                                                parsedFilePort,
+                                            username =
+                                                fileUsername,
+                                            password =
+                                                filePassword
+                                        )
+
+                                    if (connessione.isSuccess) {
+                                        val directory =
+                                            fileClient.openDirectory("/")
+
+                                        if (directory.isSuccess) {
+                                            val remoto =
+                                                directory.getOrThrow()
+
+                                            filePath =
+                                                remoto.path
+                                            fileEntries =
+                                                remoto.entries
+
+                                            val timestamp =
+                                                System.currentTimeMillis()
+
+                                            ultimaConnessioneFile =
+                                                timestamp
+
+                                            preferences.edit()
+                                                .putLong(
+                                                    "${safeKey}_last_sftp",
+                                                    timestamp
+                                                )
+                                                .apply()
+
+                                            fileConnected = true
+                                            fileStatus =
+                                                "Connesso via SFTP"
+                                        } else {
+                                            fileConnected = false
+                                            fileStatus =
+                                                "Errore directory SFTP: " +
+                                                (
+                                                    directory
+                                                        .exceptionOrNull()
+                                                        ?.message
+                                                        ?: "errore"
+                                                )
+                                        }
+                                    } else {
+                                        fileConnected = false
+                                        fileStatus =
+                                            "Errore SFTP: " +
+                                            (
+                                                connessione
+                                                    .exceptionOrNull()
+                                                    ?.message
+                                                    ?: "connessione fallita"
+                                            )
+                                    }
+                                }
+
+                                return@Button
+                            }
+
                             val parsedPort =
                                 port.trim().toIntOrNull()
 
@@ -2214,7 +2301,17 @@ val filePickerLauncher =
                     TextButton(
                         onClick = {
                             sshTrustPrompt = null
-                            status = "Connessione annullata"
+
+                            if (
+                                prompt.target ==
+                                SshTrustTarget.SFTP
+                            ) {
+                                fileStatus =
+                                    "Connessione annullata"
+                            } else {
+                                status =
+                                    "Connessione annullata"
+                            }
                         }
                     ) {
                         Text("Annulla")
@@ -3745,9 +3842,37 @@ val filePickerLauncher =
                                         }
                                     } else {
                                         fileConnected = false
-                                        fileStatus =
-                                            "Errore SFTP: " +
-                                            (connessione.exceptionOrNull()?.message ?: "connessione fallita")
+
+                                        val error =
+                                            connessione.exceptionOrNull()
+
+                                        if (
+                                            error is SshHostKeyVerificationException
+                                        ) {
+                                            sshTrustPrompt =
+                                                SshTrustPrompt(
+                                                    candidate =
+                                                        error.candidate,
+                                                    changed =
+                                                        error.changed,
+                                                    target =
+                                                        SshTrustTarget.SFTP
+                                                )
+
+                                            fileStatus =
+                                                if (error.changed) {
+                                                    "Chiave SSH del server cambiata"
+                                                } else {
+                                                    "Verifica chiave SSH richiesta"
+                                                }
+                                        } else {
+                                            fileStatus =
+                                                "Errore SFTP: " +
+                                                (
+                                                    error?.message
+                                                        ?: "connessione fallita"
+                                                )
+                                        }
                                     }
                                 } else {
                                     fileClient.disconnect()

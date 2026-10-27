@@ -271,6 +271,11 @@ fun Greeting(
     var mostraLiveLog by rememberSaveable { mutableStateOf(false) }
     var mostraStrumenti by rememberSaveable { mutableStateOf(false) }
     var mostraInformazioni by rememberSaveable { mutableStateOf(false) }
+    var mostraServerHub by rememberSaveable { mutableStateOf(false) }
+
+    var sezioneStrumentiIniziale by remember {
+        mutableStateOf(TerminalToolsInitialSection.TERMINAL)
+    }
 
     var serverSalvati by remember {
         mutableStateOf(caricaServerSalvati(preferences))
@@ -401,6 +406,52 @@ fun Greeting(
         }
 
         return aggiornato
+    }
+
+    fun apriDashboardServer() {
+        if (!permessoReteConcesso) {
+            val messaggio =
+                "Concedi prima l'accesso alla rete locale"
+
+            impostaStatoDashboard(messaggio)
+            mostraSnackbar(messaggio)
+            mostraSpiegazionePermesso = true
+            return
+        }
+
+        if (host.isBlank() || porta.isBlank()) {
+            val messaggio =
+                "Inserisci Host/IP e Porta"
+
+            impostaStatoDashboard(messaggio)
+            mostraSnackbar(messaggio)
+            return
+        }
+
+        preferences.edit()
+            .putString("host", host.trim())
+            .putString("porta", porta.trim())
+            .putString("username", username)
+            .putString(
+                "password",
+                SecurePasswordCrypto.encrypt(password)
+            )
+            .apply()
+
+        dashboardViewModel?.resetDashboardState()
+        impostaStatoDashboard("Connessione...")
+
+        mostraServers = true
+        mostraReaders = true
+        mostraProxies = true
+        mostraClients = true
+
+        coroutineScope.launch {
+            if (aggiornaDashboardDaOscam()) {
+                mostraServerHub = false
+                mostraConnessione = false
+            }
+        }
     }
 
     val richiestaPermessoRete = rememberLauncherForActivityResult(
@@ -1245,7 +1296,142 @@ fun Greeting(
                 240.dp.roundToPx()
             }
 
-        val contenutoPrincipale: @Composable () -> Unit = {
+        val contenutoPrincipale: @Composable () -> Unit = contenuto@ {
+            if (mostraConnessione) {
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .imePadding(),
+                    contentPadding = PaddingValues(
+                        horizontal = if (schermoCompatto) 12.dp else 16.dp,
+                        vertical = if (schermoCompatto) 10.dp else 16.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        ExpressiveAppHeader(
+                            compatto = schermoCompatto,
+                            totaleServer = serverSalvati.size,
+                            statiServer = statoServerSalvati.values
+                        )
+                    }
+
+                    item {
+                        Spacer(
+                            modifier = Modifier.height(
+                                if (schermoCompatto) 2.dp else 4.dp
+                            )
+                        )
+                    }
+
+                    item {
+                        ServerSelectionHeader(
+                            onAddServer = {
+                                nuovoNomeServer = ""
+                                nuovoHostServer = ""
+                                nuovaPortaServer = ""
+                                nuovoUsernameServer = ""
+                                nuovaPasswordServer = ""
+                                mostraPasswordNuovo = false
+                                mostraAggiungiServer = true
+                            }
+                        )
+                    }
+
+                    if (serverSalvati.isEmpty()) {
+                        item {
+                            EmptyServerState()
+                        }
+                    } else {
+                        items(
+                            count = serverSalvati.size,
+                            key = { index ->
+                                val server = serverSalvati[index]
+                                "${server.nome}|${server.host}|${server.porta}"
+                            }
+                        ) { index ->
+                            val server = serverSalvati[index]
+
+                            val serverSelezionato =
+                                host.trim() == server.host.trim() &&
+                                    porta.trim() == server.porta.trim()
+
+                            OscamServerCard(
+                                server = server,
+                                selected = serverSelezionato,
+                                connectionState =
+                                    statoServerSalvati[
+                                        server.host.trim() +
+                                            ":" +
+                                            server.porta.trim()
+                                    ] ?: OscamServerConnectionState.CHECKING,
+                                onSelect = {
+                                    host = server.host
+                                    porta = server.porta
+                                    username = server.username
+                                    password = server.password
+
+                                    preferences.edit()
+                                        .putString(
+                                            "nome_server",
+                                            server.nome
+                                        )
+                                        .putString(
+                                            "host",
+                                            server.host
+                                        )
+                                        .putString(
+                                            "porta",
+                                            server.porta
+                                        )
+                                        .putString(
+                                            "username",
+                                            server.username
+                                        )
+                                        .putString(
+                                            "password",
+                                            SecurePasswordCrypto.encrypt(
+                                                server.password
+                                            )
+                                        )
+                                        .apply()
+
+                                    impostaStatoDashboard("")
+
+                                    coroutineScope.launch {
+                                        kotlinx.coroutines.delay(180)
+                                        mostraServerHub = true
+                                    }
+                                },
+                                onEdit = {
+                                    serverDaModificare = server
+                                    modificaNomeServer = server.nome
+                                    modificaHostServer = server.host
+                                    modificaPortaServer = server.porta
+                                    modificaUsernameServer =
+                                        server.username
+                                    modificaPasswordServer =
+                                        server.password
+                                    mostraPasswordModifica = false
+                                },
+                                onReorder = {
+                                    mostraRiordinaServer = true
+                                },
+                                onDelete = {
+                                    serverDaEliminare = server
+                                }
+                            )
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+
+                return@contenuto
+            }
+
             Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -1267,186 +1453,6 @@ fun Greeting(
                     if (schermoCompatto) 6.dp else 10.dp
                 )
             )
-
-            if (mostraConnessione) {
-                ServerSelectionHeader(
-                    onAddServer = {
-                        nuovoNomeServer = ""
-                        nuovoHostServer = ""
-                        nuovaPortaServer = ""
-                        nuovoUsernameServer = ""
-                        nuovaPasswordServer = ""
-                        mostraPasswordNuovo = false
-                        mostraAggiungiServer = true
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                if (serverSalvati.isEmpty()) {
-                    EmptyServerState()
-                } else {
-                    serverSalvati.forEach { server ->
-                        val serverSelezionato =
-                            host.trim() == server.host &&
-                                    porta.trim() == server.porta
-
-                        OscamServerCard(
-                            server = server,
-                            selected = serverSelezionato,
-                          connectionState = statoServerSalvati[server.host.trim() + ":" + server.porta.trim()]
-                              ?: OscamServerConnectionState.CHECKING,
-                            onSelect = {
-                                host = server.host
-                                porta = server.porta
-                                username = server.username
-                                password = server.password
-
-                                preferences.edit()
-                                    .putString("nome_server", server.nome)
-                                    .putString("host", server.host)
-                                    .putString("porta", server.porta)
-                                    .putString("username", server.username)
-                                    .putString(
-                                        "password",
-                                        SecurePasswordCrypto.encrypt(
-                                            server.password
-                                        )
-                                    )
-                                    .apply()
-
-                                impostaStatoDashboard("")
-                            },
-                            onEdit = {
-                                serverDaModificare = server
-                                modificaNomeServer = server.nome
-                                modificaHostServer = server.host
-                                modificaPortaServer = server.porta
-                                modificaUsernameServer = server.username
-                                modificaPasswordServer = server.password
-                                mostraPasswordModifica = false
-                            },
-                            onReorder = {
-                                mostraRiordinaServer = true
-                            },
-                            onDelete = {
-                                serverDaEliminare = server
-                            },
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(if (schermoCompatto) 58.dp else 56.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        Color(0xFF66BB6A)
-                    ),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32),
-                        contentColor = Color.White
-                    ),
-                    onClick = {
-                        if (!permessoReteConcesso) {
-                            val messaggio =
-                                "Concedi prima l'accesso alla rete locale"
-                            impostaStatoDashboard(messaggio)
-                            mostraSnackbar(messaggio)
-                            mostraSpiegazionePermesso = true
-                            return@Button
-                        }
-
-                        if (host.isBlank() || porta.isBlank()) {
-                            val messaggio =
-                                "Inserisci Host/IP e Porta"
-                            impostaStatoDashboard(messaggio)
-                            mostraSnackbar(messaggio)
-                            return@Button
-                        }
-
-                        preferences.edit()
-                            .putString("host", host.trim())
-                            .putString("porta", porta.trim())
-                            .putString("username", username)
-                            .putString(
-                                "password",
-                                SecurePasswordCrypto.encrypt(password)
-                            )
-                            .apply()
-
-                        dashboardViewModel?.resetDashboardState()
-                        impostaStatoDashboard("Connessione...")
-
-                        mostraServers = true
-                        mostraReaders = true
-                        mostraProxies = true
-                        mostraClients = true
-
-                        coroutineScope.launch {
-                            if (aggiornaDashboardDaOscam()) {
-                                mostraConnessione = false
-                            }
-                        }
-                    }
-                ) {
-                    Text(
-                        text = "▶  Connetti",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    enabled = host.isNotBlank(),
-                    onClick = {
-                        mostraStrumenti = true
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Build,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Strumenti")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                    onClick = {
-                        mostraInformazioni = true
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Informazioni")
-                }
-
-            }
-
-            if (mostraConnessione && stato.isNotBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
-            }
 
             if (stato.isNotBlank()) {
                 val coloreStato = when {
@@ -1584,11 +1590,23 @@ fun Greeting(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     DashboardQuickAction(
-                        titolo = "Server",
-                      icona = Icons.Default.Storage,
-                        coloreAccento = Color(0xFF29B6F6),
+                        titolo = "Hub",
+                        icona = Icons.Default.Menu,
+                        coloreAccento = MaterialTheme.colorScheme.onSurfaceVariant,
                         onClick = {
+                            mostraServerHub = true
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    DashboardQuickAction(
+                        titolo = "Home",
+                        icona = Icons.Default.Home,
+                        coloreAccento = MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = {
+                            mostraServerHub = false
                             mostraConnessione = true
+
                             dashboardViewModel?.resetDashboardState()
                             impostaStatoDashboard("")
 
@@ -1596,26 +1614,6 @@ fun Greeting(
                             mostraReaders = true
                             mostraProxies = true
                             mostraClients = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    DashboardQuickAction(
-                        titolo = "WebIF",
-                        icona = Icons.Default.Language,
-                        coloreAccento = Color(0xFF29B6F6),
-                        onClick = {
-                            mostraWebIf = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    DashboardQuickAction(
-                        titolo = "Live Log",
-                        icona = Icons.AutoMirrored.Filled.ReceiptLong,
-                        coloreAccento = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = {
-                            mostraLiveLog = true
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -1651,27 +1649,7 @@ fun Greeting(
                 )
             }
 
-            if (mostraConnessione) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-                ) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(
-                            id = if (temaScuro) {
-                                R.drawable.mr_unix_footer
-                            } else {
-                                R.drawable.mr_unix_footer_light
-                            }
-                        ),
-                        contentDescription = "mr-unix",
-                        modifier = Modifier.height(56.dp)
-                    )
-
-                }
-            } else if (ultimoAggiornamento.isNotBlank()) {
+            if (!mostraConnessione && ultimoAggiornamento.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment =
@@ -2177,6 +2155,57 @@ fun Greeting(
             contenutoPrincipale()
         }
 
+        if (mostraServerHub) {
+            val serverHub =
+                serverSalvati.firstOrNull { server ->
+                    server.host.trim() == host.trim() &&
+                        server.porta.trim() == porta.trim()
+                }
+
+            if (serverHub != null) {
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    ServerHubScreen(
+                        server = serverHub,
+                        connectionState =
+                            statoServerSalvati[
+                                serverHub.host.trim() +
+                                    ":" +
+                                    serverHub.porta.trim()
+                            ] ?: OscamServerConnectionState.CHECKING,
+                        onBack = {
+                            mostraServerHub = false
+                        },
+                        onDashboard = {
+                            apriDashboardServer()
+                        },
+                        onWebIf = {
+                            mostraWebIf = true
+                        },
+                        onLiveLog = {
+                            mostraLiveLog = true
+                        },
+                        onTerminal = {
+                            sezioneStrumentiIniziale =
+                                TerminalToolsInitialSection.TERMINAL
+                            mostraStrumenti = true
+                        },
+                        onFiles = {
+                            sezioneStrumentiIniziale =
+                                TerminalToolsInitialSection.FILES
+                            mostraStrumenti = true
+                        },
+                        onInfo = {
+                            mostraInformazioni = true
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+        }
+
         if (mostraInformazioni) {
             androidx.compose.material3.Surface(
                 modifier = Modifier.fillMaxSize(),
@@ -2254,9 +2283,9 @@ fun Greeting(
                     defaultHost = host.trim(),
                     onClose = {
                         mostraStrumenti = false
-                        mostraConnessione = true
                     },
                     modifier = Modifier.fillMaxSize(),
+                    initialSection = sezioneStrumentiIniziale,
                     onEditorLandscapeImeChange =
                         onEditorLandscapeImeChange
                 )

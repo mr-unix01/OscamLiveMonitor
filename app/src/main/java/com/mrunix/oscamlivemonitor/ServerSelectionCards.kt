@@ -279,6 +279,12 @@ fun OscamServerCard(
                 }
             }
 
+            Text(
+                text = "›",
+                fontSize = 28.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             Box {
                 IconButton(
                     onClick = { menuExpanded = true }

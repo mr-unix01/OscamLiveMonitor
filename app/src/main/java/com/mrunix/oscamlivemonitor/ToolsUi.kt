@@ -6,7 +6,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
@@ -21,6 +20,8 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ToolsHeader(
+    title: String,
+    icon: ImageVector,
     serverName: String,
     serverHost: String,
     onBack: () -> Unit,
@@ -62,7 +63,7 @@ fun ToolsHeader(
                 color = Color(0xFF4CAF50).copy(alpha = 0.14f)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Build,
+                    imageVector = icon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
@@ -77,7 +78,7 @@ fun ToolsHeader(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "Strumenti",
+                    text = title,
                     fontSize = if (compact) 16.sp else 19.sp,
                     fontWeight = FontWeight.Bold
                 )

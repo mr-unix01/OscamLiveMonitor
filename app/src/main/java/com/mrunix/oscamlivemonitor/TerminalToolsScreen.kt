@@ -61,6 +61,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+enum class TerminalToolsInitialSection {
+    TERMINAL,
+    FILES
+}
+
 private enum class SshTrustTarget {
     TERMINAL,
     SFTP
@@ -96,6 +101,7 @@ fun TerminalToolsScreen(
     defaultHost: String,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    initialSection: TerminalToolsInitialSection = TerminalToolsInitialSection.TERMINAL,
     onEditorLandscapeImeChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -245,8 +251,10 @@ fun TerminalToolsScreen(
         )
     }
 
-    var mostraFile by remember {
-        mutableStateOf(false)
+    var mostraFile by remember(initialSection) {
+        mutableStateOf(
+            initialSection == TerminalToolsInitialSection.FILES
+        )
     }
 
     var fileSftp by remember {
@@ -2424,21 +2432,6 @@ val filePickerLauncher =
                         maxLines = 1
                     )
 
-                    IconButton(
-                        modifier = Modifier.size(34.dp),
-                        onClick = {
-                            mostraFile = false
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Terminal,
-                            contentDescription = "Terminale",
-                            modifier = Modifier.size(19.dp),
-                            tint =
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
                     Surface(
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -2501,6 +2494,18 @@ val filePickerLauncher =
                 Spacer(modifier = Modifier.height(3.dp))
             } else {
                 ToolsHeader(
+                    title =
+                        if (initialSection == TerminalToolsInitialSection.FILES) {
+                            "File"
+                        } else {
+                            "Terminale"
+                        },
+                    icon =
+                        if (initialSection == TerminalToolsInitialSection.FILES) {
+                            Icons.Default.Folder
+                        } else {
+                            Icons.Default.Terminal
+                        },
                     serverName = serverName.ifBlank { defaultHost },
                     serverHost = defaultHost,
                     onBack = {
@@ -2517,18 +2522,6 @@ val filePickerLauncher =
                         } else {
                             null
                         }
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                ToolsModeSelector(
-                    fileSelected = mostraFile,
-                    onTerminal = {
-                        mostraFile = false
-                    },
-                    onFile = {
-                        mostraFile = true
-                    }
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))

@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.sp
 
 private data class ServerHubAction(
     val title: String,
-    val subtitle: String,
     val icon: ImageVector,
     val onClick: () -> Unit
 )
@@ -86,37 +85,31 @@ fun ServerHubScreen(
     val actions = listOf(
         ServerHubAction(
             title = "Dashboard",
-            subtitle = "Apri stato, client, reader ed ECM",
             icon = Icons.Default.PlayArrow,
             onClick = onDashboard
         ),
         ServerHubAction(
             title = "WebIF",
-            subtitle = "Apri l'interfaccia web OSCam",
             icon = Icons.Default.Language,
             onClick = onWebIf
         ),
         ServerHubAction(
             title = "Live Log",
-            subtitle = "Segui il log OSCam in tempo reale",
             icon = Icons.Default.Description,
             onClick = onLiveLog
         ),
         ServerHubAction(
             title = "Terminale",
-            subtitle = "Apri direttamente il terminale remoto",
             icon = Icons.Default.Terminal,
             onClick = onTerminal
         ),
         ServerHubAction(
             title = "File / SFTP",
-            subtitle = "Gestisci i file del server",
             icon = Icons.Default.Folder,
             onClick = onFiles
         ),
         ServerHubAction(
             title = "Informazioni",
-            subtitle = "Visualizza i dati del server",
             icon = Icons.Default.Info,
             onClick = onInfo
         )
@@ -257,23 +250,11 @@ fun ServerHubScreen(
 
                     Spacer(modifier = Modifier.width(14.dp))
 
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = action.title,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Text(
-                            text = action.subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = action.title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
                 }
             }
         }

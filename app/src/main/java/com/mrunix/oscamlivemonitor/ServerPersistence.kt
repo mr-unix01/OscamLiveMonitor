@@ -23,7 +23,12 @@ internal fun caricaServerSalvati(
                         username = oggetto.optString("username", ""),
                         password = SecurePasswordCrypto.decrypt(
                             oggetto.optString("password", "")
-                        )
+                        ),
+                        id =
+                            oggetto.optString("id", "")
+                                .ifBlank {
+                                    java.util.UUID.randomUUID().toString()
+                                }
                     )
                 )
             }
@@ -83,17 +88,28 @@ internal fun serverSalvatiRichiedonoMigrazione(
         val array = org.json.JSONArray(json)
 
         for (indice in 0 until array.length()) {
-            val password =
+            val oggetto =
                 array.getJSONObject(indice)
-                    .optString(
-                        "password",
-                        ""
-                    )
+
+            val id =
+                oggetto.optString(
+                    "id",
+                    ""
+                )
+
+            val password =
+                oggetto.optString(
+                    "password",
+                    ""
+                )
 
             if (
-                password.isNotEmpty() &&
-                !SecurePasswordCrypto.isEncrypted(
-                    password
+                id.isBlank() ||
+                (
+                    password.isNotEmpty() &&
+                    !SecurePasswordCrypto.isEncrypted(
+                        password
+                    )
                 )
             ) {
                 return@runCatching true
@@ -113,6 +129,7 @@ internal fun salvaServerSalvati(
     server.forEach { elemento ->
         val oggetto = org.json.JSONObject()
 
+        oggetto.put("id", elemento.id)
         oggetto.put("nome", elemento.nome)
         oggetto.put("host", elemento.host)
         oggetto.put("porta", elemento.porta)

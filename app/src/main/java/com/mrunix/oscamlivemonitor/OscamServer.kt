@@ -5,5 +5,6 @@ data class OscamServer(
     val host: String,
     val porta: String,
     val username: String,
-    val password: String
+    val password: String,
+    val id: String = java.util.UUID.randomUUID().toString()
 )

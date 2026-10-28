@@ -281,6 +281,36 @@ fun Greeting(
         mutableStateOf(caricaServerSalvati(preferences))
     }
 
+    var serverIdAttivo by remember {
+        val idSalvato =
+            preferences.getString(
+                "server_id",
+                ""
+            ).orEmpty()
+
+        val nomeSalvato =
+            preferences.getString(
+                "nome_server",
+                ""
+            ).orEmpty()
+
+        val serverIniziale =
+            serverSalvati.firstOrNull { server ->
+                server.id == idSalvato
+            } ?: serverSalvati.firstOrNull { server ->
+                server.nome == nomeSalvato &&
+                    server.host.trim() == host.trim() &&
+                    server.porta.trim() == porta.trim()
+            } ?: serverSalvati.firstOrNull { server ->
+                server.host.trim() == host.trim() &&
+                    server.porta.trim() == porta.trim()
+            }
+
+        mutableStateOf(
+            serverIniziale?.id.orEmpty()
+        )
+    }
+
     val statoServerSalvati = remember {
         androidx.compose.runtime.mutableStateMapOf<String, OscamServerConnectionState>()
     }
@@ -537,7 +567,7 @@ fun Greeting(
             statoServerSalvati.clear()
 
             serverSalvati.forEach { server ->
-                val chiave = server.host.trim() + ":" + server.porta.trim()
+                val chiave = server.id
                 statoServerSalvati[chiave] = OscamServerConnectionState.CHECKING
             }
 
@@ -546,7 +576,7 @@ fun Greeting(
                     serverSalvati.forEach { server ->
                         launch {
                             val chiave =
-                                server.host.trim() + ":" + server.porta.trim()
+                                server.id
 
                             val nuovoStato = withContext(Dispatchers.IO) {
                                 if (
@@ -593,7 +623,7 @@ fun Greeting(
 
                             if (
                                 nuovoStato == OscamServerConnectionState.ACTIVE &&
-                                chiave == host.trim() + ":" + porta.trim() &&
+                                chiave == serverIdAttivo &&
                                 stato.startsWith("ERRORE:", ignoreCase = true)
                             ) {
                                 impostaStatoDashboard("")
@@ -680,8 +710,7 @@ fun Greeting(
     if (mostraConfermaRiavvio) {
         val serverAttivo =
             serverSalvati.firstOrNull { server ->
-                server.host.trim() == host.trim() &&
-                    server.porta.trim() == porta.trim()
+                server.id == serverIdAttivo
             }
 
         val nomeServerAttivo =
@@ -944,12 +973,17 @@ fun Greeting(
                         server = serverSalvati
                     )
 
+                    serverIdAttivo = nuovoServer.id
                     host = nuovoServer.host
                     porta = nuovoServer.porta
                     username = nuovoServer.username
                     password = nuovoServer.password
 
                     preferences.edit()
+                        .putString(
+                            "server_id",
+                            nuovoServer.id
+                        )
                         .putString(
                             "nome_server",
                             nuovoServer.nome
@@ -1077,8 +1111,7 @@ fun Greeting(
                         )
 
                         val eraSelezionato =
-                            host.trim() == serverOriginale.host &&
-                                porta.trim() == serverOriginale.porta
+                            serverIdAttivo == serverOriginale.id
 
                         if (eraSelezionato) {
                             host =
@@ -1093,7 +1126,14 @@ fun Greeting(
                             password =
                                 serverAggiornato.password
 
+                            serverIdAttivo =
+                                serverAggiornato.id
+
                             preferences.edit()
+                                .putString(
+                                    "server_id",
+                                    serverAggiornato.id
+                                )
                                 .putString(
                                     "nome_server",
                                     serverAggiornato.nome
@@ -1144,8 +1184,7 @@ fun Greeting(
 
                     if (indice >= 0) {
                         val eraSelezionato =
-                            host.trim() == serverOriginale.host &&
-                                    porta.trim() == serverOriginale.porta
+                            serverIdAttivo == serverOriginale.id
 
                         val nuovaLista =
                             serverSalvati.toMutableList()
@@ -1165,6 +1204,9 @@ fun Greeting(
                                 serverSalvati.firstOrNull()
 
                             if (nuovoSelezionato != null) {
+                                serverIdAttivo =
+                                    nuovoSelezionato.id
+
                                 host =
                                     nuovoSelezionato.host
 
@@ -1178,6 +1220,10 @@ fun Greeting(
                                     nuovoSelezionato.password
 
                                 preferences.edit()
+                                    .putString(
+                                        "server_id",
+                                        nuovoSelezionato.id
+                                    )
                                     .putString(
                                         "nome_server",
                                         nuovoSelezionato.nome
@@ -1202,12 +1248,14 @@ fun Greeting(
                                     )
                                     .apply()
                             } else {
+                                serverIdAttivo = ""
                                 host = ""
                                 porta = ""
                                 username = ""
                                 password = ""
 
                                 preferences.edit()
+                                    .remove("server_id")
                                     .remove("nome_server")
                                     .remove("host")
                                     .remove("porta")
@@ -1346,32 +1394,33 @@ fun Greeting(
                         items(
                             count = serverSalvati.size,
                             key = { index ->
-                                val server = serverSalvati[index]
-                                "${server.nome}|${server.host}|${server.porta}"
+                                serverSalvati[index].id
                             }
                         ) { index ->
                             val server = serverSalvati[index]
 
                             val serverSelezionato =
-                                host.trim() == server.host.trim() &&
-                                    porta.trim() == server.porta.trim()
+                                server.id == serverIdAttivo
 
                             OscamServerCard(
                                 server = server,
                                 selected = serverSelezionato,
                                 connectionState =
                                     statoServerSalvati[
-                                        server.host.trim() +
-                                            ":" +
-                                            server.porta.trim()
+                                        server.id
                                     ] ?: OscamServerConnectionState.CHECKING,
                                 onSelect = {
+                                    serverIdAttivo = server.id
                                     host = server.host
                                     porta = server.porta
                                     username = server.username
                                     password = server.password
 
                                     preferences.edit()
+                                        .putString(
+                                            "server_id",
+                                            server.id
+                                        )
                                         .putString(
                                             "nome_server",
                                             server.nome
@@ -1478,8 +1527,7 @@ fun Greeting(
                 val serverAttivoDashboard =
                     if (!mostraConnessione) {
                         serverSalvati.firstOrNull { server ->
-                            server.host.trim() == host.trim() &&
-                                    server.porta.trim() == porta.trim()
+                            server.id == serverIdAttivo
                         }
                     } else {
                         null
@@ -2158,8 +2206,7 @@ fun Greeting(
         if (mostraServerHub) {
             val serverHub =
                 serverSalvati.firstOrNull { server ->
-                    server.host.trim() == host.trim() &&
-                        server.porta.trim() == porta.trim()
+                    server.id == serverIdAttivo
                 }
 
             if (serverHub != null) {
@@ -2171,9 +2218,7 @@ fun Greeting(
                         server = serverHub,
                         connectionState =
                             statoServerSalvati[
-                                serverHub.host.trim() +
-                                    ":" +
-                                    serverHub.porta.trim()
+                                serverHub.id
                             ] ?: OscamServerConnectionState.CHECKING,
                         onBack = {
                             mostraServerHub = false
@@ -2273,12 +2318,13 @@ fun Greeting(
             ) {
                 val serverTerminale =
                     serverSalvati.firstOrNull {
-                        it.host.trim() == host.trim() &&
-                        it.porta.trim() == porta.trim()
+                        it.id == serverIdAttivo
                     }
 
                 TerminalToolsScreen(
-                    serverKey = "${host.trim()}_${porta.trim()}",
+                    serverKey =
+                        serverTerminale?.id
+                            ?: "${host.trim()}_${porta.trim()}",
                     serverName = serverTerminale?.nome ?: host.trim(),
                     defaultHost = host.trim(),
                     onClose = {

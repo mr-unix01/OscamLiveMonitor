@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -2437,7 +2438,7 @@ val filePickerLauncher =
                             androidx.compose.foundation.shape.RoundedCornerShape(
                                 10.dp
                             ),
-                        color = Color(0xFFFFB300).copy(alpha = 0.12f)
+                        color = Color(0xFF4DA3FF).copy(alpha = 0.12f)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Folder,
@@ -2445,7 +2446,7 @@ val filePickerLauncher =
                             modifier = Modifier
                                 .padding(7.dp)
                                 .size(18.dp),
-                            tint = Color(0xFFFFB300)
+                            tint = Color(0xFF4DA3FF)
                         )
                     }
 
@@ -2453,7 +2454,7 @@ val filePickerLauncher =
 
                     Text(
                         text = "●",
-                        color = Color(0xFFD0A23A),
+                        color = Color(0xFF66BB6A),
                         fontSize = 10.sp
                     )
 
@@ -2553,7 +2554,7 @@ val filePickerLauncher =
                         Icon(
                             imageVector = Icons.Default.Terminal,
                             contentDescription = null,
-                            tint = Color(0xFF66BB6A)
+                            tint = Color(0xFF4DA3FF)
                         )
 
                         Spacer(modifier = Modifier.width(9.dp))
@@ -2585,7 +2586,7 @@ val filePickerLauncher =
                         rightIcon = Icons.Default.Terminal,
                         leftSelected =
                             protocol == TerminalProtocol.SSH,
-                        accent = Color(0xFF66BB6A),
+                        accent = Color(0xFF4DA3FF),
                         onLeft = {
                             if (!connected) {
                                 val oldDefault =
@@ -2763,8 +2764,8 @@ val filePickerLauncher =
                         enabled = !connessioneTerminaleInCorso,
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32),
-                            contentColor = Color.White
+                            containerColor = Color(0xFF4DA3FF),
+                            contentColor = Color(0xFF102338)
                         ),
                         onClick = {
                             val parsedPort =
@@ -2899,16 +2900,8 @@ val filePickerLauncher =
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Login,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text =
-                                "Connetti ${protocol.name}",
-                            fontWeight = FontWeight.Bold
+                            contentDescription = "Connetti ${protocol.name}",
+                            modifier = Modifier.size(24.dp)
                         )
                     }
 
@@ -3537,7 +3530,7 @@ val filePickerLauncher =
                                 leftIcon = Icons.Default.Lock,
                                 rightIcon = Icons.Default.Folder,
                                 leftSelected = fileSftp,
-                                accent = Color(0xFFFFB300),
+                                accent = Color(0xFF4DA3FF),
                                 onLeft = {
                                     val vecchiaPorta =
                                         if (fileSftp) "22" else "21"
@@ -3767,8 +3760,8 @@ val filePickerLauncher =
                             .height(52.dp),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFFB300),
-                            contentColor = Color.Black
+                            containerColor = Color(0xFF4DA3FF),
+                            contentColor = Color(0xFF102338)
                         ),
                         onClick = {
                             val parsedPort =
@@ -3921,20 +3914,10 @@ val filePickerLauncher =
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Login,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text =
-                                if (fileSftp) {
-                                    "Connetti SFTP"
-                                } else {
-                                    "Connetti FTP"
-                                },
-                            fontWeight = FontWeight.Bold
+                            contentDescription =
+                                if (fileSftp) "Connetti SFTP"
+                                else "Connetti FTP",
+                            modifier = Modifier.size(24.dp)
                         )
                     }
 
@@ -4084,8 +4067,8 @@ val filePickerLauncher =
                                 ),
                                 colors =
                                     ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF6A5416),
-                                        contentColor = Color(0xFFFFE0A3)
+                                        containerColor = Color(0xFF353B45),
+                                        contentColor = Color.White
                                     )
                             ) {
                                 if (uploadInCorso) {
@@ -4186,7 +4169,7 @@ val filePickerLauncher =
                                 ),
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                Color(0xFFB88A2A).copy(alpha = 0.28f)
+                                Color(0xFF4DA3FF).copy(alpha = 0.40f)
                             )
                         ) {
                             Row(
@@ -4200,7 +4183,7 @@ val filePickerLauncher =
                             ) {
                                 Text(
                                     text = "›",
-                                    color = Color(0xFFD0A23A),
+                                    color = Color(0xFF4DA3FF),
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 )
@@ -4410,7 +4393,7 @@ val filePickerLauncher =
                                 ) {
                                     Text(
                                         text = "●",
-                                        color = Color(0xFFD0A23A),
+                                        color = Color(0xFF66BB6A),
                                         fontSize = 11.sp
                                     )
 

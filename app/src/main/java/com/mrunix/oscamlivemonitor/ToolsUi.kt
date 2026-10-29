@@ -186,7 +186,7 @@ fun ToolsModeSelector(
             title = "Terminale",
             icon = Icons.Default.Terminal,
             selected = !fileSelected,
-            accent = Color(0xFF66BB6A),
+            accent = Color(0xFF4DA3FF),
             onClick = onTerminal,
             modifier = Modifier.weight(1f),
             compact = compact
@@ -196,7 +196,7 @@ fun ToolsModeSelector(
             title = "File",
             icon = Icons.Default.Folder,
             selected = fileSelected,
-            accent = Color(0xFFFFB300),
+            accent = Color(0xFF4DA3FF),
             onClick = onFile,
             modifier = Modifier.weight(1f),
             compact = compact

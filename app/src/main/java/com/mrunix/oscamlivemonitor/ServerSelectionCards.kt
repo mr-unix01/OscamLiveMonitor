@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -18,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -127,13 +130,14 @@ fun OscamServerCard(
     selected: Boolean,
     connectionState: OscamServerConnectionState,
     onSelect: () -> Unit,
+    onOpen: () -> Unit,
     onEdit: () -> Unit,
     onReorder: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val darkTheme = isSystemInDarkTheme()
-    val selectionColor = Color(0xFF4CAF50)
+    val selectionColor = Color(0xFF4DA3FF)
 
     val (connectionText, connectionColor) = when (connectionState) {
         OscamServerConnectionState.CHECKING ->
@@ -156,7 +160,11 @@ fun OscamServerCard(
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant
+            if (selected) {
+                selectionColor.copy(alpha = 0.55f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            }
         ),
         colors = CardDefaults.cardColors(
             containerColor =
@@ -167,7 +175,9 @@ fun OscamServerCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp
         ),
-        onClick = onSelect
+        onClick = {
+            if (selected) onOpen() else onSelect()
+        }
     ) {
         Row(
             modifier = Modifier
@@ -262,28 +272,33 @@ fun OscamServerCard(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    Text(
-                        text = "●",
-                        color = connectionColor,
-                        fontSize = 8.sp
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    Text(
-                        text = connectionText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = connectionColor,
-                        maxLines = 1
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(connectionColor, CircleShape)
+                            .semantics {
+                                contentDescription = connectionText
+                            }
                     )
                 }
             }
 
-            Text(
-                text = "›",
-                fontSize = 28.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            IconButton(
+                modifier = Modifier.size(40.dp),
+                onClick = {
+                    onSelect()
+                    onOpen()
+                }
+            ) {
+                Text(
+                    text = "›",
+                    fontSize = 28.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Apri ${server.nome}"
+                    }
+                )
+            }
 
             Box {
                 IconButton(

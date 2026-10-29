@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -482,6 +483,19 @@ fun Greeting(
                 mostraConnessione = false
             }
         }
+    }
+
+    fun tornaAlPannelloDaDashboard() {
+        mostraConnessione = true
+        mostraServerHub = true
+
+        dashboardViewModel?.resetDashboardState()
+        impostaStatoDashboard("")
+
+        mostraServers = true
+        mostraReaders = true
+        mostraProxies = true
+        mostraClients = true
     }
 
     val richiestaPermessoRete = rememberLauncherForActivityResult(
@@ -1322,6 +1336,22 @@ fun Greeting(
         )
     }
 
+    androidx.activity.compose.BackHandler(
+        enabled =
+            (mostraServerHub || !mostraConnessione) &&
+            !mostraInformazioni &&
+            !mostraRepositoryGitHub &&
+            !mostraWebIf &&
+            !mostraLiveLog &&
+            !mostraStrumenti
+    ) {
+        if (mostraServerHub) {
+            mostraServerHub = false
+        } else {
+            tornaAlPannelloDaDashboard()
+        }
+    }
+
     // La dashboard resta sempre composta anche mentre WebIF o Live Log sono aperti.
     // In questo modo, alla chiusura torna immediatamente completa con gli ultimi dati.
     Box(
@@ -1357,11 +1387,7 @@ fun Greeting(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
-                        ExpressiveAppHeader(
-                            compatto = schermoCompatto,
-                            totaleServer = serverSalvati.size,
-                            statiServer = statoServerSalvati.values
-                        )
+                        ExpressiveAppHeader(compatto = schermoCompatto)
                     }
 
                     item {
@@ -1446,7 +1472,8 @@ fun Greeting(
                                         .apply()
 
                                     impostaStatoDashboard("")
-
+                                },
+                                onOpen = {
                                     coroutineScope.launch {
                                         kotlinx.coroutines.delay(180)
                                         mostraServerHub = true
@@ -1491,179 +1518,99 @@ fun Greeting(
                     vertical = if (schermoCompatto) 10.dp else 16.dp
                 )
         ) {
-            ExpressiveAppHeader(
-                compatto = schermoCompatto,
-                totaleServer = serverSalvati.size,
-                statiServer = statoServerSalvati.values
-            )
+            val serverAttivoDashboard =
+                serverSalvati.firstOrNull { server ->
+                    server.id == serverIdAttivo
+                }
 
-            Spacer(
-                modifier = Modifier.height(
-                    if (schermoCompatto) 6.dp else 10.dp
-                )
-            )
+            val nomeServerDashboard =
+                serverAttivoDashboard?.nome
+                    ?: preferences.getString("nome_server", null)
+                        ?.takeIf { it.isNotBlank() }
+                    ?: host.trim()
 
-            if (stato.isNotBlank()) {
-                val coloreStato = when {
-                    stato.equals("Connesso", ignoreCase = true) ->
-                        if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32)
-
+            val coloreStatoDashboard = when {
+                stato.equals("Connesso", ignoreCase = true) ||
                     stato.contains("selezionato", ignoreCase = true) ->
-                        if (temaScuro) Color(0xFF66BB6A) else Color(0xFF2E7D32)
+                    if (temaScuro) Color(0xFF66BB6A)
+                    else Color(0xFF2E7D32)
 
-                    stato.contains("Connessione", ignoreCase = true) ->
-                        if (temaScuro) Color(0xFFFFB74D) else Color(0xFFD96B00)
+                stato.contains("autentic", ignoreCase = true) ->
+                    Color(0xFFFFB300)
 
-                    stato.startsWith("ERRORE:", ignoreCase = true) ->
-                        Color(0xFFEF5350)
-
+                stato.startsWith("ERRORE:", ignoreCase = true) ||
+                    stato.contains("persa", ignoreCase = true) ||
+                    stato.contains("non raggiungibile", ignoreCase = true) ||
                     stato.contains("necessario", ignoreCase = true) ->
-                        Color(0xFFEF5350)
+                    Color(0xFFEF5350)
 
-                    else ->
-                        MaterialTheme.colorScheme.primary
-                }
+                stato.contains("Connessione", ignoreCase = true) ||
+                    stato.contains("riconnessione", ignoreCase = true) ||
+                    stato.contains("verifica", ignoreCase = true) ->
+                    Color(0xFFFFB74D)
 
-                val serverAttivoDashboard =
-                    if (!mostraConnessione) {
-                        serverSalvati.firstOrNull { server ->
-                            server.id == serverIdAttivo
-                        }
-                    } else {
-                        null
-                    }
-
-                val nomeServerDashboard =
-                    serverAttivoDashboard?.nome
-                        ?: preferences.getString("nome_server", null)
-                            ?.takeIf { it.isNotBlank() }
-                        ?: host.trim()
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    androidx.compose.material3.Surface(
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
-                        color = if (temaScuro) {
-                            coloreStato.copy(alpha = 0.16f)
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                        border = androidx.compose.foundation.BorderStroke(
-                            if (temaScuro) 1.dp else 1.4.dp,
-                            coloreStato.copy(alpha = if (temaScuro) 0.70f else 0.85f)
-                        ),
-                        shadowElevation = if (temaScuro) 2.dp else 1.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(
-                                horizontal = 15.dp,
-                                vertical = 9.dp
-                            ),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            androidx.compose.foundation.layout.Box(
-                                modifier = Modifier
-                                    .size(if (schermoCompatto) 10.dp else 11.dp)
-                                    .background(
-                                        color = coloreStato,
-                                        shape = androidx.compose.foundation.shape.CircleShape
-                                    )
-                            )
-
-                            Spacer(modifier = Modifier.width(10.dp))
-
-                            Text(
-                                text = stato,
-                                color = coloreStato,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = if (schermoCompatto) 14.sp else 15.sp
-                            )
-                        }
-                    }
-
-                    if (
-                        !mostraConnessione &&
-                        stato.equals("Connesso", ignoreCase = true) &&
-                        host.isNotBlank()
-                    ) {
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        androidx.compose.material3.Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                            color = if (temaScuro) {
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
-                            } else {
-                                MaterialTheme.colorScheme.surface
-                            },
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f)
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(
-                                    horizontal = 11.dp,
-                                    vertical = 7.dp
-                                ),
-                                horizontalAlignment = androidx.compose.ui.Alignment.Start
-                            ) {
-                                Text(
-                                    text = nomeServerDashboard,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1
-                                )
-
-                                Text(
-                                    text = "${host.trim()}:${porta.trim()}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                    }
-                }
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             }
 
-
-            if (!mostraConnessione) {
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment =
+                    androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                FilledTonalIconButton(
+                    onClick = {
+                        tornaAlPannelloDaDashboard()
+                    }
                 ) {
-                    DashboardQuickAction(
-                        titolo = "Hub",
-                        icona = Icons.Default.Menu,
-                        coloreAccento = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = {
-                            mostraServerHub = true
-                        },
-                        modifier = Modifier.weight(1f)
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Torna al Pannello"
                     )
+                }
 
-                    DashboardQuickAction(
-                        titolo = "Home",
-                        icona = Icons.Default.Home,
-                        coloreAccento = MaterialTheme.colorScheme.onSurfaceVariant,
-                        onClick = {
-                            mostraServerHub = false
-                            mostraConnessione = true
+                Spacer(modifier = Modifier.width(10.dp))
 
-                            dashboardViewModel?.resetDashboardState()
-                            impostaStatoDashboard("")
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Row(
+                        verticalAlignment =
+                            androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = nomeServerDashboard,
+                            modifier = Modifier.weight(1f, fill = false),
+                            fontSize = if (schermoCompatto) 20.sp else 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
 
-                            mostraServers = true
-                            mostraReaders = true
-                            mostraProxies = true
-                            mostraClients = true
-                        },
-                        modifier = Modifier.weight(1f)
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(
+                                    coloreStatoDashboard,
+                                    androidx.compose.foundation.shape.CircleShape
+                                )
+                                .semantics {
+                                    contentDescription =
+                                        if (stato.isBlank()) {
+                                            "Stato connessione sconosciuto"
+                                        } else {
+                                            stato
+                                        }
+                                }
+                        )
+                    }
+
+                    Text(
+                        text = "${host.trim()}:${porta.trim()}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
                     )
                 }
             }
@@ -3051,12 +2998,12 @@ fun InformazioniScreen(
                 androidx.compose.material3.Surface(
                     shape =
                         androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
-                    color = Color(0xFF4CAF50).copy(alpha = 0.14f)
+                    color = Color(0xFF4DA3FF).copy(alpha = 0.14f)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
-                        tint = Color(0xFF4CAF50),
+                        tint = Color(0xFF4DA3FF),
                         modifier = Modifier
                             .padding(8.dp)
                             .size(20.dp)
@@ -3081,12 +3028,12 @@ fun InformazioniScreen(
         ) {
             androidx.compose.material3.Surface(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
-                color = Color(0xFF4CAF50).copy(alpha = 0.20f)
+                color = Color(0xFF4DA3FF).copy(alpha = 0.20f)
             ) {
                 Icon(
                     imageVector = Icons.Default.Storage,
                     contentDescription = null,
-                    tint = Color(0xFF4CAF50),
+                    tint = Color(0xFF4DA3FF),
                     modifier = Modifier
                         .padding(22.dp)
                         .size(42.dp)
@@ -3097,7 +3044,22 @@ fun InformazioniScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "OSCam Live Monitor",
+            text = androidx.compose.ui.text.buildAnnotatedString {
+                pushStyle(
+                    androidx.compose.ui.text.SpanStyle(
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+                append("OSCam")
+                pop()
+                pushStyle(
+                    androidx.compose.ui.text.SpanStyle(
+                        color = Color(0xFF4DA3FF)
+                    )
+                )
+                append(" Live Monitor")
+                pop()
+            },
             modifier = Modifier.fillMaxWidth(),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             fontSize = 25.sp,
@@ -3222,10 +3184,10 @@ fun InformazioniScreen(
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
             enabled = !controlloAggiornamentoInCorso,
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2E7D32),
-                contentColor = Color.White,
-                disabledContainerColor = Color(0xFF2E7D32).copy(alpha = 0.45f),
-                disabledContentColor = Color.White.copy(alpha = 0.70f)
+                containerColor = Color(0xFF4DA3FF),
+                contentColor = Color(0xFF102338),
+                disabledContainerColor = Color(0xFF4DA3FF).copy(alpha = 0.45f),
+                disabledContentColor = Color(0xFF102338).copy(alpha = 0.70f)
             ),
             onClick = {
                 controlloAggiornamentoInCorso = true

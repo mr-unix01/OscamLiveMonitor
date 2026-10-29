@@ -38,6 +38,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
@@ -217,26 +220,32 @@ internal fun RiordinaServerDialog(
                     modifier = Modifier.height(6.dp)
                 )
 
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(
-                            16.dp
-                        ),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .width(58.dp)
+                            .height(50.dp),
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                14.dp
+                            ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF353B45),
                             contentColor = Color.White
                         ),
-                    onClick = onDismiss
-                ) {
-                    Text(
-                        text = "Fine",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                        contentPadding = PaddingValues(0.dp),
+                        onClick = onDismiss
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription =
+                                "Fine riordino, ordine già salvato",
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
         },
@@ -279,7 +288,7 @@ internal fun ModificaServerDialog(
                     shape =
                         androidx.compose.foundation.shape.CircleShape,
                     color =
-                        Color(0xFF4CAF50).copy(alpha = 0.18f)
+                        Color(0xFF353B45)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center
@@ -287,7 +296,7 @@ internal fun ModificaServerDialog(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = null,
-                            tint = Color(0xFF4CAF50),
+                            tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -504,29 +513,54 @@ internal fun ModificaServerDialog(
         },
         confirmButton = {
             Button(
+                modifier = Modifier
+                    .width(56.dp)
+                    .height(50.dp)
+                    .semantics {
+                        contentDescription = "Salva server"
+                    },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         14.dp
                     ),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32),
-                        contentColor = Color.White
-                    ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF353B45),
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(0.dp),
                 onClick = onSave
             ) {
-                Text("Salva")
+                Icon(
+                    imageVector = Icons.Default.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         },
         dismissButton = {
-            OutlinedButton(
+            Button(
+                modifier = Modifier
+                    .width(56.dp)
+                    .height(50.dp)
+                    .semantics {
+                        contentDescription = "Annulla"
+                    },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         14.dp
                     ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF353B45),
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(0.dp),
                 onClick = onDismiss
             ) {
-                Text("Annulla")
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         }
     )
@@ -563,7 +597,7 @@ internal fun AggiungiServerDialog(
                     shape =
                         androidx.compose.foundation.shape.CircleShape,
                     color =
-                        Color(0xFF4CAF50).copy(alpha = 0.18f)
+                        Color(0xFF353B45)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center
@@ -571,7 +605,7 @@ internal fun AggiungiServerDialog(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            tint = Color(0xFF4CAF50),
+                            tint = Color.White,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -756,29 +790,54 @@ internal fun AggiungiServerDialog(
         },
         confirmButton = {
             Button(
+                modifier = Modifier
+                    .width(56.dp)
+                    .height(50.dp)
+                    .semantics {
+                        contentDescription = "Salva server"
+                    },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         14.dp
                     ),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E7D32),
-                        contentColor = Color.White
-                    ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF353B45),
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(0.dp),
                 onClick = onSave
             ) {
-                Text("Salva")
+                Icon(
+                    imageVector = Icons.Default.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         },
         dismissButton = {
-            OutlinedButton(
+            Button(
+                modifier = Modifier
+                    .width(56.dp)
+                    .height(50.dp)
+                    .semantics {
+                        contentDescription = "Annulla"
+                    },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         14.dp
                     ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF353B45),
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(0.dp),
                 onClick = onDismiss
             ) {
-                Text("Annulla")
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         }
     )

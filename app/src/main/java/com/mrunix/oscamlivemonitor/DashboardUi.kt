@@ -1,5 +1,9 @@
 package com.mrunix.oscamlivemonitor
 
+import androidx.compose.material.icons.filled.Menu
+
+import androidx.compose.foundation.clickable
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
@@ -84,7 +88,7 @@ fun ExpressiveMiniInfo(
     compatto: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val temaScuroMini = androidx.compose.foundation.isSystemInDarkTheme()
+    val temaScuroMini = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     androidx.compose.material3.Surface(
         modifier = modifier,
@@ -233,7 +237,7 @@ fun ExpressiveOscamInfoCard(
     onRiavviaClick: () -> Unit
 ) {
     val temaScuroCard =
-        androidx.compose.foundation.isSystemInDarkTheme()
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -448,7 +452,7 @@ fun BadgeStatoDashboard(
         }
 
     val colore = coloreStatoDashboard(statoVisualizzato)
-    val temaScuroBadge = androidx.compose.foundation.isSystemInDarkTheme()
+    val temaScuroBadge = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     androidx.compose.material3.Surface(
         shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
@@ -488,7 +492,7 @@ fun VoceStatoCard(
     onToggleReader: (() -> Unit)? = null
 ) {
     val temaScuroVoce =
-        androidx.compose.foundation.isSystemInDarkTheme()
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     val nome = testo
         .substringBeforeLast("—", testo)
@@ -676,9 +680,10 @@ fun MiniDatoClient(
 
 @Composable
 fun ExpressiveAppHeader(
-    compatto: Boolean
+    compatto: Boolean,
+    onMenuClick: () -> Unit = {}
 ) {
-    val temaScuroHeader = androidx.compose.foundation.isSystemInDarkTheme()
+    val temaScuroHeader = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -701,6 +706,7 @@ fun ExpressiveAppHeader(
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             androidx.compose.material3.Surface(
+                modifier = Modifier.clickable(onClick = onMenuClick),
                 shape = androidx.compose.foundation.shape.CircleShape,
                 color = if (temaScuroHeader) {
                     Color(0xFF4DA3FF).copy(alpha = 0.16f)
@@ -709,7 +715,7 @@ fun ExpressiveAppHeader(
                 }
             ) {
                 Icon(
-                    imageVector = Icons.Default.Storage,
+                    imageVector = Icons.Default.Menu,
                     contentDescription = null,
                     tint = if (temaScuroHeader) Color(0xFF4DA3FF) else Color(0xFF1565C0),
                     modifier = Modifier
@@ -811,7 +817,7 @@ fun ClientInfoCard(
         ?.trim()
 
     val temaScuroClient =
-        androidx.compose.foundation.isSystemInDarkTheme()
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     var altezzaPrecedenteCard by remember {
         mutableIntStateOf(0)
@@ -1093,7 +1099,7 @@ fun DashboardCard(
     didascalia: String? = null
 ) {
     val temaScuroCard =
-        androidx.compose.foundation.isSystemInDarkTheme()
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     Card(
         modifier = modifier

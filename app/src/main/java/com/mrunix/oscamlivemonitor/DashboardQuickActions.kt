@@ -22,7 +22,7 @@ fun DashboardQuickAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val temaScuro = isSystemInDarkTheme()
+    val temaScuro = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     Card(
         modifier = modifier.height(72.dp),

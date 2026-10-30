@@ -1,6 +1,10 @@
 
 package com.mrunix.oscamlivemonitor
 
+import androidx.compose.ui.input.pointer.pointerInput
+
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
@@ -69,7 +73,32 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            OscamLiveMonitorTheme {
+            val preferenzeTema = remember {
+                getSharedPreferences(
+                    "oscam_monitor",
+                    android.content.Context.MODE_PRIVATE
+                )
+            }
+
+            var temaApp by remember {
+                mutableStateOf(
+                    preferenzeTema.getString("tema_app", "system")
+                        ?: "system"
+                )
+            }
+
+            val temaSistemaScuro =
+                androidx.compose.foundation.isSystemInDarkTheme()
+
+            val temaEffettivoScuro = when (temaApp) {
+                "light" -> false
+                "dark" -> true
+                else -> temaSistemaScuro
+            }
+
+            OscamLiveMonitorTheme(
+                darkTheme = temaEffettivoScuro
+            ) {
                 var editorLandscapeIme by remember {
                     mutableStateOf(false)
                 }
@@ -115,6 +144,15 @@ class MainActivity : ComponentActivity() {
                         dashboardViewModel = dashboardViewModel,
                         onEditorLandscapeImeChange = {
                             editorLandscapeIme = it
+                        },
+                        temaApp = temaApp,
+                        onTemaAppChange = { scelta ->
+                            if (scelta in listOf("system", "light", "dark")) {
+                                temaApp = scelta
+                                preferenzeTema.edit()
+                                    .putString("tema_app", scelta)
+                                    .apply()
+                            }
                         }
                     )
                 }
@@ -128,7 +166,9 @@ fun Greeting(
     name: String,
     modifier: Modifier = Modifier,
     dashboardViewModel: DashboardViewModel? = null,
-    onEditorLandscapeImeChange: (Boolean) -> Unit = {}
+    onEditorLandscapeImeChange: (Boolean) -> Unit = {},
+    temaApp: String = "system",
+    onTemaAppChange: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -163,7 +203,7 @@ fun Greeting(
         }
     }
 
-    val temaScuro = androidx.compose.foundation.isSystemInDarkTheme()
+    val temaScuro = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     val schermoCompatto =
         BuildConfig.TABLET_MODE ||
                 androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 500
@@ -172,6 +212,34 @@ fun Greeting(
         context.getSharedPreferences(
             "oscam_monitor",
             android.content.Context.MODE_PRIVATE
+        )
+    }
+
+    var schermoSempreAcceso by remember {
+        mutableStateOf(
+            preferences.getBoolean("schermo_sempre_acceso", false)
+        )
+    }
+
+    val vistaApp = androidx.compose.ui.platform.LocalView.current
+
+    DisposableEffect(vistaApp, schermoSempreAcceso) {
+        vistaApp.keepScreenOn = schermoSempreAcceso
+        onDispose {
+            vistaApp.keepScreenOn = false
+        }
+    }
+
+    var aggiornamentoAutomaticoDashboard by remember {
+        mutableStateOf(
+            preferences.getBoolean("dashboard_auto_refresh", true)
+        )
+    }
+
+    var intervalloDashboardSecondi by remember {
+        mutableStateOf(
+            preferences.getInt("dashboard_refresh_seconds", 5)
+                .takeIf { it in listOf(5, 10, 15, 30, 60) } ?: 5
         )
     }
 
@@ -271,8 +339,13 @@ fun Greeting(
     var mostraWebIf by rememberSaveable { mutableStateOf(false) }
     var mostraLiveLog by rememberSaveable { mutableStateOf(false) }
     var mostraStrumenti by rememberSaveable { mutableStateOf(false) }
+    var mostraImpostazioni by rememberSaveable { mutableStateOf(false) }
     var mostraInformazioni by rememberSaveable { mutableStateOf(false) }
     var mostraServerHub by rememberSaveable { mutableStateOf(false) }
+
+    // Menu superiore HOME, indipendente dai singoli server.
+    var menuSuperioreAperto by rememberSaveable { mutableStateOf(false) }
+    var trascinamentoMenu by remember { mutableFloatStateOf(0f) }
 
     var sezioneStrumentiIniziale by remember {
         mutableStateOf(TerminalToolsInitialSection.TERMINAL)
@@ -695,13 +768,18 @@ fun Greeting(
         porta,
         username,
         password,
-        dashboardViewModel
+        dashboardViewModel,
+        aggiornamentoAutomaticoDashboard,
+        intervalloDashboardSecondi,
+        mostraImpostazioni
     ) {
         val pollingAttivo =
             !mostraConnessione &&
                 !mostraWebIf &&
                 !mostraLiveLog &&
-                !riavvioInCorso
+                !mostraImpostazioni &&
+                !riavvioInCorso &&
+                aggiornamentoAutomaticoDashboard
 
         if (pollingAttivo) {
             // Primo refresh immediato: quando si chiude WebIF/Live Log
@@ -710,7 +788,8 @@ fun Greeting(
                 host = host,
                 porta = porta,
                 username = username,
-                password = password
+                password = password,
+                intervalloSecondi = intervalloDashboardSecondi
             )
         } else {
             dashboardViewModel?.fermaPolling()
@@ -1339,6 +1418,7 @@ fun Greeting(
     androidx.activity.compose.BackHandler(
         enabled =
             (mostraServerHub || !mostraConnessione) &&
+            !mostraImpostazioni &&
             !mostraInformazioni &&
             !mostraRepositoryGitHub &&
             !mostraWebIf &&
@@ -1350,6 +1430,10 @@ fun Greeting(
         } else {
             tornaAlPannelloDaDashboard()
         }
+    }
+
+    androidx.activity.compose.BackHandler(enabled = menuSuperioreAperto) {
+        menuSuperioreAperto = false
     }
 
     // La dashboard resta sempre composta anche mentre WebIF o Live Log sono aperti.
@@ -1387,7 +1471,13 @@ fun Greeting(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
-                        ExpressiveAppHeader(compatto = schermoCompatto)
+                        ExpressiveAppHeader(
+                            compatto = schermoCompatto,
+                            onMenuClick = {
+                                trascinamentoMenu = 0f
+                                menuSuperioreAperto = true
+                            }
+                        )
                     }
 
                     item {
@@ -2150,6 +2240,140 @@ fun Greeting(
             contenutoPrincipale()
         }
 
+
+        // Il menu si sovrappone alla HOME, senza spostare l'elenco dei server.
+        // Il pannello segue il dito verso l'alto e poi scivola fuori dallo schermo.
+        if (mostraConnessione && !mostraServerHub &&
+            !mostraImpostazioni && !mostraInformazioni &&
+            !mostraRepositoryGitHub && !mostraWebIf &&
+            !mostraLiveLog && !mostraStrumenti
+        ) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = menuSuperioreAperto,
+                enter = androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.fadeOut(),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.38f))
+                        .clickable { menuSuperioreAperto = false }
+                )
+            }
+
+            androidx.compose.animation.AnimatedVisibility(
+                visible = menuSuperioreAperto,
+                enter = androidx.compose.animation.slideInVertically(
+                    initialOffsetY = { -it }
+                ),
+                exit = androidx.compose.animation.slideOutVertically(
+                    targetOffsetY = { -it }
+                ),
+                modifier = Modifier
+                    .align(androidx.compose.ui.Alignment.TopStart)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { change, dragAmount ->
+                                change.consume()
+                                trascinamentoMenu =
+                                    (trascinamentoMenu + dragAmount)
+                                        .coerceAtMost(0f)
+                            },
+                            onDragEnd = {
+                                if (trascinamentoMenu < -72.dp.toPx()) {
+                                    menuSuperioreAperto = false
+                                } else {
+                                    trascinamentoMenu = 0f
+                                }
+                            },
+                            onDragCancel = {
+                                trascinamentoMenu = 0f
+                            }
+                        )
+                    }
+            ) {
+                DisposableEffect(Unit) {
+                    onDispose {
+                        trascinamentoMenu = 0f
+                    }
+                }
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset {
+                            androidx.compose.ui.unit.IntOffset(
+                                0, trascinamentoMenu.toInt()
+                            )
+                        },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                        bottomStart = 20.dp,
+                        bottomEnd = 20.dp
+                    ),
+                    color = Color(0xFF242424),
+                    shadowElevation = 12.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                            .padding(horizontal = 20.dp, vertical = 14.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.oscam_drawer_logo),
+                            contentDescription = "Logo OSCam",
+                            modifier = Modifier.size(72.dp)
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "OscamLiveMonitor",
+                            fontSize = 12.sp,
+                            color = Color(0xFFDCDCDC)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider(color = Color(0xFF484848))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    menuSuperioreAperto = false
+                                    mostraImpostazioni = true
+                                }
+                                .padding(vertical = 13.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Impostazioni", color = Color.White)
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    menuSuperioreAperto = false
+                                    mostraInformazioni = true
+                                }
+                                .padding(vertical = 13.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Informazioni", color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+
         if (mostraServerHub) {
             val serverHub =
                 serverSalvati.firstOrNull { server ->
@@ -2189,12 +2413,48 @@ fun Greeting(
                                 TerminalToolsInitialSection.FILES
                             mostraStrumenti = true
                         },
-                        onInfo = {
-                            mostraInformazioni = true
-                        },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+            }
+        }
+
+        if (mostraImpostazioni) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                ImpostazioniScreen(
+                    onClose = {
+                        mostraImpostazioni = false
+                    },
+                    temaApp = temaApp,
+                    onTemaAppChange = onTemaAppChange,
+                    schermoSempreAcceso = schermoSempreAcceso,
+                    onSchermoSempreAccesoChange = { attivo ->
+                        schermoSempreAcceso = attivo
+                        preferences.edit()
+                            .putBoolean("schermo_sempre_acceso", attivo)
+                            .apply()
+                    },
+                    aggiornamentoAutomaticoDashboard =
+                        aggiornamentoAutomaticoDashboard,
+                    onAggiornamentoAutomaticoDashboardChange = {
+                        aggiornamentoAutomaticoDashboard = it
+                        preferences.edit()
+                            .putBoolean("dashboard_auto_refresh", it)
+                            .apply()
+                    },
+                    intervalloDashboardSecondi =
+                        intervalloDashboardSecondi,
+                    onIntervalloDashboardSecondiChange = {
+                        intervalloDashboardSecondi = it
+                        preferences.edit()
+                            .putInt("dashboard_refresh_seconds", it)
+                            .apply()
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
 
@@ -2400,7 +2660,7 @@ fun LiveLogScreen(
     }
 
     val temaScuroLive =
-        androidx.compose.foundation.isSystemInDarkTheme()
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     val coloreLive =
         when {
@@ -2608,41 +2868,43 @@ fun LiveLogScreen(
                     )
                 }
 
-                androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(
-                            50
-                        ),
-                    color = coloreLive.copy(alpha = 0.12f),
-                    border =
-                        androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            coloreLive.copy(alpha = 0.45f)
-                        )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(
-                            horizontal = 8.dp,
-                            vertical = 5.dp
-                        ),
-                        verticalAlignment =
-                            androidx.compose.ui.Alignment.CenterVertically
+                if (statoLive != "LIVE") {
+                    androidx.compose.material3.Surface(
+                        shape =
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                50
+                            ),
+                        color = coloreLive.copy(alpha = 0.12f),
+                        border =
+                            androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                coloreLive.copy(alpha = 0.45f)
+                            )
                     ) {
-                        androidx.compose.material3.Surface(
-                            modifier = Modifier.size(7.dp),
-                            shape =
-                                androidx.compose.foundation.shape.CircleShape,
-                            color = coloreLive
-                        ) {}
+                        Row(
+                            modifier = Modifier.padding(
+                                horizontal = 8.dp,
+                                vertical = 5.dp
+                            ),
+                            verticalAlignment =
+                                androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier.size(7.dp),
+                                shape =
+                                    androidx.compose.foundation.shape.CircleShape,
+                                color = coloreLive
+                            ) {}
 
-                        Spacer(modifier = Modifier.width(5.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
 
-                        Text(
-                            text = statoLive,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = coloreLive
-                        )
+                            Text(
+                                text = statoLive,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = coloreLive
+                            )
+                        }
                     }
                 }
             }
@@ -3605,43 +3867,6 @@ fun WebIfScreen(
                     )
                 }
 
-                androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(
-                            50
-                        ),
-                    color = Color(0xFF4CAF50).copy(alpha = 0.11f),
-                    border =
-                        androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            Color(0xFF4CAF50).copy(alpha = 0.40f)
-                        )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(
-                            horizontal = 8.dp,
-                            vertical = 5.dp
-                        ),
-                        verticalAlignment =
-                            androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        androidx.compose.material3.Surface(
-                            modifier = Modifier.size(7.dp),
-                            shape =
-                                androidx.compose.foundation.shape.CircleShape,
-                            color = Color(0xFF66BB6A)
-                        ) {}
-
-                        Spacer(modifier = Modifier.width(5.dp))
-
-                        Text(
-                            text = "ONLINE",
-                            color = Color(0xFF66BB6A),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
             }
         }
 

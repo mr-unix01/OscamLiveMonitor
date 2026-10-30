@@ -157,6 +157,21 @@ fun TerminalToolsScreen(
         )
     }
 
+    val fileSettings = remember(context) {
+        context.getSharedPreferences(
+            "oscam_monitor",
+            android.content.Context.MODE_PRIVATE
+        )
+    }
+
+    val mostraFileNascosti = remember(fileSettings) {
+        fileSettings.getBoolean("file_mostra_nascosti", true)
+    }
+
+    val ricordaUltimaCartella = remember(fileSettings) {
+        fileSettings.getBoolean("file_ricorda_cartella", false)
+    }
+
     var protocol by remember {
         mutableStateOf(
             runCatching {
@@ -312,6 +327,27 @@ fun TerminalToolsScreen(
 
     var fileEntries by remember {
         mutableStateOf(emptyList<RemoteFile>())
+    }
+
+    LaunchedEffect(
+        fileConnected, filePath, fileSftp,
+        safeKey, ricordaUltimaCartella
+    ) {
+        if (
+            ricordaUltimaCartella &&
+            fileConnected &&
+            filePath.startsWith("/")
+        ) {
+            val chiave = if (fileSftp) {
+                "${safeKey}_ultima_cartella_sftp"
+            } else {
+                "${safeKey}_ultima_cartella_ftp"
+            }
+
+            preferences.edit()
+                .putString(chiave, filePath)
+                .apply()
+        }
     }
 
     var uploadInCorso by remember {
@@ -2135,8 +2171,25 @@ val filePickerLauncher =
                                         )
 
                                     if (connessione.isSuccess) {
+                                        val percorsoSalvato =
+                                            if (ricordaUltimaCartella) {
+                                                preferences.getString(
+                                                    "${safeKey}_ultima_cartella_sftp",
+                                                    "/"
+                                                )?.takeIf { it.startsWith("/") } ?: "/"
+                                            } else {
+                                                "/"
+                                            }
+
+                                        val primoTentativo =
+                                            fileClient.openDirectory(percorsoSalvato)
+
                                         val directory =
-                                            fileClient.openDirectory("/")
+                                            if (primoTentativo.isFailure && percorsoSalvato != "/") {
+                                                fileClient.openDirectory("/")
+                                            } else {
+                                                primoTentativo
+                                            }
 
                                         if (directory.isSuccess) {
                                             val remoto =
@@ -3797,8 +3850,25 @@ val filePickerLauncher =
                                         )
 
                                     if (connessione.isSuccess) {
+                                        val percorsoSalvato =
+                                            if (ricordaUltimaCartella) {
+                                                preferences.getString(
+                                                    "${safeKey}_ultima_cartella_sftp",
+                                                    "/"
+                                                )?.takeIf { it.startsWith("/") } ?: "/"
+                                            } else {
+                                                "/"
+                                            }
+
+                                        val primoTentativo =
+                                            fileClient.openDirectory(percorsoSalvato)
+
                                         val directory =
-                                            fileClient.openDirectory("/")
+                                            if (primoTentativo.isFailure && percorsoSalvato != "/") {
+                                                fileClient.openDirectory("/")
+                                            } else {
+                                                primoTentativo
+                                            }
 
                                         if (directory.isSuccess) {
                                             val remoto = directory.getOrThrow()
@@ -3872,8 +3942,25 @@ val filePickerLauncher =
                                         )
 
                                     if (connessione.isSuccess) {
+                                        val percorsoSalvato =
+                                            if (ricordaUltimaCartella) {
+                                                preferences.getString(
+                                                    "${safeKey}_ultima_cartella_ftp",
+                                                    "/"
+                                                )?.takeIf { it.startsWith("/") } ?: "/"
+                                            } else {
+                                                "/"
+                                            }
+
+                                        val primoTentativo =
+                                            ftpClient.openDirectory(percorsoSalvato)
+
                                         val directory =
-                                            ftpClient.openDirectory("/")
+                                            if (primoTentativo.isFailure && percorsoSalvato != "/") {
+                                                ftpClient.openDirectory("/")
+                                            } else {
+                                                primoTentativo
+                                            }
 
                                         if (directory.isSuccess) {
                                             val remoto = directory.getOrThrow()
@@ -4217,6 +4304,11 @@ val filePickerLauncher =
                                 .filterNot { entry ->
                                     filePath == "/" &&
                                         entry.name == ".."
+                                }
+                                .filterNot { entry ->
+                                    !mostraFileNascosti &&
+                                        entry.name.startsWith(".") &&
+                                        entry.name != ".."
                                 }
                                 .forEach { entry ->
                                 Row(

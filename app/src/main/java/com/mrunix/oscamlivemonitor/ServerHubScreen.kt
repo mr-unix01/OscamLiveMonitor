@@ -17,13 +17,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Storage
@@ -62,7 +62,6 @@ fun ServerHubScreen(
     onLiveLog: () -> Unit,
     onTerminal: () -> Unit,
     onFiles: () -> Unit,
-    onInfo: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     BackHandler {
@@ -72,7 +71,7 @@ fun ServerHubScreen(
     val (connectionText, connectionColor) =
         when (connectionState) {
             OscamServerConnectionState.CHECKING ->
-                "Verifica..." to MaterialTheme.colorScheme.onSurfaceVariant
+                "Verifica..." to Color(0xFFFF9800)
 
             OscamServerConnectionState.ACTIVE ->
                 "OSCam attivo" to Color(0xFF4CAF50)
@@ -109,14 +108,9 @@ fun ServerHubScreen(
             onClick = onTerminal
         ),
         ServerHubAction(
-            title = "File / SFTP",
+            title = "File",
             icon = Icons.Default.Folder,
             onClick = onFiles
-        ),
-        ServerHubAction(
-            title = "Informazioni",
-            icon = Icons.Default.Info,
-            onClick = onInfo
         )
     )
 
@@ -160,24 +154,22 @@ fun ServerHubScreen(
                                 androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(connectionColor, CircleShape)
-                                .semantics {
-                                    contentDescription =
-                                        "Stato server: $connectionText"
-                                }
-                        )
                     }
 
-                    Text(
-                        text = "${server.host}:${server.porta}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Language,
+                            contentDescription = "Stato server: $connectionText",
+                            tint = connectionColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "${server.host}:${server.porta}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

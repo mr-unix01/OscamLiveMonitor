@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -136,12 +135,12 @@ fun OscamServerCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     val selectionColor = Color(0xFF4DA3FF)
 
     val (connectionText, connectionColor) = when (connectionState) {
         OscamServerConnectionState.CHECKING ->
-            "Verifica..." to MaterialTheme.colorScheme.onSurfaceVariant
+            "Verifica..." to Color(0xFFFF9800)
         OscamServerConnectionState.ACTIVE ->
             "OSCam attivo" to Color(0xFF4CAF50)
         OscamServerConnectionState.AUTH_ERROR ->
@@ -184,15 +183,6 @@ fun OscamServerCard(
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
         ) {
-            if (selected) {
-                Box(
-                    modifier = Modifier
-                        .width(4.dp)
-                        .fillMaxHeight()
-                        .background(selectionColor)
-                )
-            }
-
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -257,8 +247,8 @@ fun OscamServerCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Language,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        contentDescription = connectionText,
+                        tint = connectionColor,
                         modifier = Modifier.size(14.dp)
                     )
 
@@ -270,16 +260,6 @@ fun OscamServerCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .background(connectionColor, CircleShape)
-                            .semantics {
-                                contentDescription = connectionText
-                            }
-                    )
                 }
             }
 

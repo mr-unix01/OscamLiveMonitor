@@ -254,7 +254,8 @@ class DashboardViewModel(
         host: String,
         porta: String,
         username: String,
-        password: String
+        password: String,
+        intervalloSecondi: Int = 5
     ) {
         fermaPolling()
 
@@ -273,7 +274,9 @@ class DashboardViewModel(
                         _connessionePersaEventi.emit(Unit)
                     }
 
-                    delay(5000)
+                    delay(
+                        intervalloSecondi.coerceIn(5, 60) * 1000L
+                    )
                 }
             }
     }

@@ -216,6 +216,20 @@ fun ToolsBinarySelector(
     onRight: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val accentEffettivo =
+        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) {
+            accent
+        } else {
+            Color(0xFF7895AD)
+        }
+
+    val accentTesto =
+        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) {
+            accent
+        } else {
+            Color(0xFF587992)
+        }
+
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -237,12 +251,12 @@ fun ToolsBinarySelector(
                 shape = RoundedCornerShape(14.dp),
                 border = BorderStroke(
                     if (selected) 1.4.dp else 1.dp,
-                    if (selected) accent.copy(alpha = 0.75f)
+                    if (selected) accentEffettivo.copy(alpha = 0.75f)
                     else MaterialTheme.colorScheme.outlineVariant
                 ),
                 colors = CardDefaults.cardColors(
                     containerColor = if (selected) {
-                        accent.copy(alpha = 0.10f)
+                        accentEffettivo.copy(alpha = 0.10f)
                     } else {
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.25f)
                     }
@@ -259,7 +273,7 @@ fun ToolsBinarySelector(
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                         tint = if (selected)
-                            accent
+                            accentTesto
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -273,7 +287,7 @@ fun ToolsBinarySelector(
                         else
                             FontWeight.Medium,
                         color = if (selected)
-                            accent
+                            accentTesto
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant
                     )

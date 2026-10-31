@@ -31,6 +31,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -105,12 +106,17 @@ class MainActivity : ComponentActivity() {
 
                 val window = this@MainActivity.window
 
-                DisposableEffect(editorLandscapeIme) {
+                DisposableEffect(editorLandscapeIme, temaEffettivoScuro) {
                     val controller =
                         androidx.core.view.WindowCompat.getInsetsController(
                             window,
                             window.decorView
                         )
+
+                    controller.isAppearanceLightStatusBars =
+                        !temaEffettivoScuro
+                    controller.isAppearanceLightNavigationBars =
+                        !temaEffettivoScuro
 
                     if (editorLandscapeIme) {
                         controller.hide(
@@ -2310,7 +2316,7 @@ fun Greeting(
                         bottomStart = 20.dp,
                         bottomEnd = 20.dp
                     ),
-                    color = Color(0xFF242424),
+                    color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 12.dp
                 ) {
                     Column(
@@ -2322,16 +2328,18 @@ fun Greeting(
                         Image(
                             painter = painterResource(R.drawable.oscam_drawer_logo),
                             contentDescription = "Logo OSCam",
-                            modifier = Modifier.size(72.dp)
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(androidx.compose.foundation.shape.CircleShape)
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "OscamLiveMonitor",
                             fontSize = 12.sp,
-                            color = Color(0xFFDCDCDC)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider(color = Color(0xFF484848))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier = Modifier
@@ -2346,10 +2354,10 @@ fun Greeting(
                             Icon(
                                 imageVector = Icons.Default.Settings,
                                 contentDescription = null,
-                                tint = Color.White
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text("Impostazioni", color = Color.White)
+                            Text("Impostazioni", color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(
                             modifier = Modifier
@@ -2364,10 +2372,10 @@ fun Greeting(
                             Icon(
                                 imageVector = Icons.Default.Info,
                                 contentDescription = null,
-                                tint = Color.White
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text("Informazioni", color = Color.White)
+                            Text("Informazioni", color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }

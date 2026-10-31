@@ -201,31 +201,39 @@ private fun SezioneImpostazioni(
     contenuto: @Composable ColumnScope.() -> Unit
 ) {
     Text(
-        text = titolo,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 8.dp, top = 14.dp, bottom = 8.dp)
+        text = titolo.uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 12.dp, top = 14.dp, bottom = 8.dp)
     )
 
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(content = contenuto)
     }
 
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(6.dp))
 }
 
 @Composable
 private fun IconaImpostazione(icona: ImageVector) {
-    Icon(
-        imageVector = icona,
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.size(24.dp)
-    )
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+        modifier = Modifier.size(42.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icona,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(21.dp)
+            )
+        }
+    }
 }
 
 @Composable
@@ -235,10 +243,14 @@ private fun TestoImpostazione(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        Text(titolo, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.height(3.dp))
         Text(
-            descrizione,
+            text = titolo,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = descrizione,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -257,19 +269,23 @@ private fun VoceScelta(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = abilitata, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .heightIn(min = 48.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconaImpostazione(icona)
-        Spacer(Modifier.width(16.dp))
-        Box(Modifier.weight(1f)) {
-            TestoImpostazione(titolo, descrizione)
-        }
+        Spacer(Modifier.width(12.dp))
+        TestoImpostazione(
+            titolo,
+            descrizione,
+            Modifier.weight(1f)
+        )
         if (abilitata) {
             Icon(
-                Icons.Default.ChevronRight,
+                imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
@@ -287,20 +303,22 @@ private fun VoceInterruttore(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onChange(!attivo) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconaImpostazione(icona)
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(12.dp))
         TestoImpostazione(
             titolo,
             descrizione,
             Modifier.weight(1f)
         )
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(8.dp))
         Switch(
             checked = attivo,
-            onCheckedChange = onChange
+            onCheckedChange = onChange,
+            modifier = Modifier.height(32.dp)
         )
     }
 }

@@ -2771,7 +2771,11 @@ fun LiveLogScreen(
                                     "CONNECTED",
                                     ignoreCase = true
                                 ) ->
-                                    Color(0xFF66BB6A)
+                                    if (temaScuroLive) {
+                                        Color(0xFF66BB6A)
+                                    } else {
+                                        Color(0xFF1B5E20)
+                                    }
 
                                 else ->
                                     coloreNormaleLog
@@ -3453,11 +3457,26 @@ fun InformazioniScreen(
             shape =
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
             enabled = !controlloAggiornamentoInCorso,
+            border = androidx.compose.foundation.BorderStroke(
+                1.4.dp,
+                if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                    Color(0xFF4DA3FF).copy(alpha = 0.75f)
+                else
+                    Color(0xFF7895AD).copy(alpha = 0.75f)
+            ),
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4DA3FF),
-                contentColor = Color(0xFF102338),
-                disabledContainerColor = Color(0xFF4DA3FF).copy(alpha = 0.45f),
-                disabledContentColor = Color(0xFF102338).copy(alpha = 0.70f)
+                containerColor =
+                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                        Color(0xFF4DA3FF).copy(alpha = 0.10f)
+                    else
+                        Color(0xFF7895AD).copy(alpha = 0.10f),
+                contentColor =
+                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                        Color(0xFF4DA3FF)
+                    else
+                        Color(0xFF587992),
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
             onClick = {
                 controlloAggiornamentoInCorso = true

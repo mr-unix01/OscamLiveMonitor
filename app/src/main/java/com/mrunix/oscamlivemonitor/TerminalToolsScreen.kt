@@ -2816,9 +2816,24 @@ val filePickerLauncher =
                             .height(52.dp),
                         enabled = !connessioneTerminaleInCorso,
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.4.dp,
+                            if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                Color(0xFF4DA3FF).copy(alpha = 0.75f)
+                            else
+                                Color(0xFF7895AD).copy(alpha = 0.75f)
+                        ),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4DA3FF),
-                            contentColor = Color(0xFF102338)
+                            containerColor =
+                                if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                    Color(0xFF4DA3FF).copy(alpha = 0.10f)
+                                else
+                                    Color(0xFF7895AD).copy(alpha = 0.10f),
+                            contentColor =
+                                if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                    Color(0xFF4DA3FF)
+                                else
+                                    Color(0xFF587992)
                         ),
                         onClick = {
                             val parsedPort =
@@ -3529,10 +3544,12 @@ val filePickerLauncher =
                             Text(
                                 text = tasto,
                                 color =
-                                    if (attivo) {
-                                        Color(0xFF66BB6A)
+                                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) {
+                                        if (attivo) Color(0xFF66BB6A)
+                                        else Color(0xFFE6EDF3)
                                     } else {
-                                        Color(0xFFE6EDF3)
+                                        if (attivo) Color(0xFF1B5E20)
+                                        else MaterialTheme.colorScheme.onSurface
                                     },
                                 fontFamily = FontFamily.Monospace,
                                 fontSize =
@@ -3812,9 +3829,24 @@ val filePickerLauncher =
                             .fillMaxWidth()
                             .height(52.dp),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.4.dp,
+                            if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                Color(0xFF4DA3FF).copy(alpha = 0.75f)
+                            else
+                                Color(0xFF7895AD).copy(alpha = 0.75f)
+                        ),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF4DA3FF),
-                            contentColor = Color(0xFF102338)
+                            containerColor =
+                                if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                    Color(0xFF4DA3FF).copy(alpha = 0.10f)
+                                else
+                                    Color(0xFF7895AD).copy(alpha = 0.10f),
+                            contentColor =
+                                if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                    Color(0xFF4DA3FF)
+                                else
+                                    Color(0xFF587992)
                         ),
                         onClick = {
                             val parsedPort =

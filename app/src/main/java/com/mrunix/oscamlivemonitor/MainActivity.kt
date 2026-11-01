@@ -2,8 +2,11 @@
 package com.mrunix.oscamlivemonitor
 
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.positionChange
 
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 
 import android.Manifest
 import android.content.Intent
@@ -2279,24 +2282,47 @@ fun Greeting(
                 modifier = Modifier
                     .align(androidx.compose.ui.Alignment.TopStart)
                     .pointerInput(Unit) {
-                        detectVerticalDragGestures(
-                            onVerticalDrag = { change, dragAmount ->
-                                change.consume()
-                                trascinamentoMenu =
-                                    (trascinamentoMenu + dragAmount)
-                                        .coerceAtMost(0f)
-                            },
-                            onDragEnd = {
-                                if (trascinamentoMenu < -72.dp.toPx()) {
-                                    menuSuperioreAperto = false
-                                } else {
-                                    trascinamentoMenu = 0f
+                        awaitEachGesture {
+                            val down = awaitFirstDown(
+                                requireUnconsumed = false
+                            )
+                            val touchSlop = viewConfiguration.touchSlop
+                            var distanza = 0f
+                            var trascina = false
+
+                            do {
+                                val event = awaitPointerEvent(
+                                    pass = PointerEventPass.Initial
+                                )
+                                val change = event.changes.firstOrNull {
+                                    it.id == down.id
+                                } ?: break
+
+                                if (!change.pressed) break
+
+                                val dy = change.positionChange().y
+                                distanza += dy
+
+                                if (!trascina && distanza < -touchSlop) {
+                                    trascina = true
                                 }
-                            },
-                            onDragCancel = {
+
+                                if (trascina) {
+                                    change.consume()
+                                    trascinamentoMenu =
+                                        (trascinamentoMenu + dy)
+                                            .coerceAtMost(0f)
+                                }
+                            } while (true)
+
+                            if (trascina &&
+                                trascinamentoMenu < -72.dp.toPx()
+                            ) {
+                                menuSuperioreAperto = false
+                            } else {
                                 trascinamentoMenu = 0f
                             }
-                        )
+                        }
                     }
             ) {
                 DisposableEffect(Unit) {
@@ -3300,19 +3326,13 @@ fun InformazioniScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            androidx.compose.material3.Surface(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp),
-                color = Color(0xFF4DA3FF).copy(alpha = 0.20f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Storage,
-                    contentDescription = null,
-                    tint = Color(0xFF4DA3FF),
-                    modifier = Modifier
-                        .padding(22.dp)
-                        .size(42.dp)
-                )
-            }
+            Image(
+                painter = painterResource(R.drawable.oscam_drawer_logo),
+                contentDescription = "Logo OSCam",
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -3433,7 +3453,12 @@ fun InformazioniScreen(
                 .height(52.dp),
             shape =
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-            onClick = onOpenGitHub
+            onClick = {
+                coroutineScope.launch {
+                    kotlinx.coroutines.delay(300)
+                    onOpenGitHub()
+                }
+            }
         ) {
             androidx.compose.material3.Icon(
                 painter = androidx.compose.ui.res.painterResource(
@@ -3484,6 +3509,7 @@ fun InformazioniScreen(
                 erroreAggiornamento = null
 
                 coroutineScope.launch {
+                    kotlinx.coroutines.delay(300)
                     try {
                         risultatoAggiornamento =
                             controllaAggiornamentoGitHub(

@@ -280,14 +280,7 @@ private fun VoceScelta(
             descrizione,
             Modifier.weight(1f)
         )
-        if (abilitata) {
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+
     }
 }
 

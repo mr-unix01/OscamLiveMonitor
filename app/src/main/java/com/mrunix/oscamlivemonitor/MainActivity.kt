@@ -3487,19 +3487,19 @@ fun InformazioniScreen(
                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                     Color(0xFF4DA3FF).copy(alpha = 0.75f)
                 else
-                    Color(0xFF7895AD).copy(alpha = 0.75f)
+                    Color(0xFF1565C0).copy(alpha = 0.85f)
             ),
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                 containerColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                         Color(0xFF4DA3FF).copy(alpha = 0.10f)
                     else
-                        Color(0xFF7895AD).copy(alpha = 0.10f),
+                        Color(0xFF4DA3FF).copy(alpha = 0.20f),
                 contentColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                         Color(0xFF4DA3FF)
                     else
-                        Color(0xFF587992),
+                        Color(0xFF1565C0),
                 disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
@@ -4107,6 +4107,32 @@ fun WebIfScreen(
                                 url: String?
                             ) {
                                 super.onPageFinished(view, url)
+
+                                if (
+                                    android.net.Uri.parse(url ?: "").host
+                                        ?.equals("git.streamboard.tv", ignoreCase = true) == true
+                                ) {
+                                    view?.evaluateJavascript(
+                                        """
+                                        (function() {
+                                            var style = document.createElement('style');
+                                            style.id = 'oscam-gitlab-layout-fix';
+                                            style.textContent =
+                                                '.panels-container {' +
+                                                'overflow: visible !important;' +
+                                                'min-height: 100vh !important;' +
+                                                '}' +
+                                                '.content-wrapper {' +
+                                                'min-height: 600px !important;' +
+                                                '}';
+                                            if (!document.getElementById(style.id)) {
+                                                document.head.appendChild(style);
+                                            }
+                                        })();
+                                        """.trimIndent(),
+                                        null
+                                    )
+                                }
 
                                 if (!errorePaginaCorrente &&
                                     (url?.startsWith("http://") == true ||

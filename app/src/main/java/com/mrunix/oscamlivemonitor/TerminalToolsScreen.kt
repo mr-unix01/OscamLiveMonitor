@@ -2821,19 +2821,19 @@ val filePickerLauncher =
                             if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                                 Color(0xFF4DA3FF).copy(alpha = 0.75f)
                             else
-                                Color(0xFF7895AD).copy(alpha = 0.75f)
+                                Color(0xFF1565C0).copy(alpha = 0.85f)
                         ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                                     Color(0xFF4DA3FF).copy(alpha = 0.10f)
                                 else
-                                    Color(0xFF7895AD).copy(alpha = 0.10f),
+                                    Color(0xFF4DA3FF).copy(alpha = 0.20f),
                             contentColor =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                                     Color(0xFF4DA3FF)
                                 else
-                                    Color(0xFF587992)
+                                    Color(0xFF1565C0)
                         ),
                         onClick = {
                             val parsedPort =
@@ -3834,19 +3834,19 @@ val filePickerLauncher =
                             if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                                 Color(0xFF4DA3FF).copy(alpha = 0.75f)
                             else
-                                Color(0xFF7895AD).copy(alpha = 0.75f)
+                                Color(0xFF1565C0).copy(alpha = 0.85f)
                         ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                                     Color(0xFF4DA3FF).copy(alpha = 0.10f)
                                 else
-                                    Color(0xFF7895AD).copy(alpha = 0.10f),
+                                    Color(0xFF4DA3FF).copy(alpha = 0.20f),
                             contentColor =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                                     Color(0xFF4DA3FF)
                                 else
-                                    Color(0xFF587992)
+                                    Color(0xFF1565C0)
                         ),
                         onClick = {
                             val parsedPort =

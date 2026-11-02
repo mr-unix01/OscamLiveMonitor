@@ -216,19 +216,14 @@ fun ToolsBinarySelector(
     onRight: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val temaScuro =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
     val accentEffettivo =
-        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) {
-            accent
-        } else {
-            Color(0xFF7895AD)
-        }
+        if (temaScuro) accent else Color(0xFF1565C0)
 
     val accentTesto =
-        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) {
-            accent
-        } else {
-            Color(0xFF587992)
-        }
+        if (temaScuro) accent else Color(0xFF1565C0)
 
     Row(
         modifier = modifier,
@@ -251,12 +246,21 @@ fun ToolsBinarySelector(
                 shape = RoundedCornerShape(14.dp),
                 border = BorderStroke(
                     if (selected) 1.4.dp else 1.dp,
-                    if (selected) accentEffettivo.copy(alpha = 0.75f)
-                    else MaterialTheme.colorScheme.outlineVariant
+                    if (selected) {
+                        accentEffettivo.copy(
+                            alpha = if (temaScuro) 0.75f else 0.85f
+                        )
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant
+                    }
                 ),
                 colors = CardDefaults.cardColors(
                     containerColor = if (selected) {
-                        accentEffettivo.copy(alpha = 0.10f)
+                        if (temaScuro) {
+                            accent.copy(alpha = 0.10f)
+                        } else {
+                            Color(0xFF4DA3FF).copy(alpha = 0.20f)
+                        }
                     } else {
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.25f)
                     }

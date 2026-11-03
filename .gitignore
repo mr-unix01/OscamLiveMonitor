@@ -20,3 +20,9 @@
 build-apk-v0.9.6/
 build-apk-v0.9.7/
 build-apk-v0.9.8/
+
+# APK e chiavi di firma Android
+*.apk
+*.jks
+*.keystore
+keystore.properties

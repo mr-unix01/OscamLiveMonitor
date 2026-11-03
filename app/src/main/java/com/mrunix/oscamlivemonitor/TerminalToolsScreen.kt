@@ -3193,7 +3193,12 @@ val filePickerLauncher =
                     ) {
                         Icon(
                             imageVector = Icons.Default.FullscreenExit,
-                            contentDescription = "Riduci terminale"
+                            contentDescription = "Riduci terminale",
+                            tint =
+                                if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                    androidx.compose.material3.LocalContentColor.current
+                                else
+                                    Color(0xFFE6EDF3)
                         )
                     }
                 }

@@ -274,7 +274,6 @@ internal fun ModificaServerDialog(
     onTogglePassword: () -> Unit,
     dialogSnackbarHostState: SnackbarHostState,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit,
     onSave: () -> Unit
 ) {
     AlertDialog(
@@ -455,52 +454,7 @@ internal fun ModificaServerDialog(
                         singleLine = true
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
 
-                    OutlinedButton(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp),
-                        shape =
-                            androidx.compose.foundation.shape.RoundedCornerShape(
-                                16.dp
-                            ),
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.error.copy(
-                                alpha = 0.55f
-                            )
-                        ),
-                        colors =
-                            ButtonDefaults.outlinedButtonColors(
-                                contentColor =
-                                    MaterialTheme.colorScheme.error,
-                                containerColor =
-                                    MaterialTheme.colorScheme.error.copy(
-                                        alpha = 0.08f
-                                    )
-                            ),
-                        onClick = onDelete
-                    ) {
-                        Row(
-                            verticalAlignment =
-                                Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Text(
-                                text = "Elimina server",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
                 }
 
                 SnackbarHost(

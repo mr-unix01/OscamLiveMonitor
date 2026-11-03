@@ -1160,10 +1160,6 @@ fun Greeting(
             onDismiss = {
                 serverDaModificare = null
             },
-            onDelete = {
-                serverDaEliminare = serverOriginale
-                serverDaModificare = null
-            },
             onSave = {
                 val nomePulito =
                     modificaNomeServer.trim()

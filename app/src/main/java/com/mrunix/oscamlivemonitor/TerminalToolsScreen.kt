@@ -2119,15 +2119,6 @@ val filePickerLauncher =
                 }
             },
             confirmButton = {
-                if (prompt.changed) {
-                    TextButton(
-                        onClick = {
-                            sshTrustPrompt = null
-                        }
-                    ) {
-                        Text("Chiudi")
-                    }
-                } else {
                     Button(
                         onClick = {
                             sshHostKeyStore.trust(
@@ -2354,12 +2345,13 @@ val filePickerLauncher =
                             }
                         }
                     ) {
-                        Text("Considera attendibile")
+                        Text(
+                            if (prompt.changed) "Aggiorna chiave SSH"
+                            else "Considera attendibile"
+                        )
                     }
-                }
             },
             dismissButton = {
-                if (!prompt.changed) {
                     TextButton(
                         onClick = {
                             sshTrustPrompt = null
@@ -2378,7 +2370,6 @@ val filePickerLauncher =
                     ) {
                         Text("Annulla")
                     }
-                }
             }
         )
     }

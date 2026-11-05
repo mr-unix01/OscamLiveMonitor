@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -302,7 +303,7 @@ fun ExpressiveOscamInfoCard(
                         Spacer(modifier = Modifier.height(2.dp))
 
                         Text(
-                            text = "Uptime  $uptime",
+                            text = stringResource(R.string.dashboard_uptime, uptime),
                             fontSize = 12.sp,
                             color =
                                 MaterialTheme.colorScheme.onSurfaceVariant
@@ -362,9 +363,9 @@ fun ExpressiveOscamInfoCard(
                 Text(
                     text =
                         if (riavvioInCorso)
-                            "↻  Riavvio..."
+                            stringResource(R.string.dashboard_restarting)
                         else
-                            "↻  Riavvia OSCam",
+                            stringResource(R.string.dashboard_restart),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -445,13 +446,26 @@ fun BadgeStatoDashboard(
 ) {
     val statoVisualizzato =
         when (stato.trim().uppercase()) {
-            "CONNECTED" -> "CONNESSO"
-            "ACTIVE" -> "ATTIVO"
-            "DISABLED" -> "DISABILITATO"
+            "CONNECTED", "CONNESSO" ->
+                androidx.compose.ui.res.stringResource(
+                    R.string.dashboard_badge_connected
+                )
+            "ACTIVE", "ATTIVO" ->
+                androidx.compose.ui.res.stringResource(
+                    R.string.dashboard_badge_active
+                )
+            "DISABLED", "DISABILITATO" ->
+                androidx.compose.ui.res.stringResource(
+                    R.string.dashboard_badge_disabled
+                )
+            "STATO SCONOSCIUTO", "UNKNOWN STATUS" ->
+                androidx.compose.ui.res.stringResource(
+                    R.string.dashboard_badge_unknown
+                )
             else -> stato
         }
 
-    val colore = coloreStatoDashboard(statoVisualizzato)
+    val colore = coloreStatoDashboard(stato)
     val temaScuroBadge = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     androidx.compose.material3.Surface(
@@ -592,7 +606,7 @@ fun VoceStatoCard(
                         Icon(
                             imageVector = Icons.Default.PowerSettingsNew,
                             contentDescription =
-                                "Abilita/disabilita reader",
+                                stringResource(R.string.dashboard_toggle_reader),
                             tint =
                                 MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(
@@ -944,7 +958,7 @@ fun ClientInfoCard(
                         } else {
                             Icon(
                                 imageVector = Icons.Default.PowerSettingsNew,
-                                contentDescription = "Abilita/disabilita user",
+                                contentDescription = stringResource(R.string.dashboard_toggle_user),
                                 tint =
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(
@@ -985,7 +999,7 @@ fun ClientInfoCard(
                     ) {
                         if (!mostraToggleUser && !canale.isNullOrBlank()) {
                             MiniDatoClient(
-                                etichetta = "Canale",
+                                etichetta = stringResource(R.string.dashboard_channel),
                                 valore = canale,
                                 compatto = compatto
                             )
@@ -1031,7 +1045,7 @@ fun ClientInfoCard(
                     ) {
                         if (!mostraToggleUser && !canale.isNullOrBlank()) {
                             MiniDatoClient(
-                                etichetta = "Canale",
+                                etichetta = stringResource(R.string.dashboard_channel),
                                 valore = canale,
                                 compatto = compatto
                             )
@@ -1172,9 +1186,9 @@ fun DashboardCard(
                             Icons.Default.ExpandMore,
                     contentDescription =
                         if (aperta)
-                            "Nascondi $titolo"
+                            stringResource(R.string.dashboard_hide_section, titolo)
                         else
-                            "Mostra $titolo",
+                            stringResource(R.string.dashboard_show_section, titolo),
                     tint =
                         MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)

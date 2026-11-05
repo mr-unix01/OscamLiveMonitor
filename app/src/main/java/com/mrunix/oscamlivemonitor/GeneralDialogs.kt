@@ -4,6 +4,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ButtonDefaults
 
@@ -16,26 +17,25 @@ internal fun SpiegazionePermessoReteDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Accesso alla rete locale")
+            Text(stringResource(R.string.dialog_network_title))
         },
         text = {
             Text(
-                "OSCam Live Monitor deve accedere alla rete locale " +
-                    "per collegarsi al WebIF di OSCam."
+                stringResource(R.string.dialog_network_message)
             )
         },
         confirmButton = {
             TextButton(
                 onClick = onContinue
             ) {
-                Text("Continua")
+                Text(stringResource(R.string.dialog_continue))
             }
         },
         dismissButton = {
             TextButton(
                 onClick = onNotNow
             ) {
-                Text("Non ora")
+                Text(stringResource(R.string.dialog_not_now))
             }
         }
     )
@@ -54,18 +54,15 @@ internal fun RiavviaOscamDialog(
         onDismissRequest = onDismissRequest,
         title = {
             Text(
-                "Riavviare $nomeServer?"
+                stringResource(R.string.dialog_restart_title, nomeServer)
             )
         },
         text = {
             Text(
-                "Verrà riavviato SOLO il server OSCam attivo:\n\n" +
-                    "$nomeServer\n" +
-                    "$host:$porta\n\n" +
-                    "Gli altri server salvati non verranno toccati. " +
-                    "I client di questo server verranno temporaneamente " +
-                    "disconnessi e OSCam Live Monitor proverà a riconnettersi " +
-                    "automaticamente."
+                stringResource(
+                    R.string.dialog_restart_message,
+                    nomeServer, host, porta
+                )
             )
         },
         confirmButton = {
@@ -75,14 +72,14 @@ internal fun RiavviaOscamDialog(
                 ),
                 onClick = onConfirm
             ) {
-                Text("Riavvia $nomeServer")
+                Text(stringResource(R.string.dialog_restart_confirm, nomeServer))
             }
         },
         dismissButton = {
             TextButton(
                 onClick = onCancel
             ) {
-                Text("Annulla")
+                Text(stringResource(R.string.settings_cancel))
             }
         }
     )

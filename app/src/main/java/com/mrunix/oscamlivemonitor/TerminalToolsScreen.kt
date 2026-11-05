@@ -40,6 +40,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -314,7 +315,7 @@ fun TerminalToolsScreen(
     }
 
     var fileStatus by remember {
-        mutableStateOf("Non connesso")
+        mutableStateOf(context.getString(R.string.tools_status_not_connected))
     }
 
     var fileConnected by remember {
@@ -450,7 +451,7 @@ val filePickerLauncher =
                         ?: "file"
 
                 uploadInCorso = true
-                fileStatus = "Upload $nomeFile..."
+                fileStatus = context.getString(R.string.file_upload_progress, nomeFile)
 
                 scope.launch {
                     val streamResult =
@@ -459,7 +460,7 @@ val filePickerLauncher =
                                 context.contentResolver
                                     .openInputStream(uri)
                                     ?: error(
-                                        "Impossibile aprire il file"
+                                        context.getString(R.string.file_source_unavailable)
                                     )
                             }
                         }
@@ -467,12 +468,11 @@ val filePickerLauncher =
                     if (streamResult.isFailure) {
                         uploadInCorso = false
                         fileStatus =
-                            "Errore apertura file: " +
-                            (
-                                streamResult.exceptionOrNull()
-                                    ?.message
-                                    ?: "errore"
-                            )
+                            context.getString(
+    R.string.file_source_open_error,
+    streamResult.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                         return@launch
                     }
 
@@ -509,15 +509,14 @@ val filePickerLauncher =
                         }
 
                         fileStatus =
-                            "Upload completato: $nomeFile"
+                            context.getString(R.string.file_upload_done, nomeFile)
                     } else {
                         fileStatus =
-                            "Errore upload: " +
-                            (
-                                risultato.exceptionOrNull()
-                                    ?.message
-                                    ?: "errore"
-                            )
+                            context.getString(
+    R.string.file_upload_error,
+    risultato.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                     }
 
                     uploadInCorso = false
@@ -539,7 +538,7 @@ val filePickerLauncher =
                 !downloadInCorso
             ) {
                 downloadInCorso = true
-                fileStatus = "Download $nomeFile..."
+                fileStatus = context.getString(R.string.file_download_progress, nomeFile)
 
                 scope.launch {
                     val streamResult =
@@ -547,7 +546,7 @@ val filePickerLauncher =
                             runCatching {
                                 context.contentResolver
                                     .openOutputStream(uri, "w")
-                                    ?: error("Impossibile creare il file")
+                                    ?: error(context.getString(R.string.file_destination_unavailable))
                             }
                         }
 
@@ -555,12 +554,11 @@ val filePickerLauncher =
                         downloadInCorso = false
                         downloadNome = null
                         fileStatus =
-                            "Errore apertura destinazione: " +
-                                (
-                                    streamResult.exceptionOrNull()
-                                        ?.message
-                                        ?: "errore"
-                                )
+                            context.getString(
+    R.string.file_destination_open_error,
+    streamResult.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                         return@launch
                     }
 
@@ -582,14 +580,13 @@ val filePickerLauncher =
 
                     fileStatus =
                         if (risultato.isSuccess) {
-                            "Download completato: $nomeFile"
+                            context.getString(R.string.file_download_done, nomeFile)
                         } else {
-                            "Errore download: " +
-                                (
-                                    risultato.exceptionOrNull()
-                                        ?.message
-                                        ?: "errore"
-                                )
+                            context.getString(
+    R.string.file_download_error,
+    risultato.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                         }
 
                     downloadInCorso = false
@@ -619,9 +616,9 @@ val filePickerLauncher =
                 ) {
                     Text(
                         if (entry.isDirectory) {
-                            "Gestisci cartella"
+                            stringResource(R.string.file_manage_directory)
                         } else {
-                            "Gestisci file"
+                            stringResource(R.string.file_manage_file)
                         }
                     )
 
@@ -632,7 +629,7 @@ val filePickerLauncher =
                                 fileMenuEntry = null
                                 editorBusy = true
                                 fileStatus =
-                                    "Apertura ${entry.name}..."
+                                    context.getString(R.string.file_opening, entry.name)
 
                                 scope.launch {
                                     val buffer =
@@ -660,7 +657,7 @@ val filePickerLauncher =
                                             2 * 1024 * 1024
                                         ) {
                                             fileStatus =
-                                                "File troppo grande per l'editor"
+                                                context.getString(R.string.file_editor_too_large)
                                         } else if (
                                             bytes.take(1024)
                                                 .any {
@@ -668,7 +665,7 @@ val filePickerLauncher =
                                                 }
                                         ) {
                                             fileStatus =
-                                                "File binario: modifica non disponibile"
+                                                context.getString(R.string.file_editor_binary)
                                         } else {
                                             val testo =
                                                 bytes.toString(
@@ -684,24 +681,22 @@ val filePickerLauncher =
                                             editorEntry = entry
 
                                             fileStatus =
-                                                "File aperto: ${entry.name}"
+                                                context.getString(R.string.file_opened, entry.name)
                                         }
                                     } else {
                                         fileStatus =
-                                            "Errore apertura: " +
-                                            (
-                                                risultato
-                                                    .exceptionOrNull()
-                                                    ?.message
-                                                    ?: "errore"
-                                            )
+                                            context.getString(
+    R.string.file_open_error,
+    risultato.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                                     }
 
                                     editorBusy = false
                                 }
                             }
                         ) {
-                            Text("Modifica")
+                            Text(stringResource(R.string.home_edit))
                         }
                     }
 
@@ -713,7 +708,7 @@ val filePickerLauncher =
                             propertiesData = null
 
                             fileStatus =
-                                "Lettura proprietà ${entry.name}..."
+                                context.getString(R.string.file_properties_reading, entry.name)
 
                             scope.launch {
                                 val risultato =
@@ -732,23 +727,21 @@ val filePickerLauncher =
                                         risultato.getOrThrow()
 
                                     fileStatus =
-                                        "Proprietà: ${entry.name}"
+                                        context.getString(R.string.file_properties_status, entry.name)
                                 } else {
                                     fileStatus =
-                                        "Errore proprietà: " +
-                                        (
-                                            risultato
-                                                .exceptionOrNull()
-                                                ?.message
-                                                ?: "errore"
-                                        )
+                                        context.getString(
+    R.string.file_properties_read_error,
+    risultato.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                                 }
 
                                 propertiesBusy = false
                             }
                         }
                     ) {
-                        Text("Proprietà")
+                        Text(stringResource(R.string.file_properties))
                     }
 
                     OutlinedButton(
@@ -759,7 +752,7 @@ val filePickerLauncher =
                             fileMenuEntry = null
                         }
                     ) {
-                        Text("Rinomina")
+                        Text(stringResource(R.string.file_rename))
                     }
 
                     OutlinedButton(
@@ -774,7 +767,7 @@ val filePickerLauncher =
                             fileMenuEntry = null
                         }
                     ) {
-                        Text("Permessi")
+                        Text(stringResource(R.string.file_permissions))
                     }
 
                     if (!entry.isDirectory) {
@@ -789,7 +782,7 @@ val filePickerLauncher =
                                 )
                             }
                         ) {
-                            Text("Scarica")
+                            Text(stringResource(R.string.file_download))
                         }
                     }
 
@@ -800,7 +793,7 @@ val filePickerLauncher =
                             fileMenuEntry = null
                         }
                     ) {
-                        Text("Elimina")
+                        Text(stringResource(R.string.home_delete))
                     }
                 }
             },
@@ -811,7 +804,7 @@ val filePickerLauncher =
                         fileMenuEntry = null
                     }
                 ) {
-                    Text("Annulla")
+                    Text(stringResource(R.string.settings_cancel))
                 }
             }
         )
@@ -826,9 +819,9 @@ val filePickerLauncher =
             title = {
                 Text(
                     if (entry.isDirectory) {
-                        "Rinomina cartella"
+                        stringResource(R.string.file_rename_directory)
                     } else {
-                        "Rinomina file"
+                        stringResource(R.string.file_rename_file)
                     }
                 )
             },
@@ -839,7 +832,7 @@ val filePickerLauncher =
                         renameValue = it
                     },
                     label = {
-                        Text("Nuovo nome")
+                        Text(stringResource(R.string.file_new_name))
                     },
                     singleLine = true
                 )
@@ -857,7 +850,7 @@ val filePickerLauncher =
                             nuovoNome.contains("/")
                         ) {
                             fileStatus =
-                                "Nome non valido"
+                                context.getString(R.string.file_invalid_name)
                         } else {
                             renameTarget = null
 
@@ -897,22 +890,20 @@ val filePickerLauncher =
                                     }
 
                                     fileStatus =
-                                        "Rinominato: ${entry.name} → $nuovoNome"
+                                        context.getString(R.string.file_renamed_status, entry.name, nuovoNome)
                                 } else {
                                     fileStatus =
-                                        "Errore rinomina: " +
-                                        (
-                                            risultato
-                                                .exceptionOrNull()
-                                                ?.message
-                                                ?: "errore"
+                                        context.getString(
+                                            R.string.file_rename_error,
+                                            risultato.exceptionOrNull()?.message
+                                                ?: context.getString(R.string.file_unknown_error)
                                         )
                                 }
                             }
                         }
                     }
                 ) {
-                    Text("Rinomina")
+                    Text(stringResource(R.string.file_rename))
                 }
             },
             dismissButton = {
@@ -921,7 +912,7 @@ val filePickerLauncher =
                         renameTarget = null
                     }
                 ) {
-                    Text("Annulla")
+                    Text(stringResource(R.string.settings_cancel))
                 }
             }
         )
@@ -936,18 +927,18 @@ val filePickerLauncher =
             title = {
                 Text(
                     if (entry.isDirectory) {
-                        "Elimina cartella?"
+                        stringResource(R.string.file_delete_directory_title)
                     } else {
-                        "Elimina file?"
+                        stringResource(R.string.file_delete_file_title)
                     }
                 )
             },
             text = {
                 Text(
                     if (entry.isDirectory) {
-                        "La cartella \"${entry.name}\" e tutto il suo contenuto verranno eliminati definitivamente."
+                        stringResource(R.string.file_delete_directory_message, entry.name)
                     } else {
-                        "Il file \"${entry.name}\" verrà eliminato definitivamente."
+                        stringResource(R.string.file_delete_file_message, entry.name)
                     }
                 )
             },
@@ -1006,21 +997,19 @@ val filePickerLauncher =
                                 }
 
                                 fileStatus =
-                                    "Eliminato: ${entry.name}"
+                                    context.getString(R.string.file_deleted_status, entry.name)
                             } else {
                                 fileStatus =
-                                    "Errore eliminazione: " +
-                                    (
-                                        risultato
-                                            .exceptionOrNull()
-                                            ?.message
-                                            ?: "errore"
-                                    )
+                                        context.getString(
+                                            R.string.file_delete_error,
+                                            risultato.exceptionOrNull()?.message
+                                                ?: context.getString(R.string.file_unknown_error)
+                                        )
                             }
                         }
                     }
                 ) {
-                    Text("Elimina")
+                    Text(stringResource(R.string.home_delete))
                 }
             },
             dismissButton = {
@@ -1029,7 +1018,7 @@ val filePickerLauncher =
                         deleteTarget = null
                     }
                 ) {
-                    Text("Annulla")
+                    Text(stringResource(R.string.settings_cancel))
                 }
             }
         )
@@ -1042,7 +1031,7 @@ val filePickerLauncher =
                 createDirectoryOpen = false
             },
             title = {
-                Text("Nuova cartella")
+                Text(stringResource(R.string.file_new_directory))
             },
             text = {
                 OutlinedTextField(
@@ -1051,7 +1040,7 @@ val filePickerLauncher =
                         createDirectoryValue = it
                     },
                     label = {
-                        Text("Nome cartella")
+                        Text(stringResource(R.string.file_directory_name))
                     },
                     singleLine = true
                 )
@@ -1069,7 +1058,7 @@ val filePickerLauncher =
                             nome.contains("/")
                         ) {
                             fileStatus =
-                                "Nome cartella non valido"
+                                context.getString(R.string.file_invalid_folder_name)
                         } else {
                             createDirectoryOpen = false
 
@@ -1111,22 +1100,20 @@ val filePickerLauncher =
                                     }
 
                                     fileStatus =
-                                        "Cartella creata: $nome"
+                                        context.getString(R.string.file_directory_created_status, nome)
                                 } else {
                                     fileStatus =
-                                        "Errore creazione cartella: " +
-                                        (
-                                            risultato
-                                                .exceptionOrNull()
-                                                ?.message
-                                                ?: "errore"
+                                        context.getString(
+                                            R.string.file_directory_create_error,
+                                            risultato.exceptionOrNull()?.message
+                                                ?: context.getString(R.string.file_unknown_error)
                                         )
                                 }
                             }
                         }
                     }
                 ) {
-                    Text("Crea")
+                    Text(stringResource(R.string.file_create))
                 }
             },
             dismissButton = {
@@ -1135,7 +1122,7 @@ val filePickerLauncher =
                         createDirectoryOpen = false
                     }
                 ) {
-                    Text("Annulla")
+                    Text(stringResource(R.string.settings_cancel))
                 }
             }
         )
@@ -1146,7 +1133,7 @@ val filePickerLauncher =
         AlertDialog(
             onDismissRequest = {},
             title = {
-                Text("Proprietà")
+                Text(stringResource(R.string.file_properties))
             },
             text = {
                 Row(
@@ -1161,7 +1148,7 @@ val filePickerLauncher =
                     )
 
                     Text(
-                        "Lettura proprietà..."
+                        stringResource(R.string.file_prop_loading)
                     )
                 }
             },
@@ -1212,7 +1199,7 @@ val filePickerLauncher =
                         java.util.Date(millis)
                     )
                 }
-                ?: "Non disponibile"
+                ?: context.getString(R.string.file_prop_unavailable)
 
         AlertDialog(
             onDismissRequest = {
@@ -1220,7 +1207,7 @@ val filePickerLauncher =
             },
             title = {
                 Text(
-                    "Proprietà — ${info.name}"
+                    stringResource(R.string.file_prop_title, info.name)
                 )
             },
             text = {
@@ -1230,66 +1217,60 @@ val filePickerLauncher =
                             Arrangement.spacedBy(7.dp)
                     ) {
                         Text(
-                            "Nome: ${info.name}"
+                            stringResource(R.string.file_prop_name, info.name)
                         )
 
                         Text(
-                            "Tipo: ${info.type}"
+                            stringResource(R.string.file_prop_type, info.type)
                         )
 
                         Text(
-                            "Percorso: ${info.path}"
+                            stringResource(R.string.file_prop_path, info.path)
                         )
 
                         Text(
-                            "Dimensione: $dimensione"
+                            stringResource(R.string.file_prop_size, dimensione)
                         )
 
                         if (info.size >= 1024L) {
                             Text(
-                                "Byte: ${info.size}"
+                                stringResource(R.string.file_prop_bytes, info.size)
                             )
                         }
 
                         Text(
-                            "Permessi: " +
-                            info.permissions
-                                .toString(8)
-                                .padStart(3, '0') +
-                            "  (${info.permissionsText})"
-                        )
-
-                        Text(
-                            "Proprietario: " +
-                            (
-                                info.owner
-                                    ?.takeIf {
-                                        it.isNotBlank()
-                                    }
-                                    ?: "Non disponibile"
+                            stringResource(
+                                R.string.file_prop_permissions,
+                                info.permissions.toString(8).padStart(3, '0'),
+                                info.permissionsText
                             )
                         )
 
                         Text(
-                            "Gruppo: " +
-                            (
-                                info.group
-                                    ?.takeIf {
-                                        it.isNotBlank()
-                                    }
-                                    ?: "Non disponibile"
+                            stringResource(
+                                R.string.file_prop_owner,
+                                info.owner?.takeIf { it.isNotBlank() }
+                                    ?: stringResource(R.string.file_prop_unavailable)
                             )
                         )
 
                         Text(
-                            "Ultima modifica: $dataModifica"
+                            stringResource(
+                                R.string.file_prop_group,
+                                info.group?.takeIf { it.isNotBlank() }
+                                    ?: stringResource(R.string.file_prop_unavailable)
+                            )
+                        )
+
+                        Text(
+                            stringResource(R.string.file_prop_modified, dataModifica)
                         )
 
                         if (
                             info.fileCount != null
                         ) {
                             Text(
-                                "File: ${info.fileCount}"
+                                stringResource(R.string.file_prop_files, info.fileCount)
                             )
                         }
 
@@ -1297,7 +1278,7 @@ val filePickerLauncher =
                             info.directoryCount != null
                         ) {
                             Text(
-                                "Cartelle: ${info.directoryCount}"
+                                stringResource(R.string.file_prop_folders, info.directoryCount)
                             )
                         }
                     }
@@ -1322,7 +1303,7 @@ val filePickerLauncher =
                 permissionsEntry = null
             },
             title = {
-                Text("Permessi — ${entry.name}")
+                Text(stringResource(R.string.file_permissions_title, entry.name))
             },
             text = {
                 OutlinedTextField(
@@ -1336,7 +1317,7 @@ val filePickerLauncher =
                         }
                     },
                     label = {
-                        Text("Permessi (es. 600, 644, 755)")
+                        Text(stringResource(R.string.file_permissions_hint))
                     },
                     singleLine = true,
                     keyboardOptions =
@@ -1352,7 +1333,7 @@ val filePickerLauncher =
                             permissionsValue.toIntOrNull(8)
 
                         if (mode == null) {
-                            fileStatus = "Permessi non validi"
+                            fileStatus = context.getString(R.string.file_permissions_invalid)
                         } else {
                             permissionsEntry = null
 
@@ -1387,21 +1368,20 @@ val filePickerLauncher =
                                     }
 
                                     fileStatus =
-                                        "Permessi modificati: ${entry.name}"
+                                        context.getString(R.string.file_permissions_changed, entry.name)
                                 } else {
                                     fileStatus =
-                                        "Errore permessi: " +
-                                            (
-                                                risultato.exceptionOrNull()
-                                                    ?.message
-                                                    ?: "errore"
-                                            )
+                                        context.getString(
+                                            R.string.file_permissions_error,
+                                            risultato.exceptionOrNull()?.message
+                                                ?: context.getString(R.string.file_unknown_error)
+                                        )
                                 }
                             }
                         }
                     }
                 ) {
-                    Text("Applica")
+                    Text(stringResource(R.string.file_permissions_apply))
                 }
             },
             dismissButton = {
@@ -1410,7 +1390,7 @@ val filePickerLauncher =
                         permissionsEntry = null
                     }
                 ) {
-                    Text("Annulla")
+                    Text(stringResource(R.string.settings_cancel))
                 }
             }
         )
@@ -1483,7 +1463,7 @@ val filePickerLauncher =
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Torna al File Manager"
+                            contentDescription = stringResource(R.string.editor_back_to_files)
                         )
                     }
 
@@ -1522,7 +1502,7 @@ val filePickerLauncher =
                         }
                     ) {
                         Text(
-                            text = "Annulla modifiche",
+                            text = stringResource(R.string.editor_discard_changes),
                             fontSize = 12.sp,
                             maxLines = 1
                         )
@@ -1533,7 +1513,7 @@ val filePickerLauncher =
                         onClick = {
                             editorBusy = true
                             fileStatus =
-                                "Salvataggio ${currentEditorEntry.name}..."
+                                context.getString(R.string.editor_saving, currentEditorEntry.name)
 
                             scope.launch {
                                 val input =
@@ -1558,17 +1538,16 @@ val filePickerLauncher =
 
                                 if (risultato.isSuccess) {
                                     fileStatus =
-                                        "Salvato: ${currentEditorEntry.name}"
+                                        context.getString(R.string.editor_saved, currentEditorEntry.name)
 
                                     editorOriginalText = editorState.text.toString()
                                 } else {
                                     fileStatus =
-                                        "Errore salvataggio: " +
-                                            (
-                                                risultato.exceptionOrNull()
-                                                    ?.message
-                                                    ?: "errore"
-                                            )
+                                        context.getString(
+    R.string.editor_save_error,
+    risultato.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                                 }
 
                                 editorBusy = false
@@ -1576,7 +1555,7 @@ val filePickerLauncher =
                         }
                     ) {
                         Text(
-                            text = "Salva",
+                            text = stringResource(R.string.editor_save),
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -1610,7 +1589,7 @@ val filePickerLauncher =
                         Icon(
                             imageVector =
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Torna al File Manager",
+                            contentDescription = stringResource(R.string.editor_back_to_files),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -1644,7 +1623,7 @@ val filePickerLauncher =
                         }
                     ) {
                         Text(
-                            text = "Annulla modifiche",
+                            text = stringResource(R.string.editor_discard_changes),
                             fontSize = 11.sp,
                             maxLines = 1
                         )
@@ -1659,7 +1638,7 @@ val filePickerLauncher =
                         onClick = {
                             editorBusy = true
                             fileStatus =
-                                "Salvataggio ${currentEditorEntry.name}..."
+                                context.getString(R.string.editor_saving, currentEditorEntry.name)
 
                             scope.launch {
                                 val input =
@@ -1684,17 +1663,16 @@ val filePickerLauncher =
 
                                 if (risultato.isSuccess) {
                                     fileStatus =
-                                        "Salvato: ${currentEditorEntry.name}"
+                                        context.getString(R.string.editor_saved, currentEditorEntry.name)
                                     editorOriginalText =
                                         editorState.text.toString()
                                 } else {
                                     fileStatus =
-                                        "Errore salvataggio: " +
-                                            (
-                                                risultato.exceptionOrNull()
-                                                    ?.message
-                                                    ?: "errore"
-                                            )
+                                        context.getString(
+    R.string.editor_save_error,
+    risultato.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                                 }
 
                                 editorBusy = false
@@ -1702,7 +1680,7 @@ val filePickerLauncher =
                         }
                     ) {
                         Text(
-                            text = "Salva",
+                            text = stringResource(R.string.editor_save),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -1783,7 +1761,7 @@ val filePickerLauncher =
     }
 
     var status by remember {
-        mutableStateOf("Non connesso")
+        mutableStateOf(context.getString(R.string.tools_status_not_connected))
     }
 
     var connessioneTerminaleInCorso by remember {
@@ -1843,15 +1821,18 @@ val filePickerLauncher =
 
         return when (dataOra.toLocalDate()) {
             oggi ->
-                "oggi alle $ora"
+                context.getString(R.string.tools_last_connection_today, ora)
 
             oggi.minusDays(1) ->
-                "ieri alle $ora"
+                context.getString(R.string.tools_last_connection_yesterday, ora)
 
             else ->
                 dataOra.format(
                     java.time.format.DateTimeFormatter.ofPattern(
-                        "dd/MM/yyyy 'alle' HH:mm"
+                        context.getString(
+                            R.string.tools_last_connection_date_pattern
+                        ),
+                        context.resources.configuration.locales[0]
                     )
                 )
         }
@@ -1887,7 +1868,7 @@ val filePickerLauncher =
     fun disconnectTerminal() {
         connected = false
         terminaleEspanso = false
-        status = "Disconnesso"
+        status = context.getString(R.string.tools_status_disconnected)
 
         readJob?.cancel()
         readJob = null
@@ -1915,12 +1896,11 @@ val filePickerLauncher =
 
                 if (inputResult.isFailure) {
                     status =
-                        "Errore invio: " +
-                            (
-                                inputResult.exceptionOrNull()
-                                    ?.message
-                                    ?: "errore"
-                            )
+                        context.getString(
+    R.string.tools_terminal_send_error,
+    inputResult.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                     return@launch
                 }
             }
@@ -1929,12 +1909,11 @@ val filePickerLauncher =
 
             if (result.isFailure) {
                 status =
-                    "Errore invio: " +
-                        (
-                            result.exceptionOrNull()
-                                ?.message
-                                ?: "errore"
-                        )
+                    context.getString(
+    R.string.tools_terminal_send_error,
+    result.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
             }
         }
 
@@ -2010,12 +1989,11 @@ val filePickerLauncher =
 
             if (result.isFailure) {
                 status =
-                    "Errore invio: " +
-                        (
-                            result.exceptionOrNull()
-                                ?.message
-                                ?: "errore"
-                        )
+                    context.getString(
+    R.string.tools_terminal_send_error,
+    result.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
             }
         }
     }
@@ -2069,9 +2047,9 @@ val filePickerLauncher =
             title = {
                 Text(
                     if (prompt.changed) {
-                        "Chiave SSH cambiata"
+                        stringResource(R.string.ssh_key_changed_title)
                     } else {
-                        "Nuovo host SSH"
+                        stringResource(R.string.ssh_new_host_title)
                     }
                 )
             },
@@ -2079,9 +2057,9 @@ val filePickerLauncher =
                 Column {
                     Text(
                         if (prompt.changed) {
-                            "La chiave SSH presentata dal server non corrisponde a quella salvata. La connessione è stata bloccata per sicurezza."
+                            stringResource(R.string.ssh_key_changed_message)
                         } else {
-                            "È la prima connessione a questo host. Verifica il fingerprint prima di considerarlo attendibile."
+                            stringResource(R.string.ssh_new_host_message)
                         }
                     )
 
@@ -2139,12 +2117,12 @@ val filePickerLauncher =
 
                                 if (parsedFilePort == null) {
                                     fileStatus =
-                                        "Porta SFTP non valida"
+                                        context.getString(R.string.tools_invalid_sftp_port)
                                     return@Button
                                 }
 
                                 fileStatus =
-                                    "Connessione SFTP..."
+                                    context.getString(R.string.tools_status_connecting_protocol, "SFTP")
 
                                 scope.launch {
                                     fileClient.disconnect()
@@ -2206,28 +2184,22 @@ val filePickerLauncher =
 
                                             fileConnected = true
                                             fileStatus =
-                                                "Connesso via SFTP"
+                                                context.getString(R.string.tools_status_connected_via, "SFTP")
                                         } else {
                                             fileConnected = false
                                             fileStatus =
-                                                "Errore directory SFTP: " +
-                                                (
-                                                    directory
-                                                        .exceptionOrNull()
-                                                        ?.message
-                                                        ?: "errore"
-                                                )
+                                                context.getString(
+    R.string.tools_sftp_directory_error,
+    directory.exceptionOrNull()?.message ?: context.getString(R.string.file_unknown_error)
+)
                                         }
                                     } else {
                                         fileConnected = false
                                         fileStatus =
-                                            "Errore SFTP: " +
-                                            (
-                                                connessione
-                                                    .exceptionOrNull()
-                                                    ?.message
-                                                    ?: "connessione fallita"
-                                            )
+                                            context.getString(
+    R.string.tools_sftp_error,
+    connessione.exceptionOrNull()?.message ?: context.getString(R.string.tools_connection_failed)
+)
                                     }
                                 }
 
@@ -2238,11 +2210,11 @@ val filePickerLauncher =
                                 port.trim().toIntOrNull()
 
                             if (parsedPort == null) {
-                                status = "Porta SSH non valida"
+                                status = context.getString(R.string.tools_invalid_ssh_port)
                                 return@Button
                             }
 
-                            status = "Connessione..."
+                            status = context.getString(R.string.tools_status_connecting)
                             terminalOutput = ""
                             connessioneTerminaleInCorso = true
 
@@ -2275,7 +2247,7 @@ val filePickerLauncher =
                                         .apply()
 
                                     connected = true
-                                    status = "Connesso via SSH"
+                                    status = context.getString(R.string.tools_status_connected_via, "SSH")
 
                                     readJob = scope.launch {
                                         client.readLoop { chunk ->
@@ -2321,11 +2293,11 @@ val filePickerLauncher =
 
                                             if (
                                                 status.startsWith(
-                                                    "Connesso"
+                                                    context.getString(R.string.tools_status_connected_prefix)
                                                 )
                                             ) {
                                                 status =
-                                                    "Connessione terminata"
+                                                    context.getString(R.string.tools_status_connection_ended)
                                             }
                                         }
                                     }
@@ -2334,20 +2306,18 @@ val filePickerLauncher =
                                     terminaleEspanso = false
 
                                     status =
-                                        "Errore: " +
-                                            (
-                                                result
-                                                    .exceptionOrNull()
-                                                    ?.message
-                                                    ?: "connessione fallita"
-                                            )
+                                        context.getString(
+    R.string.tools_terminal_connection_error,
+    result.exceptionOrNull()?.message
+        ?: context.getString(R.string.tools_connection_failed)
+)
                                 }
                             }
                         }
                     ) {
                         Text(
-                            if (prompt.changed) "Aggiorna chiave SSH"
-                            else "Considera attendibile"
+                            if (prompt.changed) stringResource(R.string.ssh_update_key)
+                            else stringResource(R.string.ssh_trust_host)
                         )
                     }
             },
@@ -2361,14 +2331,14 @@ val filePickerLauncher =
                                 SshTrustTarget.SFTP
                             ) {
                                 fileStatus =
-                                    "Connessione annullata"
+                                    context.getString(R.string.tools_connection_cancelled)
                             } else {
                                 status =
-                                    "Connessione annullata"
+                                    context.getString(R.string.tools_connection_cancelled)
                             }
                         }
                     ) {
-                        Text("Annulla")
+                        Text(stringResource(R.string.settings_cancel))
                     }
             }
         )
@@ -2462,7 +2432,7 @@ val filePickerLauncher =
                         Icon(
                             imageVector =
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Indietro",
+                            contentDescription = stringResource(R.string.settings_back),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -2486,7 +2456,7 @@ val filePickerLauncher =
                     ) {
                         Icon(
                             imageVector = Icons.Default.Folder,
-                            contentDescription = "File",
+                            contentDescription = stringResource(R.string.settings_files),
                             modifier = Modifier
                                 .padding(7.dp)
                                 .size(18.dp),
@@ -2522,7 +2492,7 @@ val filePickerLauncher =
                             fileConnected = false
                             fileEntries = emptyList()
                             filePath = ""
-                            fileStatus = "Disconnesso"
+                            fileStatus = context.getString(R.string.tools_status_disconnected)
                         },
                         contentPadding = PaddingValues(
                             horizontal = 10.dp,
@@ -2530,7 +2500,7 @@ val filePickerLauncher =
                         )
                     ) {
                         Text(
-                            text = "Disconnetti",
+                            text = stringResource(R.string.tools_disconnect),
                             fontSize = 11.sp
                         )
                     }
@@ -2541,9 +2511,9 @@ val filePickerLauncher =
                 ToolsHeader(
                     title =
                         if (initialSection == TerminalToolsInitialSection.FILES) {
-                            "File"
+                            stringResource(R.string.settings_files)
                         } else {
-                            "Terminale"
+                            stringResource(R.string.hub_terminal)
                         },
                     icon =
                         if (initialSection == TerminalToolsInitialSection.FILES) {
@@ -2604,7 +2574,7 @@ val filePickerLauncher =
                         Spacer(modifier = Modifier.width(9.dp))
 
                         Text(
-                            text = "Terminale",
+                            text = stringResource(R.string.hub_terminal),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
@@ -2686,7 +2656,7 @@ val filePickerLauncher =
                             if (!connected) host = it
                         },
                         label = {
-                            Text("Host/IP")
+                            Text(stringResource(R.string.tools_host_label))
                         },
                         leadingIcon = {
                             Icon(
@@ -2707,7 +2677,7 @@ val filePickerLauncher =
                             if (!connected) port = it
                         },
                         label = {
-                            Text("Porta")
+                            Text(stringResource(R.string.tools_port_label))
                         },
                         leadingIcon = {
                             Icon(
@@ -2735,7 +2705,7 @@ val filePickerLauncher =
                             if (!connected) username = it
                         },
                         label = {
-                            Text("Username")
+                            Text(stringResource(R.string.tools_username_label))
                         },
                         leadingIcon = {
                             Icon(
@@ -2756,7 +2726,7 @@ val filePickerLauncher =
                             if (!connected) password = it
                         },
                         label = {
-                            Text("Password")
+                            Text(stringResource(R.string.tools_password_label))
                         },
                         leadingIcon = {
                             Icon(
@@ -2786,9 +2756,9 @@ val filePickerLauncher =
                                         },
                                     contentDescription =
                                         if (showPassword)
-                                            "Nascondi password"
+                                            stringResource(R.string.tools_hide_password)
                                         else
-                                            "Mostra password"
+                                            stringResource(R.string.tools_show_password)
                                 )
                             }
                         },
@@ -2836,13 +2806,13 @@ val filePickerLauncher =
                                 username.isBlank()
                             ) {
                                 status =
-                                    "Inserisci Host/IP, porta e username"
+                                    context.getString(R.string.tools_missing_connection_fields)
                                 return@Button
                             }
 
                             saveSettings()
 
-                            status = "Connessione..."
+                            status = context.getString(R.string.tools_status_connecting)
                             terminalOutput = ""
                             connessioneTerminaleInCorso = true
 
@@ -2876,7 +2846,7 @@ val filePickerLauncher =
 
                                     connected = true
                                     status =
-                                        "Connesso via ${protocol.name}"
+                                        context.getString(R.string.tools_status_connected_via, protocol.name)
 
                                     readJob = scope.launch {
                                         client.readLoop { chunk ->
@@ -2913,11 +2883,11 @@ val filePickerLauncher =
 
                                             if (
                                                 status.startsWith(
-                                                    "Connesso"
+                                                    context.getString(R.string.tools_status_connected_prefix)
                                                 )
                                             ) {
                                                 status =
-                                                    "Connessione terminata"
+                                                    context.getString(R.string.tools_status_connection_ended)
                                             }
                                         }
                                     }
@@ -2941,17 +2911,17 @@ val filePickerLauncher =
 
                                         status =
                                             if (error.changed) {
-                                                "Chiave SSH del server cambiata"
+                                                context.getString(R.string.tools_ssh_server_key_changed)
                                             } else {
-                                                "Verifica chiave SSH richiesta"
+                                                context.getString(R.string.tools_ssh_verification_required)
                                             }
                                     } else {
                                         status =
-                                            "Errore: " +
-                                                (
-                                                    error?.message
-                                                        ?: "connessione fallita"
-                                                )
+                                            context.getString(
+    R.string.tools_terminal_connection_error,
+    error?.message
+        ?: context.getString(R.string.tools_connection_failed)
+)
                                     }
                                 }
                             }
@@ -2959,7 +2929,7 @@ val filePickerLauncher =
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Login,
-                            contentDescription = "Connetti ${protocol.name}",
+                            contentDescription = stringResource(R.string.tools_connect_protocol, protocol.name),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -2971,10 +2941,13 @@ val filePickerLauncher =
 
                         Text(
                             text =
-                                "Ultima connessione ${protocol.name} riuscita: " +
+                                stringResource(
+                                    R.string.tools_last_connection_success,
+                                    protocol.name,
                                     formattaUltimaConnessione(
                                         ultimaConnessioneTerminale
-                                    ),
+                                    )
+                                ),
                             modifier =
                                 Modifier.fillMaxWidth(),
                             color =
@@ -3014,7 +2987,7 @@ val filePickerLauncher =
                     Spacer(modifier = Modifier.width(5.dp))
 
                     Text(
-                        text = "${protocol.name} connesso",
+                        text = stringResource(R.string.tools_connected_protocol, protocol.name),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color =
@@ -3046,7 +3019,7 @@ val filePickerLauncher =
                     )
                 ) {
                     Text(
-                        "Disconnetti",
+                        stringResource(R.string.tools_disconnect),
                         fontSize = 12.sp
                     )
                 }
@@ -3091,7 +3064,7 @@ val filePickerLauncher =
                             imageVector =
                                 Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription =
-                                "Torna alla selezione box"
+                                stringResource(R.string.tools_back_to_servers)
                         )
                     }
 
@@ -3107,9 +3080,12 @@ val filePickerLauncher =
 
                    Text(
                        text =
-                           "${protocol.name} connesso  •  " +
-                               "${username}@" +
-                               serverName.ifBlank { defaultHost },
+                           stringResource(
+                               R.string.tools_connected_terminal_header,
+                               protocol.name,
+                               username,
+                               serverName.ifBlank { defaultHost }
+                           ),
                        modifier = Modifier.weight(1f),
                        color =
                            MaterialTheme.colorScheme.onSurfaceVariant,
@@ -3128,7 +3104,7 @@ val filePickerLauncher =
                     ) {
                         Icon(
                             imageVector = Icons.Default.Fullscreen,
-                            contentDescription = "Espandi terminale"
+                            contentDescription = stringResource(R.string.tools_expand_terminal)
                         )
                     }
 
@@ -3154,7 +3130,7 @@ val filePickerLauncher =
                         )
                     ) {
                         Text(
-                            "Disconnetti",
+                            stringResource(R.string.tools_disconnect),
                             fontSize = 12.sp
                         )
                     }
@@ -3184,7 +3160,7 @@ val filePickerLauncher =
                     ) {
                         Icon(
                             imageVector = Icons.Default.FullscreenExit,
-                            contentDescription = "Riduci terminale",
+                            contentDescription = stringResource(R.string.tools_collapse_terminal),
                             tint =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
                                     androidx.compose.material3.LocalContentColor.current
@@ -3370,7 +3346,7 @@ val filePickerLauncher =
                 }
             } else {
                 Text(
-                    text = "Terminale pronto.",
+                    text = stringResource(R.string.tools_terminal_ready),
                     modifier = Modifier.padding(12.dp),
                     color = Color(0xFF8B949E),
                     fontFamily = FontFamily.Monospace,
@@ -3670,7 +3646,7 @@ val filePickerLauncher =
                                 fileHost = it
                             },
                             label = {
-                                Text("Host/IP")
+                                Text(stringResource(R.string.tools_host_label))
                             },
                             leadingIcon = {
                                 Icon(
@@ -3690,7 +3666,7 @@ val filePickerLauncher =
                                 filePort = it
                             },
                             label = {
-                                Text("Porta")
+                                Text(stringResource(R.string.tools_port_label))
                             },
                             leadingIcon = {
                                 Icon(
@@ -3716,7 +3692,7 @@ val filePickerLauncher =
                                 },
                                 label = {
                                     Text(
-                                        "Username",
+                                        stringResource(R.string.tools_username_label),
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -3743,7 +3719,7 @@ val filePickerLauncher =
                                 },
                                 label = {
                                     Text(
-                                        "Password",
+                                        stringResource(R.string.tools_password_label),
                                         maxLines = 1,
                                         softWrap = false
                                     )
@@ -3777,9 +3753,9 @@ val filePickerLauncher =
                                                 },
                                             contentDescription =
                                                 if (mostraFilePassword) {
-                                                    "Nascondi password"
+                                                    stringResource(R.string.tools_hide_password)
                                                 } else {
-                                                    "Mostra password"
+                                                    stringResource(R.string.tools_show_password)
                                                 }
                                         )
                                     }
@@ -3854,15 +3830,15 @@ val filePickerLauncher =
                                 fileUsername.isBlank()
                             ) {
                                 fileStatus =
-                                    "Inserisci Host/IP, porta e username"
+                                    context.getString(R.string.tools_missing_connection_fields)
                                 return@Button
                             }
 
                             fileStatus =
                                 if (fileSftp) {
-                                    "Connessione SFTP..."
+                                    context.getString(R.string.tools_status_connecting_protocol, "SFTP")
                                 } else {
-                                    "Connessione FTP..."
+                                    context.getString(R.string.tools_status_connecting_protocol, "FTP")
                                 }
 
                             scope.launch {
@@ -3917,12 +3893,14 @@ val filePickerLauncher =
 
                                             fileConnected = true
                                             fileStatus =
-                                                "Connesso via SFTP"
+                                                context.getString(R.string.tools_status_connected_via, "SFTP")
                                         } else {
                                             fileConnected = false
                                             fileStatus =
-                                                "Errore directory SFTP: " +
-                                                (directory.exceptionOrNull()?.message ?: "errore")
+                                                context.getString(
+    R.string.tools_sftp_directory_error,
+    directory.exceptionOrNull()?.message ?: context.getString(R.string.file_unknown_error)
+)
                                         }
                                     } else {
                                         fileConnected = false
@@ -3945,17 +3923,16 @@ val filePickerLauncher =
 
                                             fileStatus =
                                                 if (error.changed) {
-                                                    "Chiave SSH del server cambiata"
+                                                    context.getString(R.string.tools_ssh_server_key_changed)
                                                 } else {
-                                                    "Verifica chiave SSH richiesta"
+                                                    context.getString(R.string.tools_ssh_verification_required)
                                                 }
                                         } else {
                                             fileStatus =
-                                                "Errore SFTP: " +
-                                                (
-                                                    error?.message
-                                                        ?: "connessione fallita"
-                                                )
+                                                context.getString(
+    R.string.tools_sftp_error,
+    error?.message ?: context.getString(R.string.tools_connection_failed)
+)
                                         }
                                     }
                                 } else {
@@ -4009,19 +3986,23 @@ val filePickerLauncher =
 
                                             fileConnected = true
                                             fileStatus =
-                                                "Connesso via FTP"
+                                                context.getString(R.string.tools_status_connected_via, "FTP")
                                         } else {
                                             ftpClient.disconnect()
                                             fileConnected = false
                                             fileStatus =
-                                                "Errore directory FTP: " +
-                                                (directory.exceptionOrNull()?.message ?: "errore")
+                                                context.getString(
+    R.string.tools_ftp_directory_error,
+    directory.exceptionOrNull()?.message ?: context.getString(R.string.file_unknown_error)
+)
                                         }
                                     } else {
                                         fileConnected = false
                                         fileStatus =
-                                            "Errore FTP: " +
-                                            (connessione.exceptionOrNull()?.message ?: "connessione fallita")
+                                            context.getString(
+    R.string.tools_ftp_error,
+    connessione.exceptionOrNull()?.message ?: context.getString(R.string.tools_connection_failed)
+)
                                     }
                                 }
                             }
@@ -4030,8 +4011,8 @@ val filePickerLauncher =
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Login,
                             contentDescription =
-                                if (fileSftp) "Connetti SFTP"
-                                else "Connetti FTP",
+                                if (fileSftp) stringResource(R.string.tools_connect_protocol, "SFTP")
+                                else stringResource(R.string.tools_connect_protocol, "FTP"),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -4043,12 +4024,13 @@ val filePickerLauncher =
 
                         Text(
                             text =
-                                "Ultima connessione " +
-                                    (if (fileSftp) "SFTP" else "FTP") +
-                                    " riuscita: " +
+                                stringResource(
+                                    R.string.tools_last_connection_success,
+                                    if (fileSftp) "SFTP" else "FTP",
                                     formattaUltimaConnessione(
                                         ultimaConnessioneFile
-                                    ),
+                                    )
+                                ),
                             modifier = Modifier.fillMaxWidth(),
                             color =
                                 MaterialTheme.colorScheme
@@ -4115,25 +4097,24 @@ val filePickerLauncher =
                                             fileEntries = remoto.entries
                                             fileStatus =
                                                 if (fileSftp) {
-                                                    "Connesso via SFTP"
+                                                    context.getString(R.string.tools_status_connected_via, "SFTP")
                                                 } else {
-                                                    "Connesso via FTP"
+                                                    context.getString(R.string.tools_status_connected_via, "FTP")
                                                 }
                                         } else {
                                             fileStatus =
-                                                "Errore cartella superiore: " +
-                                                (
-                                                    directory.exceptionOrNull()
-                                                        ?.message
-                                                        ?: "errore"
-                                                )
+                                                context.getString(
+    R.string.file_nav_parent_error,
+    directory.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                                         }
                                     }
                                 }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ArrowUpward,
-                                    contentDescription = "Cartella superiore",
+                                    contentDescription = stringResource(R.string.file_nav_parent),
                                     tint =
                                         if (filePath != "/") {
                                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -4161,8 +4142,7 @@ val filePickerLauncher =
                                 Icon(
                                     imageVector =
                                         Icons.Default.CreateNewFolder,
-                                    contentDescription =
-                                        "Nuova cartella",
+                                    contentDescription = stringResource(R.string.file_new_directory),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -4212,7 +4192,7 @@ val filePickerLauncher =
                                     )
 
                                     Text(
-                                        text = "Upload",
+                                        text = stringResource(R.string.file_upload_action),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -4248,25 +4228,24 @@ val filePickerLauncher =
                                             fileEntries = remoto.entries
                                             fileStatus =
                                                 if (fileSftp) {
-                                                    "Connesso via SFTP"
+                                                    context.getString(R.string.tools_status_connected_via, "SFTP")
                                                 } else {
-                                                    "Connesso via FTP"
+                                                    context.getString(R.string.tools_status_connected_via, "FTP")
                                                 }
                                         } else {
                                             fileStatus =
-                                                "Errore aggiornamento: " +
-                                                (
-                                                    directory.exceptionOrNull()
-                                                        ?.message
-                                                        ?: "errore"
-                                                )
+                                                context.getString(
+    R.string.file_nav_refresh_error,
+    directory.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                                         }
                                     }
                                 }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Aggiorna directory",
+                                    contentDescription = stringResource(R.string.file_nav_refresh),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -4389,25 +4368,24 @@ val filePickerLauncher =
                                                             fileEntries = remoto.entries
                                                             fileStatus =
                                                                 if (fileSftp) {
-                                                                    "Connesso via SFTP"
+                                                                    context.getString(R.string.tools_status_connected_via, "SFTP")
                                                                 } else {
-                                                                    "Connesso via FTP"
+                                                                    context.getString(R.string.tools_status_connected_via, "FTP")
                                                                 }
                                                         } else if (
                                                             entry.isSymbolicLink
                                                         ) {
                                                             fileMenuEntry = entry
                                                             fileStatus =
-                                                                "Collegamento simbolico: ${entry.name}"
+                                                                context.getString(R.string.file_nav_symlink, entry.name)
                                                         } else {
                                                             fileStatus =
-                                                                "Errore directory " +
-                                                                (if (fileSftp) "SFTP: " else "FTP: ") +
-                                                                (
-                                                                    directory.exceptionOrNull()
-                                                                        ?.message
-                                                                        ?: "errore"
-                                                                )
+                                                                context.getString(
+    R.string.file_nav_open_error,
+    if (fileSftp) "SFTP" else "FTP",
+    directory.exceptionOrNull()?.message
+        ?: context.getString(R.string.file_unknown_error)
+)
                                                         }
                                                     }
                                                 }
@@ -4487,7 +4465,7 @@ val filePickerLauncher =
                                                 imageVector =
                                                     Icons.Default.MoreVert,
                                                 contentDescription =
-                                                    "Gestisci ${entry.name}"
+                                                    stringResource(R.string.file_manage_entry, entry.name)
                                             )
                                         }
                                     }
@@ -4522,9 +4500,9 @@ val filePickerLauncher =
                                     Text(
                                         text =
                                             if (fileSftp)
-                                                "SFTP connesso"
+                                                stringResource(R.string.tools_connected_protocol, "SFTP")
                                             else
-                                                "FTP connesso",
+                                                stringResource(R.string.tools_connected_protocol, "FTP"),
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color =
@@ -4546,11 +4524,11 @@ val filePickerLauncher =
                                         fileConnected = false
                                         fileEntries = emptyList()
                                         filePath = ""
-                                        fileStatus = "Disconnesso"
+                                        fileStatus = context.getString(R.string.tools_status_disconnected)
                                     }
                                 ) {
                                     Text(
-                                        text = "Disconnetti",
+                                        text = stringResource(R.string.tools_disconnect),
                                         fontSize = 12.sp
                                     )
                                 }

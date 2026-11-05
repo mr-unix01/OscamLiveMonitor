@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
@@ -63,26 +64,23 @@ internal fun EliminaServerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Eliminare server?")
+            Text(stringResource(R.string.server_delete_title))
         },
         text = {
-            Text(
-                "Vuoi eliminare definitivamente " +
-                    "\"$nomeServer\"?"
-            )
+            Text(stringResource(R.string.server_delete_message, nomeServer))
         },
         confirmButton = {
             TextButton(
                 onClick = onConfirm
             ) {
-                Text("Elimina")
+                Text(stringResource(R.string.home_delete))
             }
         },
         dismissButton = {
             TextButton(
                 onClick = onDismiss
             ) {
-                Text("Annulla")
+                Text(stringResource(R.string.settings_cancel))
             }
         }
     )
@@ -95,11 +93,13 @@ internal fun RiordinaServerDialog(
     onMoveUp: (Int) -> Unit,
     onMoveDown: (Int) -> Unit
 ) {
+    val descrizioneSpostaSu = stringResource(R.string.server_move_up)
+    val descrizioneSpostaGiu = stringResource(R.string.server_move_down)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Riordina server",
+                text = stringResource(R.string.server_reorder_title),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -171,7 +171,7 @@ internal fun RiordinaServerDialog(
                                 enabled = indice > 0,
                                 modifier = Modifier.semantics {
                                     contentDescription =
-                                        "Sposta server su"
+                                        descrizioneSpostaSu
                                 },
                                 onClick = {
                                     onMoveUp(indice)
@@ -194,7 +194,7 @@ internal fun RiordinaServerDialog(
                                 enabled = indice < server.lastIndex,
                                 modifier = Modifier.semantics {
                                     contentDescription =
-                                        "Sposta server giù"
+                                        descrizioneSpostaGiu
                                 },
                                 onClick = {
                                     onMoveDown(indice)
@@ -242,7 +242,7 @@ internal fun RiordinaServerDialog(
                         Icon(
                             imageVector = Icons.Default.Save,
                             contentDescription =
-                                "Fine riordino, ordine già salvato",
+                                stringResource(R.string.server_reorder_done),
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -276,6 +276,8 @@ internal fun ModificaServerDialog(
     onDismiss: () -> Unit,
     onSave: () -> Unit
 ) {
+    val descrizioneSalva = stringResource(R.string.server_save)
+    val descrizioneAnnulla = stringResource(R.string.settings_cancel)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -304,7 +306,7 @@ internal fun ModificaServerDialog(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
-                    text = "Modifica server OSCam",
+                    text = stringResource(R.string.server_edit_title),
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     maxLines = 1
@@ -329,7 +331,7 @@ internal fun ModificaServerDialog(
                         value = nomeServer,
                         onValueChange = onNomeChange,
                         label = {
-                            Text("Nome server")
+                            Text(stringResource(R.string.server_name))
                         },
                         leadingIcon = {
                             Icon(
@@ -351,7 +353,7 @@ internal fun ModificaServerDialog(
                         value = hostServer,
                         onValueChange = onHostChange,
                         label = {
-                            Text("Host/IP")
+                            Text(stringResource(R.string.server_host_ip))
                         },
                         leadingIcon = {
                             Icon(
@@ -373,7 +375,7 @@ internal fun ModificaServerDialog(
                         value = portaServer,
                         onValueChange = onPortaChange,
                         label = {
-                            Text("Porta")
+                            Text(stringResource(R.string.server_port))
                         },
                         leadingIcon = {
                             Icon(
@@ -395,7 +397,7 @@ internal fun ModificaServerDialog(
                         value = usernameServer,
                         onValueChange = onUsernameChange,
                         label = {
-                            Text("Username")
+                            Text(stringResource(R.string.server_username))
                         },
                         leadingIcon = {
                             Icon(
@@ -417,7 +419,7 @@ internal fun ModificaServerDialog(
                         value = passwordServer,
                         onValueChange = onPasswordChange,
                         label = {
-                            Text("Password")
+                            Text(stringResource(R.string.server_password))
                         },
                         leadingIcon = {
                             Icon(
@@ -444,9 +446,9 @@ internal fun ModificaServerDialog(
                                         },
                                     contentDescription =
                                         if (mostraPassword) {
-                                            "Nascondi password"
+                                            stringResource(R.string.server_hide_password)
                                         } else {
-                                            "Mostra password"
+                                            stringResource(R.string.server_show_password)
                                         }
                                 )
                             }
@@ -471,7 +473,7 @@ internal fun ModificaServerDialog(
                     .width(56.dp)
                     .height(50.dp)
                     .semantics {
-                        contentDescription = "Salva server"
+                        contentDescription = descrizioneSalva
                     },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(
@@ -497,7 +499,7 @@ internal fun ModificaServerDialog(
                     .width(56.dp)
                     .height(50.dp)
                     .semantics {
-                        contentDescription = "Annulla"
+                        contentDescription = descrizioneAnnulla
                     },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(
@@ -540,6 +542,8 @@ internal fun AggiungiServerDialog(
     onTestConnection: () -> Unit,
     onSave: () -> Unit
 ) {
+    val descrizioneSalva = stringResource(R.string.server_save)
+    val descrizioneAnnulla = stringResource(R.string.settings_cancel)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -568,7 +572,7 @@ internal fun AggiungiServerDialog(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
-                    text = "Aggiungi server OSCam",
+                    text = stringResource(R.string.server_add_title),
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     maxLines = 1
@@ -592,7 +596,7 @@ internal fun AggiungiServerDialog(
                             ),
                         value = nomeServer,
                         onValueChange = onNomeChange,
-                        label = { Text("Nome server") },
+                        label = { Text(stringResource(R.string.server_name)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Storage,
@@ -612,7 +616,7 @@ internal fun AggiungiServerDialog(
                             ),
                         value = hostServer,
                         onValueChange = onHostChange,
-                        label = { Text("Host/IP") },
+                        label = { Text(stringResource(R.string.server_host_ip)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Language,
@@ -632,7 +636,7 @@ internal fun AggiungiServerDialog(
                             ),
                         value = portaServer,
                         onValueChange = onPortaChange,
-                        label = { Text("Porta") },
+                        label = { Text(stringResource(R.string.server_port)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Link,
@@ -652,7 +656,7 @@ internal fun AggiungiServerDialog(
                             ),
                         value = usernameServer,
                         onValueChange = onUsernameChange,
-                        label = { Text("Username") },
+                        label = { Text(stringResource(R.string.server_username)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Person,
@@ -672,7 +676,7 @@ internal fun AggiungiServerDialog(
                             ),
                         value = passwordServer,
                         onValueChange = onPasswordChange,
-                        label = { Text("Password") },
+                        label = { Text(stringResource(R.string.server_password)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Lock,
@@ -698,9 +702,9 @@ internal fun AggiungiServerDialog(
                                         },
                                     contentDescription =
                                         if (mostraPassword) {
-                                            "Nascondi password"
+                                            stringResource(R.string.server_hide_password)
                                         } else {
-                                            "Mostra password"
+                                            stringResource(R.string.server_show_password)
                                         }
                                 )
                             }
@@ -727,9 +731,9 @@ internal fun AggiungiServerDialog(
 
                             Spacer(modifier = Modifier.width(8.dp))
 
-                            Text("Connessione...")
+                            Text(stringResource(R.string.server_connecting))
                         } else {
-                            Text("Test connessione")
+                            Text(stringResource(R.string.server_test_connection))
                         }
                     }
                 }
@@ -748,7 +752,7 @@ internal fun AggiungiServerDialog(
                     .width(56.dp)
                     .height(50.dp)
                     .semantics {
-                        contentDescription = "Salva server"
+                        contentDescription = descrizioneSalva
                     },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(
@@ -774,7 +778,7 @@ internal fun AggiungiServerDialog(
                     .width(56.dp)
                     .height(50.dp)
                     .semantics {
-                        contentDescription = "Annulla"
+                        contentDescription = descrizioneAnnulla
                     },
                 shape =
                     androidx.compose.foundation.shape.RoundedCornerShape(

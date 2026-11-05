@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +53,7 @@ fun ServerSelectionHeader(
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = "I tuoi server",
+                text = stringResource(R.string.home_your_servers),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -74,7 +75,7 @@ fun ServerSelectionHeader(
             )
             Spacer(modifier = Modifier.width(5.dp))
             Text(
-                text = "Aggiungi",
+                text = stringResource(R.string.home_add),
                 fontSize = 14.sp
             )
         }
@@ -108,14 +109,14 @@ fun EmptyServerState(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Nessun server salvato",
+                text = stringResource(R.string.home_no_servers),
                 fontWeight = FontWeight.SemiBold
             )
 
             Spacer(modifier = Modifier.height(3.dp))
 
             Text(
-                text = "Aggiungi il tuo primo server OSCam per trovarlo subito qui.",
+                text = stringResource(R.string.home_add_first),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -136,19 +137,20 @@ fun OscamServerCard(
     modifier: Modifier = Modifier
 ) {
     val darkTheme = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val descrizioneApri = stringResource(R.string.home_open_server, server.nome)
     val selectionColor = Color(0xFF4DA3FF)
 
     val (connectionText, connectionColor) = when (connectionState) {
         OscamServerConnectionState.CHECKING ->
-            "Verifica..." to Color(0xFFFF9800)
+            stringResource(R.string.home_checking) to Color(0xFFFF9800)
         OscamServerConnectionState.ACTIVE ->
-            "OSCam attivo" to Color(0xFF4CAF50)
+            stringResource(R.string.home_active) to Color(0xFF4CAF50)
         OscamServerConnectionState.AUTH_ERROR ->
-            "Errore autenticazione" to Color(0xFFFF9800)
+            stringResource(R.string.home_auth_error) to Color(0xFFFF9800)
         OscamServerConnectionState.REACHABLE_NO_OSCAM ->
-            "OSCam non risponde" to Color(0xFFFFB300)
+            stringResource(R.string.home_no_oscam) to Color(0xFFFFB300)
         OscamServerConnectionState.UNREACHABLE ->
-            "Non raggiungibile" to Color(0xFFEF5350)
+            stringResource(R.string.home_unreachable) to Color(0xFFEF5350)
     }
     var menuExpanded by remember(server.nome, server.host, server.porta) {
         mutableStateOf(false)
@@ -275,7 +277,7 @@ fun OscamServerCard(
                     fontSize = 28.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.semantics {
-                        contentDescription = "Apri ${server.nome}"
+                        contentDescription = descrizioneApri
                     }
                 )
             }
@@ -286,7 +288,7 @@ fun OscamServerCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Azioni server",
+                        contentDescription = stringResource(R.string.home_server_actions),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -296,7 +298,7 @@ fun OscamServerCard(
                     onDismissRequest = { menuExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Modifica") },
+                        text = { Text(stringResource(R.string.home_edit)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -310,7 +312,7 @@ fun OscamServerCard(
                     )
 
                     DropdownMenuItem(
-                        text = { Text("Riordina") },
+                        text = { Text(stringResource(R.string.home_reorder)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Reorder,
@@ -324,7 +326,7 @@ fun OscamServerCard(
                     )
 
                     DropdownMenuItem(
-                        text = { Text("Elimina") },
+                        text = { Text(stringResource(R.string.home_delete)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Delete,

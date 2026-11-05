@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,24 +72,24 @@ fun ServerHubScreen(
     val (connectionText, connectionColor) =
         when (connectionState) {
             OscamServerConnectionState.CHECKING ->
-                "Verifica..." to Color(0xFFFF9800)
+                stringResource(R.string.home_checking) to Color(0xFFFF9800)
 
             OscamServerConnectionState.ACTIVE ->
-                "OSCam attivo" to Color(0xFF4CAF50)
+                stringResource(R.string.home_active) to Color(0xFF4CAF50)
 
             OscamServerConnectionState.AUTH_ERROR ->
-                "Errore autenticazione" to Color(0xFFFF9800)
+                stringResource(R.string.home_auth_error) to Color(0xFFFF9800)
 
             OscamServerConnectionState.REACHABLE_NO_OSCAM ->
-                "OSCam non risponde" to Color(0xFFFFB300)
+                stringResource(R.string.home_no_oscam) to Color(0xFFFFB300)
 
             OscamServerConnectionState.UNREACHABLE ->
-                "Non raggiungibile" to Color(0xFFEF5350)
+                stringResource(R.string.home_unreachable) to Color(0xFFEF5350)
         }
 
     val actions = listOf(
         ServerHubAction(
-            title = "Dashboard",
+            title = stringResource(R.string.settings_dashboard),
             icon = Icons.Default.PlayArrow,
             onClick = onDashboard
         ),
@@ -103,12 +104,12 @@ fun ServerHubScreen(
             onClick = onLiveLog
         ),
         ServerHubAction(
-            title = "Terminale",
+            title = stringResource(R.string.hub_terminal),
             icon = Icons.Default.Terminal,
             onClick = onTerminal
         ),
         ServerHubAction(
-            title = "File",
+            title = stringResource(R.string.settings_files),
             icon = Icons.Default.Folder,
             onClick = onFiles
         )
@@ -132,7 +133,7 @@ fun ServerHubScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Indietro"
+                        contentDescription = stringResource(R.string.settings_back)
                     )
                 }
 
@@ -159,7 +160,7 @@ fun ServerHubScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Language,
-                            contentDescription = "Stato server: $connectionText",
+                            contentDescription = stringResource(R.string.hub_server_status, connectionText),
                             tint = connectionColor,
                             modifier = Modifier.size(16.dp)
                         )

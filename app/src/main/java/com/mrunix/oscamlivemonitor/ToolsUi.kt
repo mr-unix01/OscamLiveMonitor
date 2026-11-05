@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,7 +52,7 @@ fun ToolsHeader(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Indietro"
+                        contentDescription = stringResource(R.string.settings_back)
                     )
                 }
             }
@@ -107,7 +108,7 @@ fun ToolsHeader(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Fullscreen,
-                        contentDescription = "Espandi terminale",
+                        contentDescription = stringResource(R.string.tools_expand_terminal),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -183,7 +184,7 @@ fun ToolsModeSelector(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         ToolsModeButton(
-            title = "Terminale",
+            title = stringResource(R.string.hub_terminal),
             icon = Icons.Default.Terminal,
             selected = !fileSelected,
             accent = Color(0xFF4DA3FF),
@@ -193,7 +194,7 @@ fun ToolsModeSelector(
         )
 
         ToolsModeButton(
-            title = "File",
+            title = stringResource(R.string.settings_files),
             icon = Icons.Default.Folder,
             selected = fileSelected,
             accent = Color(0xFF4DA3FF),
@@ -307,17 +308,22 @@ fun ToolsConnectionStatus(
     modifier: Modifier = Modifier
 ) {
     val color = when {
-        text.contains("Errore", ignoreCase = true) ->
+        text.contains("Errore", ignoreCase = true) ||
+        text.contains("Error", ignoreCase = true) ->
             Color(0xFFEF5350)
 
         text.contains("Disconnesso", ignoreCase = true) ||
-        text.contains("Non connesso", ignoreCase = true) ->
+        text.contains("Non connesso", ignoreCase = true) ||
+        text.contains("Disconnected", ignoreCase = true) ||
+        text.contains("Not connected", ignoreCase = true) ->
             MaterialTheme.colorScheme.onSurfaceVariant
 
-        text.contains("Connessione", ignoreCase = true) ->
+        text.contains("Connessione", ignoreCase = true) ||
+        text.contains("Connecting", ignoreCase = true) ->
             Color(0xFFFFB74D)
 
-        text.contains("Connesso", ignoreCase = true) ->
+        text.contains("Connesso", ignoreCase = true) ||
+        text.contains("Connected", ignoreCase = true) ->
             Color(0xFF66BB6A)
 
         else ->

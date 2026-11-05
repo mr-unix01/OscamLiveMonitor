@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -22,6 +23,8 @@ fun ImpostazioniScreen(
     onClose: () -> Unit,
     temaApp: String,
     onTemaAppChange: (String) -> Unit,
+    linguaApp: String,
+    onLinguaAppChange: (String) -> Unit,
     schermoSempreAcceso: Boolean,
     onSchermoSempreAccesoChange: (Boolean) -> Unit,
     aggiornamentoAutomaticoDashboard: Boolean,
@@ -47,12 +50,19 @@ fun ImpostazioniScreen(
         mutableStateOf(preferenzeFile.getBoolean("file_ricorda_cartella", false))
     }
     var dialogoTema by remember { mutableStateOf(false) }
+    var dialogoLingua by remember { mutableStateOf(false) }
     var dialogoIntervallo by remember { mutableStateOf(false) }
 
     val descrizioneTema = when (temaApp) {
-        "light" -> "Chiaro"
-        "dark" -> "Scuro"
-        else -> "Sistema"
+        "light" -> stringResource(R.string.settings_light)
+        "dark" -> stringResource(R.string.settings_dark)
+        else -> stringResource(R.string.settings_system)
+    }
+
+    val descrizioneLingua = when (linguaApp) {
+        AppLanguage.ITALIAN -> "Italiano"
+        AppLanguage.ENGLISH -> "English"
+        else -> stringResource(R.string.settings_system)
     }
 
     Column(
@@ -69,16 +79,16 @@ fun ImpostazioniScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onClose) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.settings_back))
             }
             Spacer(Modifier.width(8.dp))
-            Text("Impostazioni", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall)
         }
 
-        SezioneImpostazioni("Generali") {
+        SezioneImpostazioni(stringResource(R.string.settings_general)) {
             VoceScelta(
                 Icons.Default.Palette,
-                "Aspetto",
+                stringResource(R.string.settings_appearance),
                 descrizioneTema
             ) { dialogoTema = true }
 
@@ -89,27 +99,26 @@ fun ImpostazioniScreen(
 
             VoceScelta(
                 Icons.Default.Language,
-                "Lingua",
-                "Traduzione non ancora disponibile",
-                abilitata = false
-            ) {}
+                stringResource(R.string.settings_language),
+                descrizioneLingua
+            ) { dialogoLingua = true }
         }
 
-        SezioneImpostazioni("Schermo") {
+        SezioneImpostazioni(stringResource(R.string.settings_screen)) {
             VoceInterruttore(
                 Icons.Default.PhoneAndroid,
-                "Schermo sempre acceso",
-                "Impedisce lo spegnimento durante l'utilizzo",
+                stringResource(R.string.settings_keep_screen_on),
+                stringResource(R.string.settings_keep_screen_on_desc),
                 schermoSempreAcceso,
                 onSchermoSempreAccesoChange
             )
         }
 
-        SezioneImpostazioni("File") {
+        SezioneImpostazioni(stringResource(R.string.settings_files)) {
             VoceInterruttore(
                 Icons.Default.Visibility,
-                "Mostra file nascosti",
-                "Visualizza anche i file nascosti",
+                stringResource(R.string.settings_show_hidden),
+                stringResource(R.string.settings_show_hidden_desc),
                 mostraFileNascosti
             ) { attivo ->
                 mostraFileNascosti = attivo
@@ -125,8 +134,8 @@ fun ImpostazioniScreen(
 
             VoceInterruttore(
                 Icons.Default.Folder,
-                "Ricorda ultima cartella",
-                "Ripristina l'ultima cartella utilizzata",
+                stringResource(R.string.settings_remember_folder),
+                stringResource(R.string.settings_remember_folder_desc),
                 ricordaUltimaCartella
             ) { attivo ->
                 ricordaUltimaCartella = attivo
@@ -136,11 +145,11 @@ fun ImpostazioniScreen(
             }
         }
 
-        SezioneImpostazioni("Dashboard") {
+        SezioneImpostazioni(stringResource(R.string.settings_dashboard)) {
             VoceInterruttore(
                 Icons.Default.Refresh,
-                "Aggiornamento automatico",
-                "Aggiorna periodicamente i dati della Dashboard",
+                stringResource(R.string.settings_auto_refresh),
+                stringResource(R.string.settings_auto_refresh_desc),
                 aggiornamentoAutomaticoDashboard,
                 onAggiornamentoAutomaticoDashboardChange
             )
@@ -153,8 +162,8 @@ fun ImpostazioniScreen(
 
                 VoceScelta(
                     Icons.Default.Schedule,
-                    "Intervallo di aggiornamento",
-                    "$intervalloDashboardSecondi secondi"
+                    stringResource(R.string.settings_refresh_interval),
+                    stringResource(R.string.settings_seconds, intervalloDashboardSecondi)
                 ) { dialogoIntervallo = true }
             }
         }
@@ -164,11 +173,11 @@ fun ImpostazioniScreen(
 
     if (dialogoTema) {
         DialogoSceltaImpostazioni(
-            titolo = "Aspetto",
+            titolo = stringResource(R.string.settings_appearance),
             opzioni = listOf(
-                "system" to "Sistema",
-                "light" to "Chiaro",
-                "dark" to "Scuro"
+                "system" to stringResource(R.string.settings_system),
+                "light" to stringResource(R.string.settings_light),
+                "dark" to stringResource(R.string.settings_dark)
             ),
             selezionato = temaApp,
             onScegli = {
@@ -179,11 +188,29 @@ fun ImpostazioniScreen(
         )
     }
 
+    if (dialogoLingua) {
+        DialogoSceltaImpostazioni(
+            titolo = stringResource(R.string.settings_language),
+            opzioni = listOf(
+                AppLanguage.SYSTEM to
+                    stringResource(R.string.settings_system),
+                AppLanguage.ITALIAN to "Italiano",
+                AppLanguage.ENGLISH to "English"
+            ),
+            selezionato = linguaApp,
+            onScegli = { scelta ->
+                dialogoLingua = false
+                onLinguaAppChange(scelta)
+            },
+            onChiudi = { dialogoLingua = false }
+        )
+    }
+
     if (dialogoIntervallo) {
         DialogoSceltaImpostazioni(
-            titolo = "Intervallo di aggiornamento",
+            titolo = stringResource(R.string.settings_refresh_interval),
             opzioni = listOf(5, 10, 15, 30, 60).map {
-                it.toString() to "$it secondi"
+                it.toString() to stringResource(R.string.settings_seconds, it)
             },
             selezionato = intervalloDashboardSecondi.toString(),
             onScegli = {
@@ -349,7 +376,7 @@ private fun DialogoSceltaImpostazioni(
         },
         confirmButton = {
             TextButton(onClick = onChiudi) {
-                Text("Annulla")
+                Text(stringResource(R.string.settings_cancel))
             }
         }
     )

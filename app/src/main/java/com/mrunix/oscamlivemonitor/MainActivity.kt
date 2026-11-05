@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -60,6 +61,12 @@ import kotlinx.coroutines.flow.collect
 import androidx.compose.foundation.clickable
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(
+            AppLanguage.localizedBaseContext(newBase)
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val dashboardViewModel =
@@ -155,6 +162,10 @@ class MainActivity : ComponentActivity() {
                             editorLandscapeIme = it
                         },
                         temaApp = temaApp,
+                        linguaApp = AppLanguage.selected(this@MainActivity),
+                        onLinguaAppChange = { scelta ->
+                            AppLanguage.change(this@MainActivity, scelta)
+                        },
                         onTemaAppChange = { scelta ->
                             if (scelta in listOf("system", "light", "dark")) {
                                 temaApp = scelta
@@ -177,7 +188,9 @@ fun Greeting(
     dashboardViewModel: DashboardViewModel? = null,
     onEditorLandscapeImeChange: (Boolean) -> Unit = {},
     temaApp: String = "system",
-    onTemaAppChange: (String) -> Unit = {}
+    onTemaAppChange: (String) -> Unit = {},
+    linguaApp: String = AppLanguage.SYSTEM,
+    onLinguaAppChange: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -534,7 +547,7 @@ fun Greeting(
 
         if (host.isBlank() || porta.isBlank()) {
             val messaggio =
-                "Inserisci Host/IP e Porta"
+                context.getString(R.string.main_dashboard_host_port)
 
             impostaStatoDashboard(messaggio)
             mostraSnackbar(messaggio)
@@ -552,7 +565,7 @@ fun Greeting(
             .apply()
 
         dashboardViewModel?.resetDashboardState()
-        impostaStatoDashboard("Connessione...")
+        impostaStatoDashboard(context.getString(R.string.main_dashboard_connecting))
 
         mostraServers = true
         mostraReaders = true
@@ -731,13 +744,13 @@ fun Greeting(
                             ) {
                                 val messaggio = when (nuovoStato) {
                                     OscamServerConnectionState.ACTIVE ->
-                                        "${server.nome}: OSCam di nuovo attivo"
+                                        context.getString(R.string.main_server_back_online, server.nome)
                                     OscamServerConnectionState.AUTH_ERROR ->
-                                        "${server.nome}: errore autenticazione OSCam"
+                                        context.getString(R.string.main_server_auth_error, server.nome)
                                     OscamServerConnectionState.REACHABLE_NO_OSCAM ->
-                                        "${server.nome}: raggiungibile, ma OSCam non risponde"
+                                        context.getString(R.string.main_server_no_oscam_response, server.nome)
                                     OscamServerConnectionState.UNREACHABLE ->
-                                        "${server.nome}: non raggiungibile"
+                                        context.getString(R.string.main_server_unreachable, server.nome)
                                     OscamServerConnectionState.CHECKING -> null
                                 }
 
@@ -764,7 +777,7 @@ fun Greeting(
         dashboardViewModel
             ?.connessionePersaEventi
             ?.collect {
-                mostraSnackbar("Connessione persa")
+                mostraSnackbar(context.getString(R.string.main_connection_lost))
             }
     }
 
@@ -818,7 +831,7 @@ fun Greeting(
         val nomeServerAttivo =
             serverAttivo?.nome
                 ?: host.trim()
-                    .ifBlank { "server attivo" }
+                    .ifBlank { context.getString(R.string.main_dashboard_active_server) }
 
         RiavviaOscamDialog(
             nomeServer = nomeServerAttivo,
@@ -837,12 +850,12 @@ fun Greeting(
 
                 if (host.isBlank() || porta.isBlank()) {
                     val messaggio =
-                        "Inserisci prima Host/IP e Porta"
+                        context.getString(R.string.main_dashboard_host_port_first)
                     impostaStatoDashboard(messaggio)
                     mostraSnackbar(messaggio)
                 } else {
                     riavvioInCorso = true
-                    impostaStatoDashboard("Riavvio OSCam...")
+                    impostaStatoDashboard(context.getString(R.string.main_restarting_oscam))
 
                     coroutineScope.launch {
                         val risultatoRiavvio =
@@ -868,7 +881,7 @@ fun Greeting(
                         }
 
                         impostaStatoDashboard(
-                            "Riconnessione OSCam..."
+                            context.getString(R.string.main_reconnecting_oscam)
                         )
                         kotlinx.coroutines.delay(3000)
 
@@ -887,7 +900,7 @@ fun Greeting(
 
                             if (tentativo < 10) {
                                 impostaStatoDashboard(
-                                    "Riconnessione OSCam... ($tentativo/10)"
+                                    context.getString(R.string.main_reconnecting_attempt, tentativo)
                                 )
                                 kotlinx.coroutines.delay(2000)
                             }
@@ -897,10 +910,10 @@ fun Greeting(
 
                         if (riconnesso) {
                             mostraConnessione = false
-                            impostaStatoDashboard("Connesso")
+                            impostaStatoDashboard(context.getString(R.string.main_dashboard_connected))
                         } else {
                             val messaggio =
-                                "ERRORE: OSCam non raggiungibile dopo il riavvio"
+                                context.getString(R.string.main_restart_unreachable_error)
                             impostaStatoDashboard(messaggio)
                             mostraSnackbar(messaggio)
                         }
@@ -990,7 +1003,7 @@ fun Greeting(
                     portaPulita.toIntOrNull() == null
                 ) {
                     mostraSnackbarDialog(
-                        "Inserisci Host/IP e una porta valida"
+                        context.getString(R.string.main_test_invalid_host_port)
                     )
                     return@test
                 }
@@ -1028,11 +1041,11 @@ fun Greeting(
                             )
                         ) {
                             mostraSnackbarDialog(
-                                "Risposta ricevuta, ma non è un server OSCam valido"
+                                context.getString(R.string.main_test_invalid_response)
                             )
                         } else {
                             mostraSnackbarDialog(
-                                "Connessione riuscita"
+                                context.getString(R.string.main_test_connection_success)
                             )
                         }
                     }
@@ -1053,7 +1066,7 @@ fun Greeting(
                     portaPulita.toIntOrNull() == null
                 ) {
                     mostraSnackbarDialog(
-                        "Inserisci nome, Host/IP e una porta valida"
+                        context.getString(R.string.main_server_required_fields)
                     )
                 } else {
                     val nuovoServer =
@@ -1122,7 +1135,7 @@ fun Greeting(
                     mostraAggiungiServer = false
 
                     mostraSnackbar(
-                        "Server ${nuovoServer.nome} aggiunto"
+                        context.getString(R.string.main_server_added, nuovoServer.nome)
                     )
                 }
             }
@@ -1176,7 +1189,7 @@ fun Greeting(
                     portaPulita.toIntOrNull() == null
                 ) {
                     mostraSnackbarDialog(
-                        "Inserisci nome, Host/IP e una porta valida"
+                        context.getString(R.string.main_server_required_fields)
                     )
                 } else {
                     val serverAggiornato =
@@ -1258,7 +1271,7 @@ fun Greeting(
                         }
 
                         mostraSnackbar(
-                            "Server ${serverAggiornato.nome} modificato"
+                            context.getString(R.string.main_server_modified, serverAggiornato.nome)
                         )
                     }
 
@@ -1364,7 +1377,7 @@ fun Greeting(
                         }
 
                         mostraSnackbar(
-                            "Server ${serverOriginale.nome} eliminato"
+                            context.getString(R.string.main_server_deleted, serverOriginale.nome)
                         )
                     }
 
@@ -1624,24 +1637,42 @@ fun Greeting(
                         ?.takeIf { it.isNotBlank() }
                     ?: host.trim()
 
+            val descrizioneStatoSconosciuto = stringResource(R.string.dashboard_unknown_status)
+
+            val statoPerAccessibilita = when {
+                stato.equals("Connesso", ignoreCase = true) ->
+                    context.getString(R.string.main_dashboard_connected)
+                stato.equals("Connessione persa", ignoreCase = true) ->
+                    context.getString(R.string.main_connection_lost)
+                else -> stato
+            }
+
             val coloreStatoDashboard = when {
                 stato.equals("Connesso", ignoreCase = true) ||
+                    stato.equals("Connected", ignoreCase = true) ||
                     stato.contains("selezionato", ignoreCase = true) ->
                     if (temaScuro) Color(0xFF66BB6A)
                     else Color(0xFF2E7D32)
 
-                stato.contains("autentic", ignoreCase = true) ->
+                stato.contains("autentic", ignoreCase = true) ||
+                    stato.contains("authentication", ignoreCase = true) ->
                     Color(0xFFFFB300)
 
                 stato.startsWith("ERRORE:", ignoreCase = true) ||
                     stato.contains("persa", ignoreCase = true) ||
                     stato.contains("non raggiungibile", ignoreCase = true) ||
-                    stato.contains("necessario", ignoreCase = true) ->
+                    stato.contains("necessario", ignoreCase = true) ||
+                    stato.contains("lost", ignoreCase = true) ||
+                    stato.contains("unreachable", ignoreCase = true) ->
                     Color(0xFFEF5350)
 
                 stato.contains("Connessione", ignoreCase = true) ||
                     stato.contains("riconnessione", ignoreCase = true) ||
-                    stato.contains("verifica", ignoreCase = true) ->
+                    stato.contains("Riavvio", ignoreCase = true) ||
+                    stato.contains("verifica", ignoreCase = true) ||
+                    stato.contains("Connecting", ignoreCase = true) ||
+                    stato.contains("Reconnecting", ignoreCase = true) ||
+                    stato.contains("Restarting", ignoreCase = true) ->
                     Color(0xFFFFB74D)
 
                 else -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -1659,7 +1690,7 @@ fun Greeting(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Torna al Pannello"
+                        contentDescription = stringResource(R.string.dashboard_back_panel)
                     )
                 }
 
@@ -1693,9 +1724,9 @@ fun Greeting(
                                 .semantics {
                                     contentDescription =
                                         if (stato.isBlank()) {
-                                            "Stato connessione sconosciuto"
+                                            descrizioneStatoSconosciuto
                                         } else {
-                                            stato
+                                            statoPerAccessibilita
                                         }
                                 }
                         )
@@ -1729,7 +1760,7 @@ fun Greeting(
                     onRiavviaClick = {
                         if (host.isBlank() || porta.isBlank()) {
                             val messaggio =
-                                "Inserisci prima Host/IP e Porta"
+                                context.getString(R.string.main_dashboard_host_port_first)
                             impostaStatoDashboard(messaggio)
                             mostraSnackbar(messaggio)
                         } else {
@@ -1754,7 +1785,7 @@ fun Greeting(
                     } else {
                         androidx.compose.material3.Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Aggiorna dashboard",
+                            contentDescription = stringResource(R.string.dashboard_refresh),
                             tint = Color(0xFF66BB6A),
                             modifier = Modifier
                                 .size(20.dp)
@@ -1779,7 +1810,7 @@ fun Greeting(
                     Spacer(modifier = Modifier.padding(horizontal = 3.dp))
 
                     Text(
-                        text = "Aggiornato alle $ultimoAggiornamento",
+                        text = stringResource(R.string.dashboard_updated_at, ultimoAggiornamento),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1877,7 +1908,7 @@ fun Greeting(
                         }
 
                     DashboardCard(
-                        titolo = "Users / Clients",
+                        titolo = stringResource(R.string.dashboard_users_clients),
                         compatto = schermoCompatto,
                         valore = "$utentiOnline/$utentiConnessi",
                         icona = Icons.Default.Devices,
@@ -1894,20 +1925,20 @@ fun Greeting(
 
                                 when {
                                     totaleUtenti == 0 ->
-                                        "nessun utente configurato"
+                                        context.getString(R.string.dashboard_no_users)
 
                                     utentiConnessi == 0 ->
                                         if (totaleUtenti == 1) {
-                                            "nessun client connesso · 1 utente"
+                                            context.getString(R.string.dashboard_no_clients_one)
                                         } else {
-                                            "nessun client connesso · $totaleUtenti utenti"
+                                            context.getString(R.string.dashboard_no_clients_many, totaleUtenti)
                                         }
 
                                     totaleUtenti == 1 ->
-                                        "online/connessi · 1 utente"
+                                        context.getString(R.string.dashboard_online_one)
 
                                     else ->
-                                        "online/connessi · $totaleUtenti utenti"
+                                        context.getString(R.string.dashboard_online_many, totaleUtenti)
                                 }
                             }
                     )
@@ -1918,7 +1949,7 @@ fun Greeting(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
-                    titolo = "Servizi OSCam",
+                    titolo = stringResource(R.string.dashboard_services),
                     icona = Icons.Default.Storage,
                     coloreAccento = Color(0xFF42A5F5),
                     compatto = schermoCompatto
@@ -1948,7 +1979,7 @@ fun Greeting(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
-                    titolo = "Elenco reader",
+                    titolo = stringResource(R.string.dashboard_readers_list),
                     icona = Icons.Default.CreditCard,
                     coloreAccento = Color(0xFF66BB6A),
                     compatto = schermoCompatto
@@ -2025,7 +2056,7 @@ fun Greeting(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
-                    titolo = "Elenco proxy",
+                    titolo = stringResource(R.string.dashboard_proxies_list),
                     icona = Icons.Default.SwapHoriz,
                     coloreAccento = Color(0xFFAB47BC),
                     compatto = schermoCompatto
@@ -2186,7 +2217,7 @@ fun Greeting(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 TitoloSezioneDashboard(
-                    titolo = "Client connessi",
+                    titolo = stringResource(R.string.dashboard_connected_clients),
                     icona = Icons.Default.Devices,
                     coloreAccento = Color(0xFFFFA726),
                     compatto = schermoCompatto
@@ -2349,7 +2380,7 @@ fun Greeting(
                     ) {
                         Image(
                             painter = painterResource(R.drawable.oscam_drawer_logo),
-                            contentDescription = "Logo OSCam",
+                            contentDescription = stringResource(R.string.info_logo),
                             modifier = Modifier
                                 .size(56.dp)
                                 .clip(androidx.compose.foundation.shape.CircleShape)
@@ -2379,7 +2410,7 @@ fun Greeting(
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text("Impostazioni", color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.settings_title), color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(
                             modifier = Modifier
@@ -2397,7 +2428,7 @@ fun Greeting(
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text("Informazioni", color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.info_title), color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -2460,6 +2491,8 @@ fun Greeting(
                     },
                     temaApp = temaApp,
                     onTemaAppChange = onTemaAppChange,
+                    linguaApp = linguaApp,
+                    onLinguaAppChange = onLinguaAppChange,
                     schermoSempreAcceso = schermoSempreAcceso,
                     onSchermoSempreAccesoChange = { attivo ->
                         schermoSempreAcceso = attivo
@@ -2725,6 +2758,19 @@ fun LiveLogScreen(
                 "CONNESSIONE"
         }
 
+    val statoLiveVisualizzato = when (statoLive) {
+        "PAUSA" -> androidx.compose.ui.res.stringResource(R.string.main_live_log_status_paused)
+        "ERRORE" -> androidx.compose.ui.res.stringResource(R.string.main_live_log_status_error)
+        "RICONNESSIONE" -> androidx.compose.ui.res.stringResource(R.string.main_live_log_status_reconnecting)
+        "CONNESSIONE" -> androidx.compose.ui.res.stringResource(R.string.main_live_log_status_connecting)
+        else -> statoLive
+    }
+
+    val testoAttesaLiveLog =
+        androidx.compose.ui.res.stringResource(R.string.main_live_log_waiting)
+    val testoNessunDatoLiveLog =
+        androidx.compose.ui.res.stringResource(R.string.main_live_log_no_data)
+
     val coloreNormaleLog =
         if (temaScuroLive) {
             Color(0xFFD7E0D8)
@@ -2736,7 +2782,9 @@ fun LiveLogScreen(
         remember(
             righeLog,
             erroreLiveLog,
-            temaScuroLive
+            temaScuroLive,
+            testoAttesaLiveLog,
+            testoNessunDatoLiveLog
         ) {
             androidx.compose.ui.text.buildAnnotatedString {
                 if (righeLog.isNotEmpty()) {
@@ -2826,9 +2874,9 @@ fun LiveLogScreen(
 
                     append(
                         if (erroreLiveLog.isNotBlank()) {
-                            "Nessun dato Live Log"
+                            testoNessunDatoLiveLog
                         } else {
-                            "In attesa delle righe OSCam..."
+                            testoAttesaLiveLog
                         }
                     )
 
@@ -2933,7 +2981,7 @@ fun LiveLogScreen(
                             Spacer(modifier = Modifier.width(5.dp))
 
                             Text(
-                                text = statoLive,
+                                text = statoLiveVisualizzato,
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = coloreLive
@@ -2966,9 +3014,9 @@ fun LiveLogScreen(
                 Text(
                     text =
                         if (inPausa) {
-                            "▶  Riprendi"
+                            "▶  " + androidx.compose.ui.res.stringResource(R.string.main_live_log_resume)
                         } else {
-                            "⏸  Pausa"
+                            "⏸  " + androidx.compose.ui.res.stringResource(R.string.main_live_log_pause)
                         },
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
@@ -2988,7 +3036,7 @@ fun LiveLogScreen(
                 }
             ) {
                 Text(
-                    text = "⌫  Pulisci",
+                    text = "⌫  " + androidx.compose.ui.res.stringResource(R.string.main_live_log_clear),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -3050,7 +3098,7 @@ fun LiveLogScreen(
                     Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = "${righeLog.size}/300 righe",
+                        text = androidx.compose.ui.res.stringResource(R.string.main_live_log_lines, righeLog.size),
                         fontSize = 10.sp,
                         color =
                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -3284,7 +3332,7 @@ fun InformazioniScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Indietro"
+                            contentDescription = stringResource(R.string.settings_back)
                         )
                     }
                 }
@@ -3309,7 +3357,7 @@ fun InformazioniScreen(
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = "Informazioni",
+                    text = stringResource(R.string.info_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -3324,7 +3372,7 @@ fun InformazioniScreen(
         ) {
             Image(
                 painter = painterResource(R.drawable.oscam_drawer_logo),
-                contentDescription = "Logo OSCam",
+                contentDescription = stringResource(R.string.info_logo),
                 modifier = Modifier
                     .size(96.dp)
                     .clip(androidx.compose.foundation.shape.CircleShape)
@@ -3359,7 +3407,7 @@ fun InformazioniScreen(
         Spacer(modifier = Modifier.height(5.dp))
 
         Text(
-            text = "Monitor Android per OSCam",
+            text = stringResource(R.string.info_subtitle),
             modifier = Modifier.fillMaxWidth(),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -3385,7 +3433,7 @@ fun InformazioniScreen(
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Versione",
+                        text = stringResource(R.string.info_version),
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -3407,7 +3455,7 @@ fun InformazioniScreen(
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Build",
+                        text = stringResource(R.string.info_build),
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -3429,7 +3477,7 @@ fun InformazioniScreen(
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Autore",
+                        text = stringResource(R.string.info_author),
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -3466,7 +3514,7 @@ fun InformazioniScreen(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Text("Repository GitHub")
+            Text(stringResource(R.string.info_repository))
         }
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -3514,7 +3562,7 @@ fun InformazioniScreen(
                             )
                     } catch (e: Exception) {
                         erroreAggiornamento =
-                            e.message ?: "Impossibile controllare gli aggiornamenti."
+                            e.message ?: context.getString(R.string.info_check_error)
                     } finally {
                         controlloAggiornamentoInCorso = false
                     }
@@ -3527,7 +3575,7 @@ fun InformazioniScreen(
                     strokeWidth = 2.dp
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Controllo in corso...")
+                Text(stringResource(R.string.info_checking))
             } else {
                 Icon(
                     imageVector = Icons.Default.SystemUpdate,
@@ -3535,7 +3583,7 @@ fun InformazioniScreen(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Controlla aggiornamenti")
+                Text(stringResource(R.string.info_check_updates))
             }
         }
 
@@ -3545,9 +3593,9 @@ fun InformazioniScreen(
             Text(
                 text =
                     if (risultato.aggiornamentoDisponibile) {
-                        "Nuova versione disponibile: ${risultato.versioneDisponibile}"
+                        stringResource(R.string.info_new_version, risultato.versioneDisponibile)
                     } else {
-                        "Hai già l'ultima versione disponibile."
+                        stringResource(R.string.info_up_to_date)
                     },
                 fontSize = 13.sp,
                 fontWeight =
@@ -3594,7 +3642,7 @@ fun InformazioniScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    Text("Scarica aggiornamento")
+                    Text(stringResource(R.string.info_download))
                 }
             }
         }
@@ -3619,7 +3667,7 @@ fun InformazioniScreen(
         Spacer(modifier = Modifier.height(18.dp))
 
         Text(
-            text = "OSCam Live Monitor è un progetto indipendente e non ufficiale.",
+            text = stringResource(R.string.info_disclaimer),
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -3676,7 +3724,7 @@ fun GitHubRepositoryScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Indietro"
+                            contentDescription = stringResource(R.string.settings_back)
                         )
                     }
                 }
@@ -3705,7 +3753,7 @@ fun GitHubRepositoryScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "Repository GitHub",
+                        text = stringResource(R.string.info_repository),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -3788,14 +3836,14 @@ fun GitHubRepositoryScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        text = "Impossibile caricare la repository",
+                        text = stringResource(R.string.repo_load_error),
                         fontWeight = FontWeight.Bold
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Controlla la connessione Internet e riprova.",
+                        text = stringResource(R.string.repo_connection_retry),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -3873,7 +3921,7 @@ fun WebIfScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Indietro"
+                            contentDescription = androidx.compose.ui.res.stringResource(R.string.settings_back)
                         )
                     }
                 }

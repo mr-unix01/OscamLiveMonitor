@@ -593,18 +593,16 @@ fun Greeting(
         mostraClients = true
     }
 
-    val reteContext = androidx.compose.ui.platform.LocalContext.current
-
     val richiestaPermessoRete = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { concesso ->
         permessoReteConcesso = concesso
 
         if (concesso) {
-            mostraSnackbar(reteContext.getString(R.string.network_permission_granted))
+            mostraSnackbar(context.getString(R.string.network_permission_granted))
         } else {
             val nuovoStato =
-                reteContext.getString(R.string.network_permission_required)
+                context.getString(R.string.network_permission_required)
 
             impostaStatoDashboard(nuovoStato)
             mostraSnackbar(nuovoStato)

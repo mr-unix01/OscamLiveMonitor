@@ -16,4 +16,10 @@ Il codice originale di OSCam Live Monitor è distribuito secondo la **GNU Genera
 
 Copyright (C) 2026 mr-unix01.
 
-Consulta il file [LICENSE](LICENSE) per il testo integrale della licenza. Le librerie di terze parti conservano le rispettive licenze; nomi, marchi e loghi di terzi, incluso OSCam, restano soggetti ai diritti dei rispettivi titolari. Prima della distribuzione su F-Droid, i diritti relativi alle immagini vanno verificati separatamente.
+Consulta il file [LICENSE](LICENSE) per il testo integrale della licenza.
+
+### Icona e marchi
+
+L'icona dell'app è derivata dal logo di OSCam (`webif/images/ICMLOGO.svg`, presente nel repository OSCam almeno dal 2014, distribuito con licenza GPL v3) ed è stata modificata nel 2026 con l'aggiunta dell'impulso e del pallino verde.
+
+Le librerie di terze parti conservano le rispettive licenze. Il nome OSCam e i marchi di terzi restano soggetti ai diritti dei rispettivi titolari. OSCam Live Monitor è un progetto indipendente e non ufficiale.

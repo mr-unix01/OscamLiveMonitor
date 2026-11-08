@@ -2545,6 +2545,7 @@ fun Greeting(
                 GitHubRepositoryScreen(
                     onClose = {
                         mostraRepositoryGitHub = false
+                        mostraInformazioni = true
                     },
                     modifier = Modifier.fillMaxSize()
                 )
@@ -3243,6 +3244,16 @@ fun InformazioniScreen(
     onOpenGitHub: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var mostraLicenze by rememberSaveable { mutableStateOf(false) }
+
+    if (mostraLicenze) {
+        OpenSourceLicensesScreen(
+            onClose = { mostraLicenze = false },
+            modifier = modifier
+        )
+        return
+    }
+
     androidx.activity.compose.BackHandler {
         onClose()
     }
@@ -3515,6 +3526,24 @@ fun InformazioniScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(stringResource(R.string.info_repository))
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedButton(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            onClick = { mostraLicenze = true }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Description,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.info_open_source_licenses))
         }
 
         Spacer(modifier = Modifier.height(10.dp))

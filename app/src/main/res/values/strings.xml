@@ -65,6 +65,7 @@
     <string name="info_build">Build</string>
     <string name="info_author">Author</string>
     <string name="info_repository">GitHub repository</string>
+    <string name="info_open_source_licenses">Open-source licenses</string>
     <string name="info_checking">Checking...</string>
     <string name="info_check_updates">Check for updates</string>
     <string name="info_new_version">New version available: %1$s</string>

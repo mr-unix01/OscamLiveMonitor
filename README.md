@@ -1,16 +1,44 @@
 # OSCam Live Monitor
 
-Android app per il monitoraggio di OSCam.
+## English
 
-## Download
+An Android app for monitoring OSCam.
 
-Versione disponibile nella sezione **Releases** del repository.
+### Download
 
-## Varianti
+The current version is available in the repository's **Releases** section.
+
+### Variants
 - Smartphone
 - Tablet
 
-## Licenza
+### License
+
+The original code of OSCam Live Monitor is distributed under the **GNU General Public License version 3 or later** (`GPL-3.0-or-later`).
+
+Copyright (C) 2026 mr-unix01.
+
+See the [LICENSE](LICENSE) file for the full license text.
+
+#### App icon and trademarks
+
+The app icon is derived from the OSCam logo (`webif/images/ICMLOGO.svg`, present in the OSCam repository since at least 2014 and distributed under GPL v3) and was modified in 2026 by adding the pulse and green dot.
+
+Third-party libraries retain their respective licenses. The OSCam name and third-party trademarks remain subject to the rights of their respective owners. OSCam Live Monitor is an independent, unofficial project.
+
+## Italiano
+
+Android app per il monitoraggio di OSCam.
+
+### Download
+
+Versione disponibile nella sezione **Releases** del repository.
+
+### Varianti
+- Smartphone
+- Tablet
+
+### Licenza
 
 Il codice originale di OSCam Live Monitor è distribuito secondo la **GNU General Public License versione 3 o successiva** (`GPL-3.0-or-later`).
 
@@ -18,7 +46,7 @@ Copyright (C) 2026 mr-unix01.
 
 Consulta il file [LICENSE](LICENSE) per il testo integrale della licenza.
 
-### Icona e marchi
+#### Icona e marchi
 
 L'icona dell'app è derivata dal logo di OSCam (`webif/images/ICMLOGO.svg`, presente nel repository OSCam almeno dal 2014, distribuito con licenza GPL v3) ed è stata modificata nel 2026 con l'aggiunta dell'impulso e del pallino verde.
 

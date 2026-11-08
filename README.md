@@ -26,6 +26,8 @@ The app icon is derived from the OSCam logo (`webif/images/ICMLOGO.svg`, present
 
 Third-party libraries retain their respective licenses. The OSCam name and third-party trademarks remain subject to the rights of their respective owners. OSCam Live Monitor is an independent, unofficial project.
 
+Third-party licenses and attribution notices: [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+
 ## Italiano
 
 Android app per il monitoraggio di OSCam.
@@ -51,3 +53,5 @@ Consulta il file [LICENSE](LICENSE) per il testo integrale della licenza.
 L'icona dell'app è derivata dal logo di OSCam (`webif/images/ICMLOGO.svg`, presente nel repository OSCam almeno dal 2014, distribuito con licenza GPL v3) ed è stata modificata nel 2026 con l'aggiunta dell'impulso e del pallino verde.
 
 Le librerie di terze parti conservano le rispettive licenze. Il nome OSCam e i marchi di terzi restano soggetti ai diritti dei rispettivi titolari. OSCam Live Monitor è un progetto indipendente e non ufficiale.
+
+Licenze e avvisi di attribuzione delle librerie di terze parti: [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).

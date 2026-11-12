@@ -26,3 +26,7 @@ build-apk-v0.9.8/
 *.jks
 *.keystore
 keystore.properties
+
+# Android Studio: configurazioni locali
+/.idea/*
+!/.idea/codeStyles/

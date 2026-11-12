@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="home_open_menu">Open menu</string>
+    <plurals name="home_online_servers_label">
+        <item quantity="one">server online</item>
+        <item quantity="other">servers online</item>
+    </plurals>
+
     <string name="app_name">OSCam Live Monitor</string>
     <string name="settings_back">Back</string>
     <string name="settings_title">Settings</string>

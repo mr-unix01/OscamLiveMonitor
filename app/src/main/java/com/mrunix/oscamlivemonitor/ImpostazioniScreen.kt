@@ -1,6 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
@@ -65,26 +67,72 @@ fun ImpostazioniScreen(
         else -> stringResource(R.string.settings_system)
     }
 
+    val temaScuroImpostazioni =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val bluImpostazioni =
+        if (temaScuroImpostazioni) Color(0xFF112B4F) else Color(0xFF1565C0)
+    val sfondoImpostazioni =
+        if (temaScuroImpostazioni) Color(0xFF171A1F) else Color.White
+
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(sfondoImpostazioni)
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp, bottom = 20.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .background(bluImpostazioni)
         ) {
-            IconButton(onClick = onClose) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.settings_back))
-            }
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall)
-        }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 24.dp,
+                        bottom = 26.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    modifier = Modifier.clickable(onClick = onClose),
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = Color.White.copy(alpha = 0.16f)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.settings_back),
+                        tint = Color.White,
+                        modifier = Modifier
+                            .padding(11.dp)
+                            .size(24.dp)
+                    )
+                }
 
+                Spacer(Modifier.width(12.dp))
+
+                Text(
+                    text = stringResource(R.string.settings_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        sfondoImpostazioni,
+                        RoundedCornerShape(
+                            topStart = 28.dp,
+                            topEnd = 28.dp
+                        )
+                    )
+                    .padding(horizontal = 16.dp)
+            ) {
         SezioneImpostazioni(stringResource(R.string.settings_general)) {
             VoceScelta(
                 Icons.Default.Palette,
@@ -94,7 +142,7 @@ fun ImpostazioniScreen(
 
             HorizontalDivider(
                 modifier = Modifier.padding(start = 56.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = if (temaScuroImpostazioni) Color(0xFF303842) else Color(0xFFE2E8F0)
             )
 
             VoceScelta(
@@ -129,7 +177,7 @@ fun ImpostazioniScreen(
 
             HorizontalDivider(
                 modifier = Modifier.padding(start = 56.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = if (temaScuroImpostazioni) Color(0xFF303842) else Color(0xFFE2E8F0)
             )
 
             VoceInterruttore(
@@ -157,7 +205,7 @@ fun ImpostazioniScreen(
             if (aggiornamentoAutomaticoDashboard) {
                 HorizontalDivider(
                     modifier = Modifier.padding(start = 56.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant
+                    color = if (temaScuroImpostazioni) Color(0xFF303842) else Color(0xFFE2E8F0)
                 )
 
                 VoceScelta(
@@ -169,6 +217,8 @@ fun ImpostazioniScreen(
         }
 
         Spacer(Modifier.height(24.dp))
+            }
+        }
     }
 
     if (dialogoTema) {
@@ -227,16 +277,18 @@ private fun SezioneImpostazioni(
     titolo: String,
     contenuto: @Composable ColumnScope.() -> Unit
 ) {
+    val scuro = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
     Text(
         text = titolo.uppercase(),
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = if (scuro) Color(0xFF4DA3FF) else Color(0xFF1565C0),
         modifier = Modifier.padding(start = 12.dp, top = 14.dp, bottom = 8.dp)
     )
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        color = if (scuro) Color(0xFF171A1F) else Color.White,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(content = contenuto)
@@ -247,16 +299,18 @@ private fun SezioneImpostazioni(
 
 @Composable
 private fun IconaImpostazione(icona: ImageVector) {
+    val scuro = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+        color = if (scuro) Color(0xFF1D3249) else Color(0xFFE5F1FF),
         modifier = Modifier.size(42.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icona,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = if (scuro) Color(0xFF4DA3FF) else Color(0xFF1565C0),
                 modifier = Modifier.size(21.dp)
             )
         }
@@ -273,6 +327,7 @@ private fun TestoImpostazione(
         Text(
             text = titolo,
             style = MaterialTheme.typography.bodyMedium,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(Modifier.height(2.dp))
@@ -308,6 +363,8 @@ private fun VoceScelta(
             Modifier.weight(1f)
         )
 
+
+
     }
 }
 
@@ -338,7 +395,23 @@ private fun VoceInterruttore(
         Switch(
             checked = attivo,
             onCheckedChange = onChange,
-            modifier = Modifier.height(32.dp)
+            modifier = Modifier.height(32.dp),
+            colors = SwitchDefaults.colors(
+                checkedTrackColor =
+                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                        Color(0xFF4DA3FF)
+                    else Color(0xFF1565C0),
+                checkedThumbColor =
+                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                        Color(0xFF112B4F)
+                    else Color.White,
+                uncheckedTrackColor =
+                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                        Color(0xFF171A1F)
+                    else Color.White,
+                uncheckedBorderColor = Color(0xFF8895A7),
+                uncheckedThumbColor = Color(0xFF8895A7)
+            )
         )
     }
 }

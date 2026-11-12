@@ -2344,6 +2344,25 @@ val filePickerLauncher =
         )
     }
 
+    val toolsAvvioStandard =
+        !fullscreenTerminale &&
+        !connected &&
+        !fileConnected &&
+        !layoutTerminaleCompatto &&
+        !fileManagerCompatto
+
+    val fileConnessoStandard =
+        mostraFile && fileConnected && !fileManagerCompatto
+
+    val terminaleConnessoStandard =
+        connected && !mostraFile && !layoutTerminaleCompatto
+
+    val sfondoTestataTools =
+        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+            Color(0xFF112B4F)
+        else
+            Color(0xFF1565C0)
+
     Column(
         modifier = (
             if (
@@ -2352,6 +2371,8 @@ val filePickerLauncher =
                 fileConnected
             ) {
                 modifier.fillMaxSize()
+            } else if (toolsAvvioStandard) {
+                Modifier.fillMaxSize()
             } else {
                 Modifier
                     .fillMaxWidth()
@@ -2367,19 +2388,23 @@ val filePickerLauncher =
             )
             .padding(
                 start =
-                    if (layoutTerminaleCompatto) 2.dp
+                    if (toolsAvvioStandard || fileConnessoStandard || terminaleConnessoStandard) 0.dp
+                    else if (layoutTerminaleCompatto) 2.dp
                     else if (fileManagerCompatto) 4.dp
                     else 14.dp,
                 top =
-                    if (layoutTerminaleCompatto) 2.dp
+                    if (toolsAvvioStandard || fileConnessoStandard || terminaleConnessoStandard) 0.dp
+                    else if (layoutTerminaleCompatto) 2.dp
                     else if (fileManagerCompatto) 4.dp
                     else 14.dp,
                 end =
-                    if (layoutTerminaleCompatto) 2.dp
+                    if (toolsAvvioStandard || fileConnessoStandard || terminaleConnessoStandard) 0.dp
+                    else if (layoutTerminaleCompatto) 2.dp
                     else if (fileManagerCompatto) 4.dp
                     else 14.dp,
                 bottom =
-                    if (connected && !mostraFile) {
+                    if (toolsAvvioStandard || fileConnessoStandard || terminaleConnessoStandard) 0.dp
+                    else if (connected && !mostraFile) {
                         0.dp
                     } else {
                         if (layoutTerminaleCompatto) 2.dp
@@ -2387,31 +2412,7 @@ val filePickerLauncher =
                         else 14.dp
                     }
             )
-            .then(
-                if (
-                    !fullscreenTerminale &&
-                    !connected &&
-                    !fileConnected
-                ) {
-                    Modifier
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(
-                                alpha = 0.62f
-                            ),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
-                        )
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.34f
-                            ),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
-                        )
-                        .padding(12.dp)
-                } else {
-                    Modifier
-                }
-            )
+              .background(if (toolsAvvioStandard || fileConnessoStandard || terminaleConnessoStandard) sfondoTestataTools else Color.Transparent)
     ) {
         if (!layoutTerminaleCompatto) {
             if (fileManagerCompatto) {
@@ -2527,6 +2528,7 @@ val filePickerLauncher =
                         disconnectTerminal()
                         onClose()
                     },
+                    flat = toolsAvvioStandard || fileConnessoStandard || terminaleConnessoStandard,
                     onFullscreen =
                         if (connected && !mostraFile) {
                             {
@@ -2539,14 +2541,32 @@ val filePickerLauncher =
                         }
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(
+                    modifier = Modifier.height(
+                        if (toolsAvvioStandard || fileConnessoStandard || terminaleConnessoStandard) 0.dp else 10.dp
+                    )
+                )
             }
         }
 
         if (!fullscreenTerminale && !mostraFile && !connected) {
+            val scuroCampiTools =
+                com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+            val accentoCampiTools =
+                if (scuroCampiTools) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+            val bordoCampiTools =
+                if (scuroCampiTools) Color(0xFF303842) else Color(0xFFCBD8E8)
+
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+              colors = androidx.compose.material3.CardDefaults.cardColors(
+                  containerColor =
+                      if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                          Color(0xFF171A1F)
+                      else
+                          Color.White
+              )
         ) {
             Column(
                 modifier = Modifier
@@ -2651,6 +2671,12 @@ val filePickerLauncher =
                     OutlinedTextField(
                         modifier = Modifier.weight(1.8f),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoCampiTools,
+                            unfocusedBorderColor = bordoCampiTools,
+                            focusedLabelColor = accentoCampiTools,
+                            cursorColor = accentoCampiTools
+                        ),
                         value = host,
                         onValueChange = {
                             if (!connected) host = it
@@ -2672,6 +2698,12 @@ val filePickerLauncher =
                     OutlinedTextField(
                         modifier = Modifier.weight(0.8f),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoCampiTools,
+                            unfocusedBorderColor = bordoCampiTools,
+                            focusedLabelColor = accentoCampiTools,
+                            cursorColor = accentoCampiTools
+                        ),
                         value = port,
                         onValueChange = {
                             if (!connected) port = it
@@ -2700,6 +2732,12 @@ val filePickerLauncher =
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoCampiTools,
+                            unfocusedBorderColor = bordoCampiTools,
+                            focusedLabelColor = accentoCampiTools,
+                            cursorColor = accentoCampiTools
+                        ),
                         value = username,
                         onValueChange = {
                             if (!connected) username = it
@@ -2721,6 +2759,12 @@ val filePickerLauncher =
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoCampiTools,
+                            unfocusedBorderColor = bordoCampiTools,
+                            focusedLabelColor = accentoCampiTools,
+                            cursorColor = accentoCampiTools
+                        ),
                         value = password,
                         onValueChange = {
                             if (!connected) password = it
@@ -2963,6 +3007,33 @@ val filePickerLauncher =
         }
         }
 
+        if (connected && !mostraFile) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .then(
+                        if (terminaleConnessoStandard) {
+                            Modifier
+                                .background(
+                                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                        Color(0xFF171A1F)
+                                    else
+                                        Color.White,
+                                    androidx.compose.foundation.shape.RoundedCornerShape(
+                                        topStart = 28.dp,
+                                        topEnd = 28.dp
+                                    )
+                                )
+                                .padding(
+                                    horizontal = 14.dp,
+                                    vertical = 12.dp
+                                )
+                        } else {
+                            Modifier
+                        }
+                    )
+            ) {
         if (
             connected &&
             !mostraFile &&
@@ -3362,7 +3433,7 @@ val filePickerLauncher =
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp),
-                color = MaterialTheme.colorScheme.background
+                color = Color.Transparent
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -3536,7 +3607,17 @@ val filePickerLauncher =
         }
 
 
+            }
+        }
+
         if (!fullscreenTerminale && mostraFile) {
+            val scuroCampiTools =
+                com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+            val accentoCampiTools =
+                if (scuroCampiTools) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+            val bordoCampiTools =
+                if (scuroCampiTools) Color(0xFF303842) else Color(0xFFCBD8E8)
+
             Card(
                 modifier =
                     if (fileConnected) {
@@ -3544,10 +3625,23 @@ val filePickerLauncher =
                             .fillMaxWidth()
                             .weight(1f)
                     } else {
-                        Modifier.fillMaxWidth()
+                        if (toolsAvvioStandard) Modifier.fillMaxWidth().weight(1f)
+                          else Modifier.fillMaxWidth()
                     },
-                shape =
-                    androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+                shape = if (toolsAvvioStandard || fileConnessoStandard)
+                          androidx.compose.foundation.shape.RoundedCornerShape(
+                              topStart = 28.dp,
+                              topEnd = 28.dp
+                          )
+                      else
+                          androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+              colors = androidx.compose.material3.CardDefaults.cardColors(
+                  containerColor =
+                      if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                          Color(0xFF171A1F)
+                      else
+                          Color.White
+              )
             ) {
                 Column(
                     modifier =
@@ -3641,6 +3735,12 @@ val filePickerLauncher =
                         OutlinedTextField(
                             modifier = Modifier.weight(1.8f),
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = accentoCampiTools,
+                                unfocusedBorderColor = bordoCampiTools,
+                                focusedLabelColor = accentoCampiTools,
+                                cursorColor = accentoCampiTools
+                            ),
                             value = fileHost,
                             onValueChange = {
                                 fileHost = it
@@ -3661,6 +3761,12 @@ val filePickerLauncher =
                         OutlinedTextField(
                             modifier = Modifier.weight(0.8f),
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = accentoCampiTools,
+                                unfocusedBorderColor = bordoCampiTools,
+                                focusedLabelColor = accentoCampiTools,
+                                cursorColor = accentoCampiTools
+                            ),
                             value = filePort,
                             onValueChange = {
                                 filePort = it
@@ -3686,6 +3792,12 @@ val filePickerLauncher =
                             OutlinedTextField(
                                 modifier = fieldModifier,
                                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = accentoCampiTools,
+                                    unfocusedBorderColor = bordoCampiTools,
+                                    focusedLabelColor = accentoCampiTools,
+                                    cursorColor = accentoCampiTools
+                                ),
                                 value = fileUsername,
                                 onValueChange = {
                                     fileUsername = it
@@ -3713,6 +3825,12 @@ val filePickerLauncher =
                             OutlinedTextField(
                                 modifier = fieldModifier,
                                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = accentoCampiTools,
+                                    unfocusedBorderColor = bordoCampiTools,
+                                    focusedLabelColor = accentoCampiTools,
+                                    cursorColor = accentoCampiTools
+                                ),
                                 value = filePassword,
                                 onValueChange = {
                                     filePassword = it
@@ -4160,17 +4278,28 @@ val filePickerLauncher =
                                     horizontal = 10.dp,
                                     vertical = 4.dp
                                 ),
-                                colors =
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF353B45),
-                                        contentColor = Color.White
-                                    )
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) Color(0xFF4DA3FF)
+                                    else Color(0xFF1565C0)
+                                ),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor =
+                                        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) Color(0xFF1B2B42)
+                                        else Color(0xFFE8F1FD),
+                                    contentColor =
+                                        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) Color(0xFF4DA3FF)
+                                        else Color(0xFF1565C0)
+                                )
                             ) {
                                 if (uploadInCorso) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(20.dp),
                                         strokeWidth = 2.dp,
-                                        color = Color.White
+                                        color =
+                                            if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
+                                                Color(0xFF4DA3FF)
+                                            else Color(0xFF1565C0)
                                     )
                                 } else {
                                     Icon(

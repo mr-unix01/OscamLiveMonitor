@@ -2,6 +2,9 @@ package com.mrunix.oscamlivemonitor
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -115,117 +118,172 @@ fun ServerHubScreen(
         )
     )
 
+
+    val scuro = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
+    val blu = if (scuro) Color(0xFF112B4F) else Color(0xFF1565C0)
+    val sfondo = if (scuro) Color(0xFF171A1F) else Color.White
+    val testo = if (scuro) Color.White else Color(0xFF152235)
+    val icone = if (scuro) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+    val sfondoIcone = if (scuro) Color(0xFF1D3249) else Color(0xFFE5F1FF)
+    val separatore = if (scuro) Color(0xFF303842) else Color(0xFFE2E8F0)
+
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            horizontal = 12.dp,
-            vertical = 10.dp
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = modifier
+            .fillMaxSize()
+            .background(sfondo),
+        contentPadding = PaddingValues(0.dp)
     ) {
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                FilledTonalIconButton(
-                    onClick = onBack
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.settings_back)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = server.nome,
-                            modifier = Modifier.weight(1f, fill = false),
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow =
-                                androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Language,
-                            contentDescription = stringResource(R.string.hub_server_status, connectionText),
-                            tint = connectionColor,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = "${server.host}:${server.porta}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-
-        items(
-            items = actions,
-            key = { it.title }
-        ) { action ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant
-                ),
-                colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.surfaceVariant.copy(
-                            alpha = 0.32f
-                        )
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 0.dp
-                ),
-                onClick = action.onClick
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(blu)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
-                            horizontal = 16.dp,
-                            vertical = 14.dp
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 24.dp,
+                            bottom = 50.dp
                         ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = action.icon,
-                        contentDescription = null,
-                        tint = Color(0xFF4DA3FF),
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Surface(
+                        modifier = Modifier.clickable(onClick = onBack),
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = Color.White.copy(alpha = 0.16f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_back),
+                            tint = Color.White,
+                            modifier = Modifier
+                                .padding(11.dp)
+                                .size(24.dp)
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
-                    Text(
-                        text = action.title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = server.nome,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+
+                            Spacer(modifier = Modifier.width(7.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .size(9.dp)
+                                    .background(
+                                        connectionColor,
+                                        androidx.compose.foundation.shape.CircleShape
+                                    )
+                                    .semantics {
+                                        contentDescription = connectionText
+                                    }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        Text(
+                            text = "${server.host}:${server.porta}",
+                            color = Color.White.copy(alpha = 0.82f),
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            sfondo,
+                            RoundedCornerShape(
+                                topStart = 28.dp,
+                                topEnd = 28.dp
+                            )
+                        )
+                        .padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 18.dp,
+                            bottom = 22.dp
+                        )
+                ) {
+                    actions.forEachIndexed { index, action ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 66.dp)
+                                .clickable(onClick = action.onClick)
+                                .padding(
+                                    horizontal = 8.dp,
+                                    vertical = 10.dp
+                                ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(13.dp),
+                                color = sfondoIcone
+                            ) {
+                                Icon(
+                                    imageVector = action.icon,
+                                    contentDescription = null,
+                                    tint = icone,
+                                    modifier = Modifier
+                                        .padding(10.dp)
+                                        .size(22.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Text(
+                                text = action.title,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = testo,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            Text(
+                                text = "›",
+                                fontSize = 26.sp,
+                                color = if (scuro)
+                                    Color(0xFFABB7C7)
+                                else
+                                    Color(0xFF59677B)
+                            )
+                        }
+
+                        if (index < actions.lastIndex) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(
+                                    start = 68.dp,
+                                    end = 6.dp
+                                ),
+                                thickness = 1.dp,
+                                color = separatore
+                            )
+                        }
+                    }
                 }
             }
         }
-
-        item {
-            Spacer(modifier = Modifier.height(6.dp))
-        }
     }
+
 }

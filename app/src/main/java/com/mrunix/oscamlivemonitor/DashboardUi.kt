@@ -3,6 +3,8 @@ package com.mrunix.oscamlivemonitor
 import androidx.compose.material.icons.filled.Menu
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -523,8 +525,8 @@ fun VoceStatoCard(
         ),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            coloreAccento.copy(
-                alpha = if (temaScuroVoce) 0.28f else 0.36f
+            MaterialTheme.colorScheme.outlineVariant.copy(
+                alpha = if (temaScuroVoce) 0.65f else 0.75f
             )
         ),
         colors = CardDefaults.cardColors(
@@ -695,79 +697,119 @@ fun MiniDatoClient(
 @Composable
 fun ExpressiveAppHeader(
     compatto: Boolean,
+    statiServer: List<OscamServerConnectionState>,
     onMenuClick: () -> Unit = {}
 ) {
-    val temaScuroHeader = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val temaScuro = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val bluHeader = if (temaScuro) Color(0xFF112B4F) else Color(0xFF1565C0)
+
+    val online = statiServer.count {
+        it == OscamServerConnectionState.ACTIVE
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            if (compatto) 20.dp else 24.dp
-        ),
-        border = null,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        ),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = bluHeader),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = if (compatto) 14.dp else 18.dp,
-                    vertical = if (compatto) 11.dp else 14.dp
-                ),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = 28.dp
+                )
         ) {
-            androidx.compose.material3.Surface(
-                modifier = Modifier.clickable(onClick = onMenuClick),
-                shape = androidx.compose.foundation.shape.CircleShape,
-                color = if (temaScuroHeader) {
-                    Color(0xFF4DA3FF).copy(alpha = 0.16f)
-                } else {
-                    Color(0xFF4DA3FF).copy(alpha = 0.12f)
-                }
+            Row(
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = null,
-                    tint = if (temaScuroHeader) Color(0xFF4DA3FF) else Color(0xFF1565C0),
-                    modifier = Modifier
-                        .padding(if (compatto) 11.dp else 13.dp)
-                        .size(if (compatto) 24.dp else 28.dp)
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.clickable(onClick = onMenuClick),
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = Color.White.copy(alpha = 0.15f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = stringResource(R.string.home_open_menu),
+                        tint = Color.White,
+                        modifier = Modifier.padding(11.dp).size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = "OSCam Live Monitor",
+                    fontSize = if (compatto) 21.sp else 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    maxLines = 1
                 )
             }
 
-            Spacer(modifier = Modifier.width(if (compatto) 12.dp else 16.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            Column(
-                modifier = Modifier.weight(1f)
+            Row(
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
+                Text(
+                    text = online.toString(),
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "OSCam",
-                        fontSize = if (compatto) 25.sp else 30.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (temaScuroHeader) MaterialTheme.colorScheme.onSurface else Color(0xFF1F2320)
+                        text = androidx.compose.ui.res.pluralStringResource(
+                            R.plurals.home_online_servers_label,
+                            online
+                        ),
+                        fontSize = 15.sp,
+                        color = Color.White
                     )
 
-                    Spacer(modifier = Modifier.width(7.dp))
+                    Spacer(modifier = Modifier.height(7.dp))
 
-                    Text(
-                        text = "Live Monitor",
-                        fontSize = if (compatto) 25.sp else 30.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = if (temaScuroHeader) Color(0xFF4DA3FF) else Color(0xFF1565C0)
-                    )
+                    Row(
+                        modifier = Modifier.horizontalScroll(
+                            androidx.compose.foundation.rememberScrollState()
+                        ),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        statiServer.forEach { stato ->
+                            val colore = when (stato) {
+                                OscamServerConnectionState.ACTIVE ->
+                                    Color(0xFF4CAF50)
+                                OscamServerConnectionState.CHECKING,
+                                OscamServerConnectionState.AUTH_ERROR ->
+                                    Color(0xFFFF9800)
+                                OscamServerConnectionState.REACHABLE_NO_OSCAM ->
+                                    Color(0xFFFFB300)
+                                OscamServerConnectionState.UNREACHABLE ->
+                                    Color(0xFFEF5350)
+                            }
+
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .size(width = 19.dp, height = 7.dp)
+                                    .background(
+                                        colore,
+                                        androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                    )
+                            )
+                        }
+                    }
                 }
-
             }
         }
     }
 }
-
 
 @Composable
 fun ClientInfoCard(
@@ -859,27 +901,27 @@ fun ClientInfoCard(
             if (compatto) 18.dp else 22.dp
         ),
         border = androidx.compose.foundation.BorderStroke(
-            if (temaScuroClient) 1.dp else 1.1.dp,
-            Color(0xFFFFA726).copy(
-                alpha = if (temaScuroClient) 0.30f else 0.36f
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(
+                alpha = if (temaScuroClient) 0.65f else 0.75f
             )
         ),
         colors = CardDefaults.cardColors(
             containerColor =
                 if (temaScuroClient) {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.60f)
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f)
                 } else {
-                    Color.White
+                    MaterialTheme.colorScheme.surface
                 }
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (temaScuroClient) 2.dp else 1.dp
+            defaultElevation = 0.dp
         )
     ) {
         Column(
             modifier = Modifier.padding(
-                horizontal = if (compatto) 10.dp else 13.dp,
-                vertical = if (compatto) 6.dp else 9.dp
+                horizontal = if (compatto) 11.dp else 14.dp,
+                vertical = if (compatto) 9.dp else 11.dp
             )
         ) {
             Row(
@@ -889,29 +931,27 @@ fun ClientInfoCard(
             ) {
                 androidx.compose.material3.Surface(
                     shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    color = Color(0xFFFFA726).copy(
-                        alpha = if (temaScuroClient) 0.15f else 0.10f
-                    )
+                        androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                    color = Color(0xFFFFA726).copy(alpha = 0.14f)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Devices,
                         contentDescription = null,
                         tint = Color(0xFFFFA726),
                         modifier = Modifier
-                            .padding(if (compatto) 5.dp else 7.dp)
-                            .size(if (compatto) 17.dp else 20.dp)
+                            .padding(if (compatto) 7.dp else 8.dp)
+                            .size(if (compatto) 18.dp else 20.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
                         text = nome.ifBlank { "Client" },
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = if (compatto) 14.sp else 16.sp,
                         maxLines = 1
                     )
@@ -929,7 +969,7 @@ fun ClientInfoCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(7.dp))
 
                 BadgeStatoDashboard(
                     stato = stato,
@@ -937,19 +977,19 @@ fun ClientInfoCard(
                 )
 
                 if (mostraToggleUser) {
-                    Spacer(modifier = Modifier.width(2.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
 
                     IconButton(
                         onClick = { onToggleUser?.invoke() },
                         enabled = !toggleUserInCorso,
                         modifier = Modifier.size(
-                            if (compatto) 30.dp else 34.dp
+                            if (compatto) 32.dp else 36.dp
                         )
                     ) {
                         if (toggleUserInCorso) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(
-                                    if (compatto) 16.dp else 18.dp
+                                    if (compatto) 17.dp else 19.dp
                                 ),
                                 strokeWidth = 2.dp,
                                 color =
@@ -962,7 +1002,7 @@ fun ClientInfoCard(
                                 tint =
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(
-                                    if (compatto) 17.dp else 19.dp
+                                    if (compatto) 18.dp else 20.dp
                                 )
                             )
                         }

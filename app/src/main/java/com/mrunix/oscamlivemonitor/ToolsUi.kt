@@ -27,24 +27,34 @@ fun ToolsHeader(
     serverHost: String,
     onBack: () -> Unit,
     onFullscreen: (() -> Unit)? = null,
-    compact: Boolean = false
+    compact: Boolean = false,
+    flat: Boolean = false
 ) {
+    val scuroTools =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val bluTools =
+        if (scuroTools) Color(0xFF112B4F) else Color(0xFF1565C0)
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = Color.Transparent,
+        shape =
+            if (flat) RoundedCornerShape(0.dp)
+            else RoundedCornerShape(20.dp),
+        color = bluTools,
         border = null
     ) {
         Row(
             modifier = Modifier.padding(
-                horizontal = if (compact) 4.dp else 9.dp,
-                vertical = if (compact) 2.dp else 9.dp
+                start = if (flat) 16.dp else if (compact) 4.dp else 9.dp,
+                end = if (flat) 16.dp else if (compact) 4.dp else 9.dp,
+                top = if (flat) 24.dp else if (compact) 2.dp else 9.dp,
+                bottom = if (flat) 26.dp else if (compact) 2.dp else 9.dp
             ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = Color.White.copy(alpha = 0.16f)
             ) {
                 IconButton(
                     onClick = onBack,
@@ -52,7 +62,8 @@ fun ToolsHeader(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.settings_back)
+                        contentDescription = stringResource(R.string.settings_back),
+                        tint = Color.White
                     )
                 }
             }
@@ -61,12 +72,12 @@ fun ToolsHeader(
 
             Surface(
                 shape = RoundedCornerShape(13.dp),
-                color = Color(0xFF4CAF50).copy(alpha = 0.14f)
+                color = Color.White.copy(alpha = 0.12f)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = Color.White,
                     modifier = Modifier
                         .padding(if (compact) 6.dp else 8.dp)
                         .size(if (compact) 17.dp else 20.dp)
@@ -81,7 +92,8 @@ fun ToolsHeader(
                 Text(
                     text = title,
                     fontSize = if (compact) 16.sp else 19.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
 
                 Text(
@@ -94,7 +106,7 @@ fun ToolsHeader(
                         "$serverName  •  $serverHost"
                     },
                     fontSize = if (compact) 10.sp else 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = Color.White.copy(alpha = 0.80f),
                     maxLines = 1
                 )
             }
@@ -109,6 +121,7 @@ fun ToolsHeader(
                     Icon(
                         imageVector = Icons.Default.Fullscreen,
                         contentDescription = stringResource(R.string.tools_expand_terminal),
+                            tint = Color.White,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -246,24 +259,24 @@ fun ToolsBinarySelector(
                 onClick = action,
                 shape = RoundedCornerShape(14.dp),
                 border = BorderStroke(
-                    if (selected) 1.4.dp else 1.dp,
+                    1.dp,
                     if (selected) {
                         accentEffettivo.copy(
                             alpha = if (temaScuro) 0.75f else 0.85f
                         )
                     } else {
-                        MaterialTheme.colorScheme.outlineVariant
+                        if (temaScuro) Color(0xFF303842) else Color(0xFFE2E8F0)
                     }
                 ),
                 colors = CardDefaults.cardColors(
                     containerColor = if (selected) {
                         if (temaScuro) {
-                            accent.copy(alpha = 0.10f)
+                            Color(0xFF1D3249)
                         } else {
-                            Color(0xFF4DA3FF).copy(alpha = 0.20f)
+                            Color(0xFFE5F1FF)
                         }
                     } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.25f)
+                        if (temaScuro) Color(0xFF171A1F) else Color.White
                     }
                 ),
                 elevation = CardDefaults.cardElevation(0.dp)
@@ -307,15 +320,23 @@ fun ToolsConnectionStatus(
     text: String,
     modifier: Modifier = Modifier
 ) {
+    val temaScuroStatus =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
+    val nonConnessoStatus =
+        listOf(
+            "Disconnesso",
+            "Non connesso",
+            "Disconnected",
+            "Not connected"
+        ).any { text.contains(it, ignoreCase = true) }
+
     val color = when {
         text.contains("Errore", ignoreCase = true) ||
         text.contains("Error", ignoreCase = true) ->
             Color(0xFFEF5350)
 
-        text.contains("Disconnesso", ignoreCase = true) ||
-        text.contains("Non connesso", ignoreCase = true) ||
-        text.contains("Disconnected", ignoreCase = true) ||
-        text.contains("Not connected", ignoreCase = true) ->
+        nonConnessoStatus ->
             MaterialTheme.colorScheme.onSurfaceVariant
 
         text.contains("Connessione", ignoreCase = true) ||
@@ -333,11 +354,19 @@ fun ToolsConnectionStatus(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(50),
-        color = color.copy(alpha = 0.10f),
-        border = BorderStroke(
-            1.dp,
-            color.copy(alpha = 0.32f)
-        )
+        color =
+            if (nonConnessoStatus) {
+                if (temaScuroStatus) Color(0xFF1E2A3B)
+                else Color(0xFFE8F1FD)
+            } else {
+                color.copy(alpha = 0.10f)
+            },
+        border =
+            if (nonConnessoStatus) null
+            else BorderStroke(
+                1.dp,
+                color.copy(alpha = 0.32f)
+            )
     ) {
         Row(
             modifier = Modifier.padding(

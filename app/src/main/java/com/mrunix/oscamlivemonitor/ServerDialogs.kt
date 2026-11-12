@@ -61,26 +61,122 @@ internal fun EliminaServerDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
+    val descrizioneAnnulla = stringResource(R.string.settings_cancel)
+    val descrizioneElimina = stringResource(R.string.home_delete)
+
+    val scuroElimina =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
+    val sfondoDialogo =
+        if (scuroElimina) Color(0xFF181B21) else Color.White
+
+    val accentoElimina =
+        if (scuroElimina) Color(0xFFFF8A80) else Color(0xFFB3261E)
+
+    val sfondoIconaElimina =
+        if (scuroElimina) {
+            Color(0xFFFF8A80).copy(alpha = 0.16f)
+        } else {
+            Color(0xFFB3261E).copy(alpha = 0.10f)
+        }
+
+    val bordoNeutro =
+        if (scuroElimina) Color(0xFF303842) else Color(0xFFE2E8F0)
+
+    val sfondoAnnulla =
+        if (scuroElimina) Color(0xFF171A1F) else Color.White
+
+    val sfondoElimina =
+        if (scuroElimina) {
+            Color(0xFFFF8A80).copy(alpha = 0.14f)
+        } else {
+            Color(0xFFFDECEC)
+        }
+
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+        containerColor = sfondoDialogo,
         title = {
-            Text(stringResource(R.string.server_delete_title))
-        },
-        text = {
-            Text(stringResource(R.string.server_delete_message, nomeServer))
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.home_delete))
+                Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                    color = sfondoIconaElimina
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = accentoElimina,
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .size(22.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = stringResource(R.string.server_delete_title),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
+        text = {
+            Text(
+                text = stringResource(
+                    R.string.server_delete_message,
+                    nomeServer
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
         dismissButton = {
-            TextButton(
+            Button(
+                modifier = Modifier
+                    .width(56.dp)
+                    .height(50.dp)
+                    .semantics {
+                        contentDescription = descrizioneAnnulla
+                    },
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, bordoNeutro),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = sfondoAnnulla,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                contentPadding = PaddingValues(0.dp),
                 onClick = onDismiss
             ) {
-                Text(stringResource(R.string.settings_cancel))
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                modifier = Modifier
+                    .height(50.dp)
+                    .semantics {
+                        contentDescription = descrizioneElimina
+                    },
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, accentoElimina),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = sfondoElimina,
+                    contentColor = accentoElimina
+                ),
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
+                onClick = onConfirm
+            ) {
+                Text(
+                    text = stringResource(R.string.home_delete),
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     )
@@ -95,8 +191,13 @@ internal fun RiordinaServerDialog(
 ) {
     val descrizioneSpostaSu = stringResource(R.string.server_move_up)
     val descrizioneSpostaGiu = stringResource(R.string.server_move_down)
+
+    val scuroRiordina =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor =
+            if (scuroRiordina) Color(0xFF171A1F) else Color.White,
         title = {
             Text(
                 text = stringResource(R.string.server_reorder_title),
@@ -116,31 +217,27 @@ internal fun RiordinaServerDialog(
                             androidx.compose.foundation.shape.RoundedCornerShape(
                                 18.dp
                             ),
-                        color =
-                            MaterialTheme.colorScheme.surfaceVariant
-                                .copy(alpha = 0.38f)
+                        color = if (scuroRiordina)
+                            Color(0xFF1D3249)
+                        else
+                            Color(0xFFE5F1FF)
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(
-                                    horizontal = 12.dp,
+                                    horizontal = 8.dp,
                                     vertical = 10.dp
                                 ),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
-                                modifier = Modifier.size(42.dp),
+                                modifier = Modifier.size(36.dp),
                                 shape =
                                     androidx.compose.foundation.shape.RoundedCornerShape(
                                         12.dp
                                     ),
-                                color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.outline
-                                        .copy(alpha = 0.35f)
-                                )
+                                color = Color.Transparent
                             ) {
                                 Box(
                                     contentAlignment = Alignment.Center
@@ -149,27 +246,30 @@ internal fun RiordinaServerDialog(
                                         imageVector = Icons.Default.Storage,
                                         contentDescription = null,
                                         modifier = Modifier.size(20.dp),
-                                        tint =
-                                            MaterialTheme.colorScheme
-                                                .onSurfaceVariant
+                                        tint = if (scuroRiordina)
+                                                Color(0xFF4DA3FF)
+                                            else
+                                                Color(0xFF1565C0)
                                     )
                                 }
                             }
 
                             Spacer(
-                                modifier = Modifier.width(12.dp)
+                                modifier = Modifier.width(8.dp)
                             )
 
                             Text(
                                 text = elemento.nome,
                                 modifier = Modifier.weight(1f),
                                 fontSize = 17.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
 
                             IconButton(
                                 enabled = indice > 0,
-                                modifier = Modifier.semantics {
+                                modifier = Modifier.size(40.dp).semantics {
                                     contentDescription =
                                         descrizioneSpostaSu
                                 },
@@ -192,7 +292,7 @@ internal fun RiordinaServerDialog(
 
                             IconButton(
                                 enabled = indice < server.lastIndex,
-                                modifier = Modifier.semantics {
+                                modifier = Modifier.size(40.dp).semantics {
                                     contentDescription =
                                         descrizioneSpostaGiu
                                 },
@@ -216,40 +316,37 @@ internal fun RiordinaServerDialog(
                     }
                 }
 
-                Spacer(
-                    modifier = Modifier.height(6.dp)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Button(
-                        modifier = Modifier
-                            .width(58.dp)
-                            .height(50.dp),
-                        shape =
-                            androidx.compose.foundation.shape.RoundedCornerShape(
-                                14.dp
-                            ),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF353B45),
-                            contentColor = Color.White
-                        ),
-                        contentPadding = PaddingValues(0.dp),
-                        onClick = onDismiss
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription =
-                                stringResource(R.string.server_reorder_done),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
             }
         },
-        confirmButton = {},
+        confirmButton = {
+            Button(
+                modifier = Modifier
+                    .width(58.dp)
+                    .height(50.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                border = BorderStroke(
+                    1.dp,
+                    if (scuroRiordina) Color(0xFF4DA3FF)
+                    else Color(0xFF1565C0)
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor =
+                        if (scuroRiordina) Color(0xFF1D3249)
+                        else Color(0xFFE5F1FF),
+                    contentColor =
+                        if (scuroRiordina) Color(0xFF4DA3FF)
+                        else Color(0xFF1565C0)
+                ),
+                contentPadding = PaddingValues(0.dp),
+                onClick = onDismiss
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Save,
+                    contentDescription = stringResource(R.string.server_reorder_done),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        },
         shape =
             androidx.compose.foundation.shape.RoundedCornerShape(
                 28.dp
@@ -278,8 +375,21 @@ internal fun ModificaServerDialog(
 ) {
     val descrizioneSalva = stringResource(R.string.server_save)
     val descrizioneAnnulla = stringResource(R.string.settings_cancel)
+
+    val scuroModifica =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val accentoModifica =
+        if (scuroModifica) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+    val bordoModifica =
+        if (scuroModifica) Color(0xFF303842) else Color(0xFFCBD8E8)
+    val sfondoIconaModifica =
+        if (scuroModifica) Color(0xFF1D3249) else Color(0xFFE5F1FF)
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor =
+            if (scuroModifica) Color(0xFF171A1F) else Color.White,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+        tonalElevation = 0.dp,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -289,7 +399,7 @@ internal fun ModificaServerDialog(
                     shape =
                         androidx.compose.foundation.shape.CircleShape,
                     color =
-                        Color(0xFF353B45)
+                        sfondoIconaModifica
                 ) {
                     Box(
                         contentAlignment = Alignment.Center
@@ -297,7 +407,7 @@ internal fun ModificaServerDialog(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = accentoModifica,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -323,6 +433,12 @@ internal fun ModificaServerDialog(
                         .imePadding()
                 ) {
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoModifica,
+                            unfocusedBorderColor = bordoModifica,
+                            cursorColor = accentoModifica,
+                            focusedLabelColor = accentoModifica
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -345,6 +461,12 @@ internal fun ModificaServerDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoModifica,
+                            unfocusedBorderColor = bordoModifica,
+                            cursorColor = accentoModifica,
+                            focusedLabelColor = accentoModifica
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -367,6 +489,12 @@ internal fun ModificaServerDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoModifica,
+                            unfocusedBorderColor = bordoModifica,
+                            cursorColor = accentoModifica,
+                            focusedLabelColor = accentoModifica
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -389,6 +517,12 @@ internal fun ModificaServerDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoModifica,
+                            unfocusedBorderColor = bordoModifica,
+                            cursorColor = accentoModifica,
+                            focusedLabelColor = accentoModifica
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -411,6 +545,12 @@ internal fun ModificaServerDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoModifica,
+                            unfocusedBorderColor = bordoModifica,
+                            cursorColor = accentoModifica,
+                            focusedLabelColor = accentoModifica
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -479,9 +619,10 @@ internal fun ModificaServerDialog(
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         14.dp
                     ),
+                border = BorderStroke(1.dp, accentoModifica),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF353B45),
-                    contentColor = Color.White
+                    containerColor = sfondoIconaModifica,
+                    contentColor = accentoModifica
                 ),
                 contentPadding = PaddingValues(0.dp),
                 onClick = onSave
@@ -505,9 +646,10 @@ internal fun ModificaServerDialog(
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         14.dp
                     ),
+                border = BorderStroke(1.dp, bordoModifica),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF353B45),
-                    contentColor = Color.White
+                    containerColor = if (scuroModifica) Color(0xFF171A1F) else Color.White,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 contentPadding = PaddingValues(0.dp),
                 onClick = onDismiss
@@ -544,8 +686,21 @@ internal fun AggiungiServerDialog(
 ) {
     val descrizioneSalva = stringResource(R.string.server_save)
     val descrizioneAnnulla = stringResource(R.string.settings_cancel)
+
+    val scuroAggiungi =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val accentoAggiungi =
+        if (scuroAggiungi) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+    val bordoAggiungi =
+        if (scuroAggiungi) Color(0xFF303842) else Color(0xFFCBD8E8)
+    val sfondoIconaAggiungi =
+        if (scuroAggiungi) Color(0xFF1D3249) else Color(0xFFE5F1FF)
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor =
+            if (scuroAggiungi) Color(0xFF171A1F) else Color.White,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+        tonalElevation = 0.dp,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -555,7 +710,7 @@ internal fun AggiungiServerDialog(
                     shape =
                         androidx.compose.foundation.shape.CircleShape,
                     color =
-                        Color(0xFF353B45)
+                        sfondoIconaAggiungi
                 ) {
                     Box(
                         contentAlignment = Alignment.Center
@@ -563,7 +718,7 @@ internal fun AggiungiServerDialog(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = accentoAggiungi,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -589,6 +744,12 @@ internal fun AggiungiServerDialog(
                         .imePadding()
                 ) {
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoAggiungi,
+                            unfocusedBorderColor = bordoAggiungi,
+                            cursorColor = accentoAggiungi,
+                            focusedLabelColor = accentoAggiungi
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -609,6 +770,12 @@ internal fun AggiungiServerDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoAggiungi,
+                            unfocusedBorderColor = bordoAggiungi,
+                            cursorColor = accentoAggiungi,
+                            focusedLabelColor = accentoAggiungi
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -629,6 +796,12 @@ internal fun AggiungiServerDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoAggiungi,
+                            unfocusedBorderColor = bordoAggiungi,
+                            cursorColor = accentoAggiungi,
+                            focusedLabelColor = accentoAggiungi
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -649,6 +822,12 @@ internal fun AggiungiServerDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoAggiungi,
+                            unfocusedBorderColor = bordoAggiungi,
+                            cursorColor = accentoAggiungi,
+                            focusedLabelColor = accentoAggiungi
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -669,6 +848,12 @@ internal fun AggiungiServerDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = accentoAggiungi,
+                            unfocusedBorderColor = bordoAggiungi,
+                            cursorColor = accentoAggiungi,
+                            focusedLabelColor = accentoAggiungi
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         shape =
                             androidx.compose.foundation.shape.RoundedCornerShape(
@@ -721,6 +906,10 @@ internal fun AggiungiServerDialog(
                                 14.dp
                             ),
                         enabled = !testConnessioneInCorso,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = accentoAggiungi
+                        ),
+                        border = BorderStroke(1.dp, bordoAggiungi),
                         onClick = onTestConnection
                     ) {
                         if (testConnessioneInCorso) {
@@ -758,9 +947,10 @@ internal fun AggiungiServerDialog(
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         14.dp
                     ),
+                border = BorderStroke(1.dp, accentoAggiungi),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF353B45),
-                    contentColor = Color.White
+                    containerColor = sfondoIconaAggiungi,
+                    contentColor = accentoAggiungi
                 ),
                 contentPadding = PaddingValues(0.dp),
                 onClick = onSave
@@ -784,9 +974,10 @@ internal fun AggiungiServerDialog(
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         14.dp
                     ),
+                border = BorderStroke(1.dp, bordoAggiungi),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF353B45),
-                    contentColor = Color.White
+                    containerColor = if (scuroAggiungi) Color(0xFF171A1F) else Color.White,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 contentPadding = PaddingValues(0.dp),
                 onClick = onDismiss

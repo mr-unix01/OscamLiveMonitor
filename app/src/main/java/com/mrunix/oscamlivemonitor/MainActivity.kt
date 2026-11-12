@@ -25,7 +25,12 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -1478,19 +1483,28 @@ fun Greeting(
 
         val contenutoPrincipale: @Composable () -> Unit = contenuto@ {
             if (mostraConnessione) {
+                val temaScuroHome =
+                    com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+                val sfondoHome =
+                    if (temaScuroHome) Color(0xFF171A1F) else Color.White
+                val bluHome =
+                    if (temaScuroHome) Color(0xFF112B4F) else Color(0xFF1565C0)
+
                 androidx.compose.foundation.lazy.LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
+                        .background(sfondoHome)
                         .imePadding(),
-                    contentPadding = PaddingValues(
-                        horizontal = if (schermoCompatto) 12.dp else 16.dp,
-                        vertical = if (schermoCompatto) 10.dp else 16.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(0.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     item {
                         ExpressiveAppHeader(
                             compatto = schermoCompatto,
+                            statiServer = serverSalvati.map { server ->
+                                statoServerSalvati[server.id]
+                                    ?: OscamServerConnectionState.CHECKING
+                            },
                             onMenuClick = {
                                 trascinamentoMenu = 0f
                                 menuSuperioreAperto = true
@@ -1499,30 +1513,48 @@ fun Greeting(
                     }
 
                     item {
-                        Spacer(
-                            modifier = Modifier.height(
-                                if (schermoCompatto) 2.dp else 4.dp
-                            )
-                        )
-                    }
-
-                    item {
-                        ServerSelectionHeader(
-                            onAddServer = {
-                                nuovoNomeServer = ""
-                                nuovoHostServer = ""
-                                nuovaPortaServer = ""
-                                nuovoUsernameServer = ""
-                                nuovaPasswordServer = ""
-                                mostraPasswordNuovo = false
-                                mostraAggiungiServer = true
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(bluHome)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        color = sfondoHome,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                                            topStart = 28.dp,
+                                            topEnd = 28.dp
+                                        )
+                                    )
+                            ) {
+                                ServerSelectionHeader(
+                                    modifier = Modifier.padding(
+                                        start = if (schermoCompatto) 12.dp else 16.dp,
+                                        end = if (schermoCompatto) 12.dp else 16.dp,
+                                        top = 8.dp,
+                                        bottom = 12.dp
+                                    ),
+                                    onAddServer = {
+                                        nuovoNomeServer = ""
+                                        nuovoHostServer = ""
+                                        nuovaPortaServer = ""
+                                        nuovoUsernameServer = ""
+                                        nuovaPasswordServer = ""
+                                        mostraPasswordNuovo = false
+                                        mostraAggiungiServer = true
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
 
                     if (serverSalvati.isEmpty()) {
                         item {
-                            EmptyServerState()
+                            EmptyServerState(
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
                         }
                     } else {
                         items(
@@ -1537,7 +1569,12 @@ fun Greeting(
                                 server.id == serverIdAttivo
 
                             OscamServerCard(
+                                modifier = Modifier.padding(
+                                    horizontal = if (schermoCompatto) 12.dp else 16.dp,
+                                    vertical = 4.dp
+                                ),
                                 server = server,
+                                showDivider = index < serverSalvati.lastIndex,
                                 selected = serverSelezionato,
                                 connectionState =
                                     statoServerSalvati[
@@ -1616,16 +1653,20 @@ fun Greeting(
                 return@contenuto
             }
 
+            val scuroDashboardGrafica =
+                com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+            val bluDashboardGrafica =
+                if (scuroDashboardGrafica) Color(0xFF112B4F) else Color(0xFF1565C0)
+            val sfondoDashboardGrafica =
+                if (scuroDashboardGrafica) Color(0xFF171A1F) else Color.White
+
             Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollHome)
-                .imePadding()
-                .padding(
-                    horizontal = if (schermoCompatto) 12.dp else 16.dp,
-                    vertical = if (schermoCompatto) 10.dp else 16.dp
-                )
-        ) {
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(sfondoDashboardGrafica)
+                    .verticalScroll(scrollHome)
+                    .imePadding()
+            ) {
             val serverAttivoDashboard =
                 serverSalvati.firstOrNull { server ->
                     server.id == serverIdAttivo
@@ -1651,8 +1692,7 @@ fun Greeting(
                 stato.equals("Connesso", ignoreCase = true) ||
                     stato.equals("Connected", ignoreCase = true) ||
                     stato.contains("selezionato", ignoreCase = true) ->
-                    if (temaScuro) Color(0xFF66BB6A)
-                    else Color(0xFF2E7D32)
+                    Color(0xFF7DDB9A)
 
                 stato.contains("autentic", ignoreCase = true) ||
                     stato.contains("authentication", ignoreCase = true) ->
@@ -1679,18 +1719,32 @@ fun Greeting(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment =
-                    androidx.compose.ui.Alignment.CenterVertically
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(bluDashboardGrafica)
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 24.dp,
+                        bottom = 26.dp
+                    ),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 FilledTonalIconButton(
+                    modifier = Modifier.size(46.dp),
+                    colors = androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = Color.White.copy(alpha = 0.16f),
+                        contentColor = Color.White
+                    ),
                     onClick = {
                         tornaAlPannelloDaDashboard()
                     }
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.dashboard_back_panel)
+                        contentDescription = stringResource(R.string.dashboard_back_panel),
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -1708,6 +1762,7 @@ fun Greeting(
                             modifier = Modifier.weight(1f, fill = false),
                             fontSize = if (schermoCompatto) 20.sp else 22.sp,
                             fontWeight = FontWeight.Bold,
+                            color = Color.White,
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
@@ -1735,12 +1790,32 @@ fun Greeting(
                     Text(
                         text = "${host.trim()}:${porta.trim()}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = Color.White.copy(alpha = 0.82f),
                         maxLines = 1
                     )
                 }
             }
 
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(bluDashboardGrafica)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            sfondoDashboardGrafica,
+                            androidx.compose.foundation.shape.RoundedCornerShape(
+                                topStart = 28.dp,
+                                topEnd = 28.dp
+                            )
+                        )
+                        .padding(
+                            horizontal = if (schermoCompatto) 12.dp else 16.dp,
+                            vertical = if (schermoCompatto) 10.dp else 16.dp
+                        )
+                ) {
             if (
                 !mostraConnessione &&
                 (versioneOscam.isNotBlank() ||
@@ -2258,6 +2333,8 @@ fun Greeting(
                     }
                 }
             }
+            }
+            }
         }
         }
 
@@ -2366,70 +2443,120 @@ fun Greeting(
                             )
                         },
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                        bottomStart = 20.dp,
-                        bottomEnd = 20.dp
+                        bottomStart = 28.dp,
+                        bottomEnd = 28.dp
                     ),
-                    color = MaterialTheme.colorScheme.surface,
+                    color = if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) Color(0xFF171A1F) else Color.White,
                     shadowElevation = 12.dp
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .statusBarsPadding()
-                            .padding(horizontal = 20.dp, vertical = 14.dp)
+                            .padding(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 14.dp)
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.oscam_drawer_logo),
-                            contentDescription = stringResource(R.string.info_logo),
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(androidx.compose.foundation.shape.CircleShape)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "OscamLiveMonitor",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    menuSuperioreAperto = false
-                                    mostraImpostazioni = true
-                                }
-                                .padding(vertical = 13.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(stringResource(R.string.settings_title), color = MaterialTheme.colorScheme.onSurface)
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    menuSuperioreAperto = false
-                                    mostraInformazioni = true
-                                }
-                                .padding(vertical = 13.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(stringResource(R.string.info_title), color = MaterialTheme.colorScheme.onSurface)
-                        }
+                          val scuroMenu =
+                              com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+                          val testoMenu =
+                              if (scuroMenu) Color.White else Color(0xFF152235)
+                          val iconaMenu =
+                              if (scuroMenu) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+                          val sfondoIconaMenu =
+                              if (scuroMenu) Color(0xFF1D3249) else Color(0xFFE5F1FF)
+                          val separatoreMenu =
+                              if (scuroMenu) Color(0xFF303842) else Color(0xFFE2E8F0)
+
+                          Column(
+                              modifier = Modifier
+                                  .fillMaxWidth()
+                                  .padding(bottom = 12.dp),
+                              horizontalAlignment = androidx.compose.ui.Alignment.Start
+                          ) {
+                              Image(
+                                  painter = painterResource(R.drawable.oscam_drawer_logo),
+                                  contentDescription = stringResource(R.string.info_logo),
+                                  modifier = Modifier
+                                      .size(40.dp)
+                                      .clip(androidx.compose.foundation.shape.CircleShape)
+                              )
+
+                              Spacer(modifier = Modifier.height(8.dp))
+
+                              Text(
+                                  text = "OSCam Live Monitor",
+                                  fontSize = 20.sp,
+                                  fontWeight = FontWeight.Bold,
+                                  color = testoMenu
+                              )
+                          }
+
+                          HorizontalDivider(color = separatoreMenu)
+                          Spacer(modifier = Modifier.height(8.dp))
+
+                          Row(
+                              modifier = Modifier
+                                  .fillMaxWidth()
+                                  .clickable {
+                                      menuSuperioreAperto = false
+                                      mostraImpostazioni = true
+                                  }
+                                  .padding(vertical = 12.dp),
+                              verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                          ) {
+                              Surface(
+                                  shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                                  color = sfondoIconaMenu
+                              ) {
+                                  Icon(
+                                      imageVector = Icons.Default.Settings,
+                                      contentDescription = null,
+                                      tint = iconaMenu,
+                                      modifier = Modifier.padding(10.dp).size(22.dp)
+                                  )
+                              }
+                              Spacer(modifier = Modifier.width(12.dp))
+                              Text(
+                                  text = stringResource(R.string.settings_title),
+                                  color = testoMenu,
+                                  fontSize = 16.sp,
+                                  fontWeight = FontWeight.SemiBold
+                              )
+                          }
+
+                          HorizontalDivider(
+                              modifier = Modifier.padding(start = 54.dp),
+                              color = separatoreMenu
+                          )
+
+                          Row(
+                              modifier = Modifier
+                                  .fillMaxWidth()
+                                  .clickable {
+                                      menuSuperioreAperto = false
+                                      mostraInformazioni = true
+                                  }
+                                  .padding(vertical = 12.dp),
+                              verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                          ) {
+                              Surface(
+                                  shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                                  color = sfondoIconaMenu
+                              ) {
+                                  Icon(
+                                      imageVector = Icons.Default.Info,
+                                      contentDescription = null,
+                                      tint = iconaMenu,
+                                      modifier = Modifier.padding(10.dp).size(22.dp)
+                                  )
+                              }
+                              Spacer(modifier = Modifier.width(12.dp))
+                              Text(
+                                  text = stringResource(R.string.info_title),
+                                  color = testoMenu,
+                                  fontSize = 16.sp,
+                                  fontWeight = FontWeight.SemiBold
+                              )
+                          }
                     }
                 }
             }
@@ -2886,50 +3013,63 @@ fun LiveLogScreen(
             }
         }
 
+    val bluTestataLog =
+        if (temaScuroLive) Color(0xFF112B4F) else Color(0xFF1565C0)
+
+    val sfondoPannelloLog =
+        if (temaScuroLive) Color(0xFF171A1F) else Color.White
+
+    val accentoLog =
+        if (temaScuroLive) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(
-                horizontal = 10.dp,
-                vertical = 8.dp
-            )
+            .background(bluTestataLog)
     ) {
         androidx.compose.material3.Surface(
-            shape =
-                androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-            color =
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-            border =
-                androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(
-                        alpha = 0.55f
-                    )
-                )
+            modifier = Modifier.fillMaxWidth(),
+            color = bluTestataLog
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        horizontal = 10.dp,
-                        vertical = 9.dp
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 20.dp,
+                        bottom = 26.dp
                     ),
                 verticalAlignment =
                     androidx.compose.ui.Alignment.CenterVertically
             ) {
-                FilledTonalButton(
+                androidx.compose.material3.Surface(
                     onClick = onClose,
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(
-                            14.dp
-                        ),
-                    contentPadding =
-                        PaddingValues(
-                            horizontal = 10.dp,
-                            vertical = 7.dp
-                        )
+                    modifier = Modifier.size(44.dp),
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = Color.White.copy(alpha = 0.16f)
                 ) {
-                    Text("✕")
+                    Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        Text(
+                            text = "✕",
+                            color = Color.White,
+                            fontSize = 22.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                androidx.compose.material3.Surface(
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                    color = Color.White.copy(alpha = 0.14f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Description,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.padding(9.dp).size(22.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
@@ -2939,15 +3079,15 @@ fun LiveLogScreen(
                 ) {
                     Text(
                         text = "Live Log",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
 
                     Text(
                         text = "${host.trim()}:${porta.trim()}",
                         fontSize = 11.sp,
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color.White.copy(alpha = 0.80f)
                     )
                 }
 
@@ -2993,8 +3133,19 @@ fun LiveLogScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .background(
+                    sfondoPannelloLog,
+                    androidx.compose.foundation.shape.RoundedCornerShape(
+                        topStart = 28.dp,
+                        topEnd = 28.dp
+                    )
+                )
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement =
@@ -3008,20 +3159,46 @@ fun LiveLogScreen(
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         15.dp
                     ),
+                colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                    containerColor =
+                        if (temaScuroLive) Color(0xFF1D3249)
+                        else Color(0xFFE5F1FF),
+                    contentColor = accentoLog
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp, accentoLog
+                ),
                 onClick = {
                     inPausa = !inPausa
                 }
             ) {
-                Text(
-                    text =
-                        if (inPausa) {
-                            "▶  " + androidx.compose.ui.res.stringResource(R.string.main_live_log_resume)
-                        } else {
-                            "⏸  " + androidx.compose.ui.res.stringResource(R.string.main_live_log_pause)
-                        },
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector =
+                            if (inPausa) Icons.Default.PlayArrow
+                            else Icons.Default.Pause,
+                        contentDescription = null,
+                        tint = accentoLog,
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(7.dp))
+
+                    Text(
+                        text =
+                            if (inPausa) {
+                                androidx.compose.ui.res.stringResource(R.string.main_live_log_resume)
+                            } else {
+                                androidx.compose.ui.res.stringResource(R.string.main_live_log_pause)
+                            },
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = accentoLog
+                    )
+                }
             }
 
             OutlinedButton(
@@ -3032,15 +3209,38 @@ fun LiveLogScreen(
                     androidx.compose.foundation.shape.RoundedCornerShape(
                         15.dp
                     ),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (temaScuroLive) Color(0xFF303842)
+                    else Color(0xFFCBD8E8)
+                ),
+                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
                 onClick = {
                     righeLog = emptyList()
                 }
             ) {
-                Text(
-                    text = "⌫  " + androidx.compose.ui.res.stringResource(R.string.main_live_log_clear),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Backspace,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(7.dp))
+
+                    Text(
+                        text = androidx.compose.ui.res.stringResource(R.string.main_live_log_clear),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
 
@@ -3132,9 +3332,9 @@ fun LiveLogScreen(
                 }
             }
         }
+        }
     }
 }
-
 
 
 private data class RisultatoAggiornamento(
@@ -3306,75 +3506,74 @@ fun InformazioniScreen(
         }
     }
 
+    val scuroInfo =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val bluInfo =
+        if (scuroInfo) Color(0xFF112B4F) else Color(0xFF1565C0)
+    val sfondoInfo =
+        if (scuroInfo) Color(0xFF171A1F) else Color.White
+
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(sfondoInfo)
             .verticalScroll(rememberScrollState())
-            .padding(
-                horizontal = 12.dp,
-                vertical = 10.dp
-            )
     ) {
-        androidx.compose.material3.Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(bluInfo)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(9.dp),
-                verticalAlignment =
-                    androidx.compose.ui.Alignment.CenterVertically
+                    .padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 24.dp,
+                        bottom = 26.dp
+                    ),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
                 androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    color =
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
-                ) {
-                    IconButton(
-                        onClick = onClose,
-                        modifier = Modifier.size(42.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.settings_back)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
-                    color = Color(0xFF4DA3FF).copy(alpha = 0.14f)
+                    modifier = Modifier.clickable(onClick = onClose),
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = Color.White.copy(alpha = 0.16f)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = Color(0xFF4DA3FF),
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.settings_back),
+                        tint = Color.White,
                         modifier = Modifier
-                            .padding(8.dp)
-                            .size(20.dp)
+                            .padding(11.dp)
+                            .size(24.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
                     text = stringResource(R.string.info_title),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White
                 )
             }
-        }
 
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        sfondoInfo,
+                        androidx.compose.foundation.shape.RoundedCornerShape(
+                            topStart = 28.dp,
+                            topEnd = 28.dp
+                        )
+                    )
+                    .padding(
+                        horizontal = 12.dp,
+                        vertical = 10.dp
+                    )
+            ) {
         Spacer(modifier = Modifier.height(22.dp))
 
         Row(
@@ -3403,7 +3602,10 @@ fun InformazioniScreen(
                 pop()
                 pushStyle(
                     androidx.compose.ui.text.SpanStyle(
-                        color = Color(0xFF4DA3FF)
+                        color = if (scuroInfo)
+                            Color(0xFF4DA3FF)
+                        else
+                            Color(0xFF1565C0)
                     )
                 )
                 append(" Live Monitor")
@@ -3704,6 +3906,8 @@ fun InformazioniScreen(
         )
 
         Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
     }
 }
 
@@ -3720,79 +3924,81 @@ fun GitHubRepositoryScreen(
     var caricamento by remember { mutableStateOf(true) }
     var erroreCaricamento by remember { mutableStateOf(false) }
 
+    val scuroGitHub =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
+    val coloreTestataGitHub =
+        if (scuroGitHub) Color(0xFF112B4F) else Color(0xFF1565C0)
+
+    val coloreFoglioGitHub =
+        if (scuroGitHub) Color(0xFF171A1F) else Color.White
+
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .background(coloreTestataGitHub)
     ) {
-        androidx.compose.material3.Surface(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = 10.dp,
-                    vertical = 8.dp
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 14.dp,
+                    bottom = 18.dp
                 ),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
-            )
+            verticalAlignment =
+                androidx.compose.ui.Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(9.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            androidx.compose.material3.Surface(
+                modifier = Modifier.size(42.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = Color.White.copy(alpha = 0.16f)
             ) {
-                androidx.compose.material3.Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
-                ) {
-                    IconButton(
-                        onClick = onClose,
-                        modifier = Modifier.size(42.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.settings_back)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                androidx.compose.material3.Surface(
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-                ) {
-                    androidx.compose.material3.Icon(
-                        painter = androidx.compose.ui.res.painterResource(
-                            id = R.drawable.ic_github
-                        ),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .size(20.dp)
+                IconButton(onClick = onClose) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.settings_back),
+                        tint = Color.White
                     )
                 }
+            }
 
-                Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = stringResource(R.string.info_repository),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                color = Color.White.copy(alpha = 0.14f)
+            ) {
+                Icon(
+                    painter = androidx.compose.ui.res.painterResource(
+                        id = R.drawable.ic_github
+                    ),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(20.dp)
+                )
+            }
 
-                    Text(
-                        text = "mr-unix01/OscamLiveMonitor",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = stringResource(R.string.info_repository),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Text(
+                    text = "mr-unix01/OscamLiveMonitor",
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.80f)
+                )
             }
         }
 
@@ -3800,6 +4006,14 @@ fun GitHubRepositoryScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .clip(
+                    androidx.compose.foundation.shape.RoundedCornerShape(
+                        topStart = 28.dp,
+                        topEnd = 28.dp
+                    )
+                )
+                .background(coloreFoglioGitHub)
+                .padding(top = 28.dp)
         ) {
             if (!erroreCaricamento) {
                 androidx.compose.ui.viewinterop.AndroidView(
@@ -3907,99 +4121,99 @@ fun WebIfScreen(
 
     val urlWebIf = "http://${host.trim()}:${porta.trim()}"
 
+    val scuroWebIf =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
+    val bluWebIf =
+        if (scuroWebIf) Color(0xFF112B4F) else Color(0xFF1565C0)
+
+    val sfondoWebIf =
+        if (scuroWebIf) Color(0xFF171A1F) else Color.White
+
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .background(bluWebIf)
     ) {
-        androidx.compose.material3.Surface(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = 10.dp,
-                    vertical = 8.dp
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 14.dp,
+                    bottom = 18.dp
                 ),
-            shape =
-                androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-            color =
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-            border =
-                androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(
-                        alpha = 0.55f
-                    )
-                )
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(9.dp),
-                verticalAlignment =
-                    androidx.compose.ui.Alignment.CenterVertically
+            androidx.compose.material3.Surface(
+                modifier = Modifier.size(42.dp),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = Color.White.copy(alpha = 0.16f)
             ) {
-                androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(
-                            14.dp
-                        ),
-                    color =
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
-                ) {
-                    IconButton(
-                        onClick = onClose,
-                        modifier = Modifier.size(42.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = androidx.compose.ui.res.stringResource(R.string.settings_back)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                androidx.compose.material3.Surface(
-                    shape =
-                        androidx.compose.foundation.shape.RoundedCornerShape(
-                            13.dp
-                        ),
-                    color = Color(0xFF29B6F6).copy(alpha = 0.14f)
-                ) {
+                IconButton(onClick = onClose) {
                     Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = null,
-                        tint = Color(0xFF29B6F6),
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .size(20.dp)
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription =
+                            androidx.compose.ui.res.stringResource(R.string.settings_back),
+                        tint = Color.White
                     )
                 }
+            }
 
-                Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "WebIF OSCam",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+            androidx.compose.material3.Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(13.dp),
+                color = Color.White.copy(alpha = 0.14f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Language,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(20.dp)
+                )
+            }
 
-                    Text(
-                        text = "${host.trim()}:${porta.trim()}",
-                        fontSize = 12.sp,
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            Spacer(modifier = Modifier.width(10.dp))
 
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "WebIF OSCam",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Text(
+                    text = "${host.trim()}:${porta.trim()}",
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.80f)
+                )
             }
         }
 
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(
+                    androidx.compose.foundation.shape.RoundedCornerShape(
+                        topStart = 28.dp,
+                        topEnd = 28.dp
+                    )
+                )
+                .background(sfondoWebIf)
+        ) {
         androidx.compose.ui.viewinterop.AndroidView(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .weight(1f)
+                .padding(top = 12.dp),
             factory = { webContext ->
                 android.webkit.WebView(webContext).apply {
                     settings.javaScriptEnabled = true
@@ -4303,6 +4517,7 @@ fun WebIfScreen(
                 }
             }
         )
+        }
     }
 }
 

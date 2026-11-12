@@ -1,4 +1,10 @@
 <resources>
+    <string name="home_open_menu">Apri menu</string>
+    <plurals name="home_online_servers_label">
+        <item quantity="one">server online</item>
+        <item quantity="other">server online</item>
+    </plurals>
+
     <string name="app_name">OSCam Live Monitor</string>
     <string name="settings_back">Indietro</string>
     <string name="settings_title">Impostazioni</string>

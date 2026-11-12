@@ -453,11 +453,10 @@ fun WebIfScreen(
                                     android.net.Uri.parse(urlWebIf).host
 
                                 val hostAutorizzato =
-                                    !hostAtteso.isNullOrBlank() &&
-                                    hostRichiesto?.equals(
+                                    webIfAuthHostAutorizzato(
                                         hostAtteso,
-                                        ignoreCase = true
-                                    ) == true
+                                        hostRichiesto
+                                    )
 
                                 if (!hostAutorizzato) {
                                     handler?.cancel()

@@ -3632,9 +3632,16 @@ fun InformazioniScreen(
             modifier = Modifier.fillMaxWidth(),
             shape =
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (scuroInfo) Color(0xFF303F52) else Color(0xFFCBD8E8)
+            ),
+            elevation = androidx.compose.material3.CardDefaults.cardElevation(
+                defaultElevation = 0.dp
+            ),
             colors = androidx.compose.material3.CardDefaults.cardColors(
                 containerColor =
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                    if (scuroInfo) Color(0xFF1E2A3B) else Color(0xFFF0F5FC)
             )
         ) {
             Column(
@@ -3658,7 +3665,7 @@ fun InformazioniScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 androidx.compose.material3.HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                    color = if (scuroInfo) Color(0xFF303F52) else Color(0xFFCBD8E8)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -3680,7 +3687,7 @@ fun InformazioniScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 androidx.compose.material3.HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                    color = if (scuroInfo) Color(0xFF303F52) else Color(0xFFCBD8E8)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 

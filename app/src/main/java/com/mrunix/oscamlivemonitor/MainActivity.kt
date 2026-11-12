@@ -4134,8 +4134,7 @@ fun WebIfScreen(
     val bluWebIf =
         if (scuroWebIf) Color(0xFF112B4F) else Color(0xFF1565C0)
 
-    val sfondoWebIf =
-        if (scuroWebIf) Color(0xFF171A1F) else Color.White
+    val sfondoWebIf = Color.White
 
     Column(
         modifier = modifier

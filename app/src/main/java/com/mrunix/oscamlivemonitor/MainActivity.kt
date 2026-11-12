@@ -1,6 +1,8 @@
 
 package com.mrunix.oscamlivemonitor
 
+import com.mrunix.oscamlivemonitor.ui.theme.OscamPalette
+
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.positionChange
@@ -1486,9 +1488,9 @@ fun Greeting(
                 val temaScuroHome =
                     com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
                 val sfondoHome =
-                    if (temaScuroHome) Color(0xFF171A1F) else Color.White
+                    if (temaScuroHome) OscamPalette.SheetDark else Color.White
                 val bluHome =
-                    if (temaScuroHome) Color(0xFF112B4F) else Color(0xFF1565C0)
+                    if (temaScuroHome) OscamPalette.BannerDark else OscamPalette.BannerLight
 
                 androidx.compose.foundation.lazy.LazyColumn(
                     modifier = Modifier
@@ -1656,9 +1658,9 @@ fun Greeting(
             val scuroDashboardGrafica =
                 com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
             val bluDashboardGrafica =
-                if (scuroDashboardGrafica) Color(0xFF112B4F) else Color(0xFF1565C0)
+                if (scuroDashboardGrafica) OscamPalette.BannerDark else OscamPalette.BannerLight
             val sfondoDashboardGrafica =
-                if (scuroDashboardGrafica) Color(0xFF171A1F) else Color.White
+                if (scuroDashboardGrafica) OscamPalette.SheetDark else Color.White
 
             Column(
                 modifier = Modifier
@@ -2446,7 +2448,7 @@ fun Greeting(
                         bottomStart = 28.dp,
                         bottomEnd = 28.dp
                     ),
-                    color = if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) Color(0xFF171A1F) else Color.White,
+                    color = if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) OscamPalette.SheetDark else Color.White,
                     shadowElevation = 12.dp
                 ) {
                     Column(
@@ -2460,7 +2462,7 @@ fun Greeting(
                           val testoMenu =
                               if (scuroMenu) Color.White else Color(0xFF152235)
                           val iconaMenu =
-                              if (scuroMenu) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+                              if (scuroMenu) OscamPalette.AccentDark else OscamPalette.BannerLight
                           val sfondoIconaMenu =
                               if (scuroMenu) Color(0xFF1D3249) else Color(0xFFE5F1FF)
                           val separatoreMenu =
@@ -3014,13 +3016,13 @@ fun LiveLogScreen(
         }
 
     val bluTestataLog =
-        if (temaScuroLive) Color(0xFF112B4F) else Color(0xFF1565C0)
+        if (temaScuroLive) OscamPalette.BannerDark else OscamPalette.BannerLight
 
     val sfondoPannelloLog =
-        if (temaScuroLive) Color(0xFF171A1F) else Color.White
+        if (temaScuroLive) OscamPalette.SheetDark else Color.White
 
     val accentoLog =
-        if (temaScuroLive) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+        if (temaScuroLive) OscamPalette.AccentDark else OscamPalette.BannerLight
 
     Column(
         modifier = modifier
@@ -3509,9 +3511,9 @@ fun InformazioniScreen(
     val scuroInfo =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     val bluInfo =
-        if (scuroInfo) Color(0xFF112B4F) else Color(0xFF1565C0)
+        if (scuroInfo) OscamPalette.BannerDark else OscamPalette.BannerLight
     val sfondoInfo =
-        if (scuroInfo) Color(0xFF171A1F) else Color.White
+        if (scuroInfo) OscamPalette.SheetDark else Color.White
 
     Column(
         modifier = modifier
@@ -3603,9 +3605,9 @@ fun InformazioniScreen(
                 pushStyle(
                     androidx.compose.ui.text.SpanStyle(
                         color = if (scuroInfo)
-                            Color(0xFF4DA3FF)
+                            OscamPalette.AccentDark
                         else
-                            Color(0xFF1565C0)
+                            OscamPalette.BannerLight
                     )
                 )
                 append(" Live Monitor")
@@ -3767,21 +3769,21 @@ fun InformazioniScreen(
             border = androidx.compose.foundation.BorderStroke(
                 1.4.dp,
                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                    Color(0xFF4DA3FF).copy(alpha = 0.75f)
+                    OscamPalette.AccentDark.copy(alpha = 0.75f)
                 else
-                    Color(0xFF1565C0).copy(alpha = 0.85f)
+                    OscamPalette.BannerLight.copy(alpha = 0.85f)
             ),
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                 containerColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                        Color(0xFF4DA3FF).copy(alpha = 0.10f)
+                        OscamPalette.AccentDark.copy(alpha = 0.10f)
                     else
-                        Color(0xFF4DA3FF).copy(alpha = 0.20f),
+                        OscamPalette.AccentDark.copy(alpha = 0.20f),
                 contentColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                        Color(0xFF4DA3FF)
+                        OscamPalette.AccentDark
                     else
-                        Color(0xFF1565C0),
+                        OscamPalette.BannerLight,
                 disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
@@ -3935,10 +3937,10 @@ fun GitHubRepositoryScreen(
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     val coloreTestataGitHub =
-        if (scuroGitHub) Color(0xFF112B4F) else Color(0xFF1565C0)
+        if (scuroGitHub) OscamPalette.BannerDark else OscamPalette.BannerLight
 
     val coloreFoglioGitHub =
-        if (scuroGitHub) Color(0xFF171A1F) else Color.White
+        if (scuroGitHub) OscamPalette.SheetDark else Color.White
 
     Column(
         modifier = modifier
@@ -4132,7 +4134,7 @@ fun WebIfScreen(
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     val bluWebIf =
-        if (scuroWebIf) Color(0xFF112B4F) else Color(0xFF1565C0)
+        if (scuroWebIf) OscamPalette.BannerDark else OscamPalette.BannerLight
 
     val sfondoWebIf = Color.White
 
@@ -4500,6 +4502,21 @@ fun WebIfScreen(
                                 hostRichiesto: String?,
                                 realm: String?
                             ) {
+                                val hostAtteso =
+                                    android.net.Uri.parse(urlWebIf).host
+
+                                val hostAutorizzato =
+                                    !hostAtteso.isNullOrBlank() &&
+                                    hostRichiesto?.equals(
+                                        hostAtteso,
+                                        ignoreCase = true
+                                    ) == true
+
+                                if (!hostAutorizzato) {
+                                    handler?.cancel()
+                                    return
+                                }
+
                                 if (
                                     username.isNotBlank() ||
                                     password.isNotBlank()

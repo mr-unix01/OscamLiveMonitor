@@ -1,5 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
+import com.mrunix.oscamlivemonitor.ui.theme.OscamPalette
+
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -84,7 +86,7 @@ internal fun EliminaServerDialog(
         if (scuroElimina) Color(0xFF303842) else Color(0xFFE2E8F0)
 
     val sfondoAnnulla =
-        if (scuroElimina) Color(0xFF171A1F) else Color.White
+        if (scuroElimina) OscamPalette.SheetDark else Color.White
 
     val sfondoElimina =
         if (scuroElimina) {
@@ -197,7 +199,7 @@ internal fun RiordinaServerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor =
-            if (scuroRiordina) Color(0xFF171A1F) else Color.White,
+            if (scuroRiordina) OscamPalette.SheetDark else Color.White,
         title = {
             Text(
                 text = stringResource(R.string.server_reorder_title),
@@ -247,9 +249,9 @@ internal fun RiordinaServerDialog(
                                         contentDescription = null,
                                         modifier = Modifier.size(20.dp),
                                         tint = if (scuroRiordina)
-                                                Color(0xFF4DA3FF)
+                                                OscamPalette.AccentDark
                                             else
-                                                Color(0xFF1565C0)
+                                                OscamPalette.BannerLight
                                     )
                                 }
                             }
@@ -326,16 +328,16 @@ internal fun RiordinaServerDialog(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                 border = BorderStroke(
                     1.dp,
-                    if (scuroRiordina) Color(0xFF4DA3FF)
-                    else Color(0xFF1565C0)
+                    if (scuroRiordina) OscamPalette.AccentDark
+                    else OscamPalette.BannerLight
                 ),
                 colors = ButtonDefaults.buttonColors(
                     containerColor =
                         if (scuroRiordina) Color(0xFF1D3249)
                         else Color(0xFFE5F1FF),
                     contentColor =
-                        if (scuroRiordina) Color(0xFF4DA3FF)
-                        else Color(0xFF1565C0)
+                        if (scuroRiordina) OscamPalette.AccentDark
+                        else OscamPalette.BannerLight
                 ),
                 contentPadding = PaddingValues(0.dp),
                 onClick = onDismiss
@@ -379,7 +381,7 @@ internal fun ModificaServerDialog(
     val scuroModifica =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     val accentoModifica =
-        if (scuroModifica) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+        if (scuroModifica) OscamPalette.AccentDark else OscamPalette.BannerLight
     val bordoModifica =
         if (scuroModifica) Color(0xFF303842) else Color(0xFFCBD8E8)
     val sfondoIconaModifica =
@@ -387,7 +389,7 @@ internal fun ModificaServerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor =
-            if (scuroModifica) Color(0xFF171A1F) else Color.White,
+            if (scuroModifica) OscamPalette.SheetDark else Color.White,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
         tonalElevation = 0.dp,
         title = {
@@ -648,7 +650,7 @@ internal fun ModificaServerDialog(
                     ),
                 border = BorderStroke(1.dp, bordoModifica),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (scuroModifica) Color(0xFF171A1F) else Color.White,
+                    containerColor = if (scuroModifica) OscamPalette.SheetDark else Color.White,
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 contentPadding = PaddingValues(0.dp),
@@ -690,7 +692,7 @@ internal fun AggiungiServerDialog(
     val scuroAggiungi =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     val accentoAggiungi =
-        if (scuroAggiungi) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+        if (scuroAggiungi) OscamPalette.AccentDark else OscamPalette.BannerLight
     val bordoAggiungi =
         if (scuroAggiungi) Color(0xFF303842) else Color(0xFFCBD8E8)
     val sfondoIconaAggiungi =
@@ -698,7 +700,7 @@ internal fun AggiungiServerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor =
-            if (scuroAggiungi) Color(0xFF171A1F) else Color.White,
+            if (scuroAggiungi) OscamPalette.SheetDark else Color.White,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
         tonalElevation = 0.dp,
         title = {
@@ -976,7 +978,7 @@ internal fun AggiungiServerDialog(
                     ),
                 border = BorderStroke(1.dp, bordoAggiungi),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (scuroAggiungi) Color(0xFF171A1F) else Color.White,
+                    containerColor = if (scuroAggiungi) OscamPalette.SheetDark else Color.White,
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 contentPadding = PaddingValues(0.dp),

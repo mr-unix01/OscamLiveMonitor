@@ -1,5 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
+import com.mrunix.oscamlivemonitor.ui.theme.OscamPalette
+
 import androidx.compose.material.icons.filled.Menu
 
 import androidx.compose.foundation.clickable
@@ -701,7 +703,7 @@ fun ExpressiveAppHeader(
     onMenuClick: () -> Unit = {}
 ) {
     val temaScuro = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
-    val bluHeader = if (temaScuro) Color(0xFF112B4F) else Color(0xFF1565C0)
+    val bluHeader = if (temaScuro) OscamPalette.BannerDark else OscamPalette.BannerLight
 
     val online = statiServer.count {
         it == OscamServerConnectionState.ACTIVE

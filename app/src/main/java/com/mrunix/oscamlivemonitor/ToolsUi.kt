@@ -1,5 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
+import com.mrunix.oscamlivemonitor.ui.theme.OscamPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,7 +35,7 @@ fun ToolsHeader(
     val scuroTools =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     val bluTools =
-        if (scuroTools) Color(0xFF112B4F) else Color(0xFF1565C0)
+        if (scuroTools) OscamPalette.BannerDark else OscamPalette.BannerLight
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -200,7 +202,7 @@ fun ToolsModeSelector(
             title = stringResource(R.string.hub_terminal),
             icon = Icons.Default.Terminal,
             selected = !fileSelected,
-            accent = Color(0xFF4DA3FF),
+            accent = OscamPalette.AccentDark,
             onClick = onTerminal,
             modifier = Modifier.weight(1f),
             compact = compact
@@ -210,7 +212,7 @@ fun ToolsModeSelector(
             title = stringResource(R.string.settings_files),
             icon = Icons.Default.Folder,
             selected = fileSelected,
-            accent = Color(0xFF4DA3FF),
+            accent = OscamPalette.AccentDark,
             onClick = onFile,
             modifier = Modifier.weight(1f),
             compact = compact
@@ -234,10 +236,10 @@ fun ToolsBinarySelector(
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
     val accentEffettivo =
-        if (temaScuro) accent else Color(0xFF1565C0)
+        if (temaScuro) accent else OscamPalette.BannerLight
 
     val accentTesto =
-        if (temaScuro) accent else Color(0xFF1565C0)
+        if (temaScuro) accent else OscamPalette.BannerLight
 
     Row(
         modifier = modifier,
@@ -276,7 +278,7 @@ fun ToolsBinarySelector(
                             Color(0xFFE5F1FF)
                         }
                     } else {
-                        if (temaScuro) Color(0xFF171A1F) else Color.White
+                        if (temaScuro) OscamPalette.SheetDark else Color.White
                     }
                 ),
                 elevation = CardDefaults.cardElevation(0.dp)

@@ -12,6 +12,13 @@ The current version is available in the repository's **Releases** section.
 - Smartphone
 - Tablet
 
+### Network security
+
+OSCam Live Monitor supports HTTP connections to OSCam servers.
+HTTP traffic, including authentication credentials, is not encrypted.
+Use the app on trusted local networks. For remote access, use a secure VPN.
+Do not expose OSCam HTTP directly to the Internet.
+
 ### License
 
 The original code of OSCam Live Monitor is distributed under the **GNU General Public License version 3 or later** (`GPL-3.0-or-later`).
@@ -39,6 +46,13 @@ Versione disponibile nella sezione **Releases** del repository.
 ### Varianti
 - Smartphone
 - Tablet
+
+### Sicurezza della rete
+
+OSCam Live Monitor supporta connessioni HTTP ai server OSCam.
+Il traffico HTTP, comprese le credenziali di autenticazione, non è cifrato.
+Utilizzare l'app su reti locali affidabili. Per gli accessi remoti, utilizzare una VPN sicura.
+Non esporre direttamente OSCam HTTP su Internet.
 
 ### Licenza
 

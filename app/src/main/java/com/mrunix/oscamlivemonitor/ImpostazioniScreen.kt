@@ -1,5 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
+import com.mrunix.oscamlivemonitor.ui.theme.OscamPalette
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -70,9 +72,9 @@ fun ImpostazioniScreen(
     val temaScuroImpostazioni =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     val bluImpostazioni =
-        if (temaScuroImpostazioni) Color(0xFF112B4F) else Color(0xFF1565C0)
+        if (temaScuroImpostazioni) OscamPalette.BannerDark else OscamPalette.BannerLight
     val sfondoImpostazioni =
-        if (temaScuroImpostazioni) Color(0xFF171A1F) else Color.White
+        if (temaScuroImpostazioni) OscamPalette.SheetDark else Color.White
 
     Column(
         modifier = modifier
@@ -282,13 +284,13 @@ private fun SezioneImpostazioni(
     Text(
         text = titolo.uppercase(),
         style = MaterialTheme.typography.labelMedium,
-        color = if (scuro) Color(0xFF4DA3FF) else Color(0xFF1565C0),
+        color = if (scuro) OscamPalette.AccentDark else OscamPalette.BannerLight,
         modifier = Modifier.padding(start = 12.dp, top = 14.dp, bottom = 8.dp)
     )
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (scuro) Color(0xFF171A1F) else Color.White,
+        color = if (scuro) OscamPalette.SheetDark else Color.White,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(content = contenuto)
@@ -310,7 +312,7 @@ private fun IconaImpostazione(icona: ImageVector) {
             Icon(
                 imageVector = icona,
                 contentDescription = null,
-                tint = if (scuro) Color(0xFF4DA3FF) else Color(0xFF1565C0),
+                tint = if (scuro) OscamPalette.AccentDark else OscamPalette.BannerLight,
                 modifier = Modifier.size(21.dp)
             )
         }
@@ -399,15 +401,15 @@ private fun VoceInterruttore(
             colors = SwitchDefaults.colors(
                 checkedTrackColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                        Color(0xFF4DA3FF)
-                    else Color(0xFF1565C0),
+                        OscamPalette.AccentDark
+                    else OscamPalette.BannerLight,
                 checkedThumbColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                        Color(0xFF112B4F)
+                        OscamPalette.BannerDark
                     else Color.White,
                 uncheckedTrackColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                        Color(0xFF171A1F)
+                        OscamPalette.SheetDark
                     else Color.White,
                 uncheckedBorderColor = Color(0xFF8895A7),
                 uncheckedThumbColor = Color(0xFF8895A7)

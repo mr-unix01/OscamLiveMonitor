@@ -1,5 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
+import com.mrunix.oscamlivemonitor.ui.theme.OscamPalette
+
 import android.content.res.Configuration
 import android.provider.OpenableColumns
 import androidx.activity.compose.BackHandler
@@ -2359,9 +2361,9 @@ val filePickerLauncher =
 
     val sfondoTestataTools =
         if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-            Color(0xFF112B4F)
+            OscamPalette.BannerDark
         else
-            Color(0xFF1565C0)
+            OscamPalette.BannerLight
 
     Column(
         modifier = (
@@ -2453,7 +2455,7 @@ val filePickerLauncher =
                             androidx.compose.foundation.shape.RoundedCornerShape(
                                 10.dp
                             ),
-                        color = Color(0xFF4DA3FF).copy(alpha = 0.12f)
+                        color = OscamPalette.AccentDark.copy(alpha = 0.12f)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Folder,
@@ -2461,7 +2463,7 @@ val filePickerLauncher =
                             modifier = Modifier
                                 .padding(7.dp)
                                 .size(18.dp),
-                            tint = Color(0xFF4DA3FF)
+                            tint = OscamPalette.AccentDark
                         )
                     }
 
@@ -2553,7 +2555,7 @@ val filePickerLauncher =
             val scuroCampiTools =
                 com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
             val accentoCampiTools =
-                if (scuroCampiTools) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+                if (scuroCampiTools) OscamPalette.AccentDark else OscamPalette.BannerLight
             val bordoCampiTools =
                 if (scuroCampiTools) Color(0xFF303842) else Color(0xFFCBD8E8)
 
@@ -2563,7 +2565,7 @@ val filePickerLauncher =
               colors = androidx.compose.material3.CardDefaults.cardColors(
                   containerColor =
                       if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                          Color(0xFF171A1F)
+                          OscamPalette.SheetDark
                       else
                           Color.White
               )
@@ -2588,7 +2590,7 @@ val filePickerLauncher =
                         Icon(
                             imageVector = Icons.Default.Terminal,
                             contentDescription = null,
-                            tint = Color(0xFF4DA3FF)
+                            tint = OscamPalette.AccentDark
                         )
 
                         Spacer(modifier = Modifier.width(9.dp))
@@ -2620,7 +2622,7 @@ val filePickerLauncher =
                         rightIcon = Icons.Default.Terminal,
                         leftSelected =
                             protocol == TerminalProtocol.SSH,
-                        accent = Color(0xFF4DA3FF),
+                        accent = OscamPalette.AccentDark,
                         onLeft = {
                             if (!connected) {
                                 val oldDefault =
@@ -2824,21 +2826,21 @@ val filePickerLauncher =
                         border = androidx.compose.foundation.BorderStroke(
                             1.4.dp,
                             if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                                Color(0xFF4DA3FF).copy(alpha = 0.75f)
+                                OscamPalette.AccentDark.copy(alpha = 0.75f)
                             else
-                                Color(0xFF1565C0).copy(alpha = 0.85f)
+                                OscamPalette.BannerLight.copy(alpha = 0.85f)
                         ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                                    Color(0xFF4DA3FF).copy(alpha = 0.10f)
+                                    OscamPalette.AccentDark.copy(alpha = 0.10f)
                                 else
-                                    Color(0xFF4DA3FF).copy(alpha = 0.20f),
+                                    OscamPalette.AccentDark.copy(alpha = 0.20f),
                             contentColor =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                                    Color(0xFF4DA3FF)
+                                    OscamPalette.AccentDark
                                 else
-                                    Color(0xFF1565C0)
+                                    OscamPalette.BannerLight
                         ),
                         onClick = {
                             val parsedPort =
@@ -3017,7 +3019,7 @@ val filePickerLauncher =
                             Modifier
                                 .background(
                                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                                        Color(0xFF171A1F)
+                                        OscamPalette.SheetDark
                                     else
                                         Color.White,
                                     androidx.compose.foundation.shape.RoundedCornerShape(
@@ -3614,7 +3616,7 @@ val filePickerLauncher =
             val scuroCampiTools =
                 com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
             val accentoCampiTools =
-                if (scuroCampiTools) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+                if (scuroCampiTools) OscamPalette.AccentDark else OscamPalette.BannerLight
             val bordoCampiTools =
                 if (scuroCampiTools) Color(0xFF303842) else Color(0xFFCBD8E8)
 
@@ -3638,7 +3640,7 @@ val filePickerLauncher =
               colors = androidx.compose.material3.CardDefaults.cardColors(
                   containerColor =
                       if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                          Color(0xFF171A1F)
+                          OscamPalette.SheetDark
                       else
                           Color.White
               )
@@ -3666,7 +3668,7 @@ val filePickerLauncher =
                                 leftIcon = Icons.Default.Lock,
                                 rightIcon = Icons.Default.Folder,
                                 leftSelected = fileSftp,
-                                accent = Color(0xFF4DA3FF),
+                                accent = OscamPalette.AccentDark,
                                 onLeft = {
                                     val vecchiaPorta =
                                         if (fileSftp) "22" else "21"
@@ -3922,21 +3924,21 @@ val filePickerLauncher =
                         border = androidx.compose.foundation.BorderStroke(
                             1.4.dp,
                             if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                                Color(0xFF4DA3FF).copy(alpha = 0.75f)
+                                OscamPalette.AccentDark.copy(alpha = 0.75f)
                             else
-                                Color(0xFF1565C0).copy(alpha = 0.85f)
+                                OscamPalette.BannerLight.copy(alpha = 0.85f)
                         ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                                    Color(0xFF4DA3FF).copy(alpha = 0.10f)
+                                    OscamPalette.AccentDark.copy(alpha = 0.10f)
                                 else
-                                    Color(0xFF4DA3FF).copy(alpha = 0.20f),
+                                    OscamPalette.AccentDark.copy(alpha = 0.20f),
                             contentColor =
                                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                                    Color(0xFF4DA3FF)
+                                    OscamPalette.AccentDark
                                 else
-                                    Color(0xFF1565C0)
+                                    OscamPalette.BannerLight
                         ),
                         onClick = {
                             val parsedPort =
@@ -4280,16 +4282,16 @@ val filePickerLauncher =
                                 ),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) Color(0xFF4DA3FF)
-                                    else Color(0xFF1565C0)
+                                    if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) OscamPalette.AccentDark
+                                    else OscamPalette.BannerLight
                                 ),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor =
                                         if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) Color(0xFF1B2B42)
                                         else Color(0xFFE8F1FD),
                                     contentColor =
-                                        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) Color(0xFF4DA3FF)
-                                        else Color(0xFF1565C0)
+                                        if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current) OscamPalette.AccentDark
+                                        else OscamPalette.BannerLight
                                 )
                             ) {
                                 if (uploadInCorso) {
@@ -4298,8 +4300,8 @@ val filePickerLauncher =
                                         strokeWidth = 2.dp,
                                         color =
                                             if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                                                Color(0xFF4DA3FF)
-                                            else Color(0xFF1565C0)
+                                                OscamPalette.AccentDark
+                                            else OscamPalette.BannerLight
                                     )
                                 } else {
                                     Icon(
@@ -4392,7 +4394,7 @@ val filePickerLauncher =
                                 ),
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                Color(0xFF4DA3FF).copy(alpha = 0.40f)
+                                OscamPalette.AccentDark.copy(alpha = 0.40f)
                             )
                         ) {
                             Row(
@@ -4406,7 +4408,7 @@ val filePickerLauncher =
                             ) {
                                 Text(
                                     text = "›",
-                                    color = Color(0xFF4DA3FF),
+                                    color = OscamPalette.AccentDark,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp
                                 )

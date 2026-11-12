@@ -1,5 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
+import com.mrunix.oscamlivemonitor.ui.theme.OscamPalette
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.HorizontalDivider
@@ -121,10 +123,10 @@ fun ServerHubScreen(
 
     val scuro = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
-    val blu = if (scuro) Color(0xFF112B4F) else Color(0xFF1565C0)
-    val sfondo = if (scuro) Color(0xFF171A1F) else Color.White
+    val blu = if (scuro) OscamPalette.BannerDark else OscamPalette.BannerLight
+    val sfondo = if (scuro) OscamPalette.SheetDark else Color.White
     val testo = if (scuro) Color.White else Color(0xFF152235)
-    val icone = if (scuro) Color(0xFF4DA3FF) else Color(0xFF1565C0)
+    val icone = if (scuro) OscamPalette.AccentDark else OscamPalette.BannerLight
     val sfondoIcone = if (scuro) Color(0xFF1D3249) else Color(0xFFE5F1FF)
     val separatore = if (scuro) Color(0xFF303842) else Color(0xFFE2E8F0)
 

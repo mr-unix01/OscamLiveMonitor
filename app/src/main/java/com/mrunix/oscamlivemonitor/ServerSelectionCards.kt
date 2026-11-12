@@ -1,5 +1,7 @@
 package com.mrunix.oscamlivemonitor
 
+import com.mrunix.oscamlivemonitor.ui.theme.OscamPalette
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -57,20 +59,20 @@ fun ServerSelectionHeader(
             border = BorderStroke(
                 1.2.dp,
                 if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                    Color(0xFF4DA3FF)
+                    OscamPalette.AccentDark
                 else
-                    Color(0xFF1565C0)
+                    OscamPalette.BannerLight
             ),
             colors = ButtonDefaults.outlinedButtonColors(
                 containerColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                        Color(0xFF112B4F)
+                        OscamPalette.BannerDark
                     else Color.Transparent,
                 contentColor =
                     if (com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current)
-                        Color(0xFF4DA3FF)
+                        OscamPalette.AccentDark
                     else
-                        Color(0xFF1565C0)
+                        OscamPalette.BannerLight
             ),
             contentPadding = PaddingValues(horizontal = 14.dp),
             onClick = onAddServer
@@ -146,7 +148,7 @@ fun OscamServerCard(
 ) {
     val darkTheme = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
     val descrizioneApri = stringResource(R.string.home_open_server, server.nome)
-    val selectionColor = Color(0xFF4DA3FF)
+    val selectionColor = OscamPalette.AccentDark
 
     val (connectionText, connectionColor) = when (connectionState) {
         OscamServerConnectionState.CHECKING ->
@@ -211,8 +213,8 @@ fun OscamServerCard(
                 modifier = Modifier.size(42.dp),
                 shape = RoundedCornerShape(13.dp),
                 color = if (selected) {
-                    if (darkTheme) Color(0xFF4DA3FF)
-                    else Color(0xFF1565C0)
+                    if (darkTheme) OscamPalette.AccentDark
+                    else OscamPalette.BannerLight
                 } else if (darkTheme) {
                     Color(0xFF1D3249)
                 } else {
@@ -227,12 +229,12 @@ fun OscamServerCard(
                         imageVector = Icons.Default.Storage,
                         contentDescription = null,
                         tint = if (selected) {
-                            if (darkTheme) Color(0xFF112B4F)
+                            if (darkTheme) OscamPalette.BannerDark
                             else Color.White
                         } else if (darkTheme) {
-                            Color(0xFF4DA3FF)
+                            OscamPalette.AccentDark
                         } else {
-                            Color(0xFF1565C0)
+                            OscamPalette.BannerLight
                         },
                         modifier = Modifier.size(21.dp)
                     )
@@ -305,8 +307,8 @@ fun OscamServerCard(
                     text = "›",
                     fontSize = 28.sp,
                     color = if (selected) {
-                        if (darkTheme) Color(0xFF4DA3FF)
-                        else Color(0xFF1565C0)
+                        if (darkTheme) OscamPalette.AccentDark
+                        else OscamPalette.BannerLight
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },

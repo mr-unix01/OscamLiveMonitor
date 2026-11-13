@@ -144,7 +144,7 @@ fun ImpostazioniScreen(
 
             HorizontalDivider(
                 modifier = Modifier.padding(start = 56.dp),
-                color = if (temaScuroImpostazioni) Color(0xFF303842) else Color(0xFFE2E8F0)
+                color = if (temaScuroImpostazioni) OscamPalette.DividerDark else OscamPalette.DividerLight
             )
 
             VoceScelta(
@@ -179,7 +179,7 @@ fun ImpostazioniScreen(
 
             HorizontalDivider(
                 modifier = Modifier.padding(start = 56.dp),
-                color = if (temaScuroImpostazioni) Color(0xFF303842) else Color(0xFFE2E8F0)
+                color = if (temaScuroImpostazioni) OscamPalette.DividerDark else OscamPalette.DividerLight
             )
 
             VoceInterruttore(
@@ -207,7 +207,7 @@ fun ImpostazioniScreen(
             if (aggiornamentoAutomaticoDashboard) {
                 HorizontalDivider(
                     modifier = Modifier.padding(start = 56.dp),
-                    color = if (temaScuroImpostazioni) Color(0xFF303842) else Color(0xFFE2E8F0)
+                    color = if (temaScuroImpostazioni) OscamPalette.DividerDark else OscamPalette.DividerLight
                 )
 
                 VoceScelta(
@@ -305,7 +305,7 @@ private fun IconaImpostazione(icona: ImageVector) {
 
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (scuro) Color(0xFF1D3249) else Color(0xFFE5F1FF),
+        color = if (scuro) OscamPalette.PanelDark else OscamPalette.PanelLight,
         modifier = Modifier.size(42.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {

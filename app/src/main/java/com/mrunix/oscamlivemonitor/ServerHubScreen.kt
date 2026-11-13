@@ -127,8 +127,8 @@ fun ServerHubScreen(
     val sfondo = if (scuro) OscamPalette.SheetDark else Color.White
     val testo = if (scuro) Color.White else Color(0xFF152235)
     val icone = if (scuro) OscamPalette.AccentDark else OscamPalette.BannerLight
-    val sfondoIcone = if (scuro) Color(0xFF1D3249) else Color(0xFFE5F1FF)
-    val separatore = if (scuro) Color(0xFF303842) else Color(0xFFE2E8F0)
+    val sfondoIcone = if (scuro) OscamPalette.PanelDark else OscamPalette.PanelLight
+    val separatore = if (scuro) OscamPalette.DividerDark else OscamPalette.DividerLight
 
     LazyColumn(
         modifier = modifier

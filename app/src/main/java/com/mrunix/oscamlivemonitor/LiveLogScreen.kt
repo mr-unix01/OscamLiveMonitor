@@ -476,8 +476,8 @@ fun LiveLogScreen(
                     ),
                 colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
                     containerColor =
-                        if (temaScuroLive) Color(0xFF1D3249)
-                        else Color(0xFFE5F1FF),
+                        if (temaScuroLive) OscamPalette.PanelDark
+                        else OscamPalette.PanelLight,
                     contentColor = accentoLog
                 ),
                 border = androidx.compose.foundation.BorderStroke(
@@ -526,8 +526,8 @@ fun LiveLogScreen(
                     ),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    if (temaScuroLive) Color(0xFF303842)
-                    else Color(0xFFCBD8E8)
+                    if (temaScuroLive) OscamPalette.DividerDark
+                    else OscamPalette.BorderLight
                 ),
                 colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.onSurface

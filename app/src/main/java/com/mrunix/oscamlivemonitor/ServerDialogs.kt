@@ -83,7 +83,7 @@ internal fun EliminaServerDialog(
         }
 
     val bordoNeutro =
-        if (scuroElimina) Color(0xFF303842) else Color(0xFFE2E8F0)
+        if (scuroElimina) OscamPalette.DividerDark else OscamPalette.DividerLight
 
     val sfondoAnnulla =
         if (scuroElimina) OscamPalette.SheetDark else Color.White
@@ -220,9 +220,9 @@ internal fun RiordinaServerDialog(
                                 18.dp
                             ),
                         color = if (scuroRiordina)
-                            Color(0xFF1D3249)
+                            OscamPalette.PanelDark
                         else
-                            Color(0xFFE5F1FF)
+                            OscamPalette.PanelLight
                     ) {
                         Row(
                             modifier = Modifier
@@ -333,8 +333,8 @@ internal fun RiordinaServerDialog(
                 ),
                 colors = ButtonDefaults.buttonColors(
                     containerColor =
-                        if (scuroRiordina) Color(0xFF1D3249)
-                        else Color(0xFFE5F1FF),
+                        if (scuroRiordina) OscamPalette.PanelDark
+                        else OscamPalette.PanelLight,
                     contentColor =
                         if (scuroRiordina) OscamPalette.AccentDark
                         else OscamPalette.BannerLight
@@ -383,9 +383,9 @@ internal fun ModificaServerDialog(
     val accentoModifica =
         if (scuroModifica) OscamPalette.AccentDark else OscamPalette.BannerLight
     val bordoModifica =
-        if (scuroModifica) Color(0xFF303842) else Color(0xFFCBD8E8)
+        if (scuroModifica) OscamPalette.DividerDark else OscamPalette.BorderLight
     val sfondoIconaModifica =
-        if (scuroModifica) Color(0xFF1D3249) else Color(0xFFE5F1FF)
+        if (scuroModifica) OscamPalette.PanelDark else OscamPalette.PanelLight
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor =
@@ -694,9 +694,9 @@ internal fun AggiungiServerDialog(
     val accentoAggiungi =
         if (scuroAggiungi) OscamPalette.AccentDark else OscamPalette.BannerLight
     val bordoAggiungi =
-        if (scuroAggiungi) Color(0xFF303842) else Color(0xFFCBD8E8)
+        if (scuroAggiungi) OscamPalette.DividerDark else OscamPalette.BorderLight
     val sfondoIconaAggiungi =
-        if (scuroAggiungi) Color(0xFF1D3249) else Color(0xFFE5F1FF)
+        if (scuroAggiungi) OscamPalette.PanelDark else OscamPalette.PanelLight
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor =

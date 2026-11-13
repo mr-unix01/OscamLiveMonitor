@@ -2464,9 +2464,9 @@ fun Greeting(
                           val iconaMenu =
                               if (scuroMenu) OscamPalette.AccentDark else OscamPalette.BannerLight
                           val sfondoIconaMenu =
-                              if (scuroMenu) Color(0xFF1D3249) else Color(0xFFE5F1FF)
+                              if (scuroMenu) OscamPalette.PanelDark else OscamPalette.PanelLight
                           val separatoreMenu =
-                              if (scuroMenu) Color(0xFF303842) else Color(0xFFE2E8F0)
+                              if (scuroMenu) OscamPalette.DividerDark else OscamPalette.DividerLight
 
                           Column(
                               modifier = Modifier

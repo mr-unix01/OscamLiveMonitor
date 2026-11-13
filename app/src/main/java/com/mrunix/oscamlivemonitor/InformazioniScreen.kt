@@ -359,7 +359,7 @@ fun InformazioniScreen(
                 androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
             border = androidx.compose.foundation.BorderStroke(
                 1.dp,
-                if (scuroInfo) Color(0xFF303F52) else Color(0xFFCBD8E8)
+                if (scuroInfo) Color(0xFF303F52) else OscamPalette.BorderLight
             ),
             elevation = androidx.compose.material3.CardDefaults.cardElevation(
                 defaultElevation = 0.dp
@@ -390,7 +390,7 @@ fun InformazioniScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 androidx.compose.material3.HorizontalDivider(
-                    color = if (scuroInfo) Color(0xFF303F52) else Color(0xFFCBD8E8)
+                    color = if (scuroInfo) Color(0xFF303F52) else OscamPalette.BorderLight
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -412,7 +412,7 @@ fun InformazioniScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 androidx.compose.material3.HorizontalDivider(
-                    color = if (scuroInfo) Color(0xFF303F52) else Color(0xFFCBD8E8)
+                    color = if (scuroInfo) Color(0xFF303F52) else OscamPalette.BorderLight
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 

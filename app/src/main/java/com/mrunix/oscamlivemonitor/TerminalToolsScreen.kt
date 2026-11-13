@@ -2557,7 +2557,7 @@ val filePickerLauncher =
             val accentoCampiTools =
                 if (scuroCampiTools) OscamPalette.AccentDark else OscamPalette.BannerLight
             val bordoCampiTools =
-                if (scuroCampiTools) Color(0xFF303842) else Color(0xFFCBD8E8)
+                if (scuroCampiTools) OscamPalette.DividerDark else OscamPalette.BorderLight
 
         Card(
             modifier = Modifier.fillMaxWidth().weight(1f),
@@ -3618,7 +3618,7 @@ val filePickerLauncher =
             val accentoCampiTools =
                 if (scuroCampiTools) OscamPalette.AccentDark else OscamPalette.BannerLight
             val bordoCampiTools =
-                if (scuroCampiTools) Color(0xFF303842) else Color(0xFFCBD8E8)
+                if (scuroCampiTools) OscamPalette.DividerDark else OscamPalette.BorderLight
 
             Card(
                 modifier =

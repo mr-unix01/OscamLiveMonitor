@@ -16,4 +16,9 @@ object OscamPalette {
     val BannerDark = Color(0xFF112B4F)
     val AccentDark = Color(0xFF4DA3FF)
     val SheetDark = Color(0xFF171A1F)
+    val PanelDark = Color(0xFF1D3249)
+    val PanelLight = Color(0xFFE5F1FF)
+    val DividerDark = Color(0xFF303842)
+    val DividerLight = Color(0xFFE2E8F0)
+    val BorderLight = Color(0xFFCBD8E8)
 }

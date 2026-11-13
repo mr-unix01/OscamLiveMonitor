@@ -216,9 +216,9 @@ fun OscamServerCard(
                     if (darkTheme) OscamPalette.AccentDark
                     else OscamPalette.BannerLight
                 } else if (darkTheme) {
-                    Color(0xFF1D3249)
+                    OscamPalette.PanelDark
                 } else {
-                    Color(0xFFE5F1FF)
+                    OscamPalette.PanelLight
                 },
                 border = null
             ) {
@@ -389,7 +389,7 @@ fun OscamServerCard(
                 color = if (darkTheme)
                     Color(0xFF354454)
                 else
-                    Color(0xFFE2E8F0)
+                    OscamPalette.DividerLight
             )
         }
     }

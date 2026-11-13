@@ -267,15 +267,15 @@ fun ToolsBinarySelector(
                             alpha = if (temaScuro) 0.75f else 0.85f
                         )
                     } else {
-                        if (temaScuro) Color(0xFF303842) else Color(0xFFE2E8F0)
+                        if (temaScuro) OscamPalette.DividerDark else OscamPalette.DividerLight
                     }
                 ),
                 colors = CardDefaults.cardColors(
                     containerColor = if (selected) {
                         if (temaScuro) {
-                            Color(0xFF1D3249)
+                            OscamPalette.PanelDark
                         } else {
-                            Color(0xFFE5F1FF)
+                            OscamPalette.PanelLight
                         }
                     } else {
                         if (temaScuro) OscamPalette.SheetDark else Color.White

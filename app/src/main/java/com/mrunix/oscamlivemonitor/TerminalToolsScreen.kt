@@ -1292,7 +1292,7 @@ val filePickerLauncher =
                         propertiesData = null
                     }
                 ) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             }
         )

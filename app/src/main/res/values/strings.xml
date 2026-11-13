@@ -268,4 +268,5 @@
     <string name="main_live_log_status_connecting">CONNECTING</string>
     <string name="network_permission_granted">Local network access permission granted</string>
     <string name="network_permission_required">Local network access permission required to connect to OSCam</string>
+    <string name="common_ok">OK</string>
 </resources>

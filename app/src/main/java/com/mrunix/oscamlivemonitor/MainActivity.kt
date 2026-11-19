@@ -69,6 +69,7 @@ import androidx.compose.foundation.clickable
 
 class MainActivity : ComponentActivity() {
     override fun attachBaseContext(newBase: android.content.Context) {
+        AppLanguage.initializeFirstLaunch(newBase)
         super.attachBaseContext(
             AppLanguage.localizedBaseContext(newBase)
         )
@@ -454,14 +455,14 @@ fun Greeting(
     var mostraReaders by remember { mutableStateOf(true) }
     var mostraProxies by remember { mutableStateOf(true) }
     var mostraClients by remember { mutableStateOf(true) }
-    var userEspanso by remember(serverIdAttivo) {
-        mutableStateOf<String?>(null)
+    var usersEspansi by remember(serverIdAttivo) {
+        mutableStateOf(emptySet<String>())
     }
-    var readerEspanso by remember(serverIdAttivo) {
-        mutableStateOf<String?>(null)
+    var readersEspansi by remember(serverIdAttivo) {
+        mutableStateOf(emptySet<String>())
     }
-    var proxyEspanso by remember(serverIdAttivo) {
-        mutableStateOf<String?>(null)
+    var proxiesEspansi by remember(serverIdAttivo) {
+        mutableStateOf(emptySet<String>())
     }
 
     var mostraSpiegazionePermesso by remember {
@@ -2080,16 +2081,18 @@ fun Greeting(
                                 "—", reader
                             ).trim()
                         ].orEmpty(),
-                        espanso = readerEspanso ==
-                            reader.substringBeforeLast(
-                                "—", reader
-                            ).trim(),
+                        espanso = reader.substringBeforeLast(
+                            "—", reader
+                        ).trim() in readersEspansi,
                         onToggleEspanso = {
                             val nome = reader.substringBeforeLast(
                                 "—", reader
                             ).trim()
-                            readerEspanso =
-                                if (readerEspanso == nome) null else nome
+                            readersEspansi =
+                                if (nome in readersEspansi)
+                                    readersEspansi - nome
+                                else
+                                    readersEspansi + nome
                         },
                         readerAbilitato = readerAbilitati[
                             reader.substringBeforeLast("—", reader).trim()
@@ -2173,16 +2176,18 @@ fun Greeting(
                                 "—", proxy
                             ).trim()
                         ].orEmpty(),
-                        espanso = proxyEspanso ==
-                            proxy.substringBeforeLast(
-                                "—", proxy
-                            ).trim(),
+                        espanso = proxy.substringBeforeLast(
+                            "—", proxy
+                        ).trim() in proxiesEspansi,
                         onToggleEspanso = {
                             val nome = proxy.substringBeforeLast(
                                 "—", proxy
                             ).trim()
-                            proxyEspanso =
-                                if (proxyEspanso == nome) null else nome
+                            proxiesEspansi =
+                                if (nome in proxiesEspansi)
+                                    proxiesEspansi - nome
+                                else
+                                    proxiesEspansi + nome
                         },
                         readerAbilitato = readerAbilitati[
                             proxy.substringBeforeLast("—", proxy).trim()
@@ -2259,14 +2264,16 @@ fun Greeting(
                         testo = user,
                         compatto = schermoCompatto,
                         mostraToggleUser = true,
-                        espanso = userEspanso ==
-                            user.lineSequence().first()
-                                .substringBeforeLast("—").trim(),
+                        espanso = user.lineSequence().first()
+                            .substringBeforeLast("—").trim() in usersEspansi,
                         onToggleEspanso = {
                             val nome = user.lineSequence().first()
                                 .substringBeforeLast("—").trim()
-                            userEspanso =
-                                if (userEspanso == nome) null else nome
+                            usersEspansi =
+                                if (nome in usersEspansi)
+                                    usersEspansi - nome
+                                else
+                                    usersEspansi + nome
                         },
                         userAbilitato = userAbilitati[
                             user.lineSequence()

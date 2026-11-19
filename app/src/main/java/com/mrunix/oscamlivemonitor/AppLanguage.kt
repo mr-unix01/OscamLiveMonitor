@@ -16,6 +16,43 @@ internal object AppLanguage {
     private const val PREFERENCES = "oscam_monitor"
     private const val KEY = "lingua_app"
 
+    private const val FIRST_LAUNCH_KEY =
+        "lingua_primo_avvio_gestita"
+
+    fun initializeFirstLaunch(base: Context) {
+        val prefs = base.getSharedPreferences(
+            PREFERENCES,
+            Context.MODE_PRIVATE
+        )
+
+        if (prefs.contains(FIRST_LAUNCH_KEY)) return
+
+        // Solo nuove installazioni senza preferenze precedenti.
+        val nuovaInstallazione = prefs.all.isEmpty()
+
+        if (nuovaInstallazione) {
+            if (Build.VERSION.SDK_INT >= 33) {
+                val manager = base.getSystemService(
+                    LocaleManager::class.java
+                )
+
+                if (manager.applicationLocales
+                        .toLanguageTags().isEmpty()) {
+                    manager.applicationLocales =
+                        LocaleList.forLanguageTags(ENGLISH)
+                }
+            } else {
+                prefs.edit()
+                    .putString(KEY, ENGLISH)
+                    .apply()
+            }
+        }
+
+        prefs.edit()
+            .putBoolean(FIRST_LAUNCH_KEY, true)
+            .apply()
+    }
+
     fun selected(context: Context): String {
         val tag = if (Build.VERSION.SDK_INT >= 33) {
             context.getSystemService(LocaleManager::class.java)
@@ -39,8 +76,6 @@ internal object AppLanguage {
     }
 
     fun localizedBaseContext(base: Context): Context {
-        if (Build.VERSION.SDK_INT >= 33) return base
-
         val language = selected(base)
         if (language == SYSTEM) return base
 

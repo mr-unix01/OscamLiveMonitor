@@ -406,7 +406,7 @@ fun TitoloSezioneDashboard(
         Text(
             text = titolo,
             fontWeight = FontWeight.SemiBold,
-            fontSize = if (compatto) 16.sp else 18.sp,
+            fontSize = if (compatto) 17.sp else 19.sp,
             color = MaterialTheme.colorScheme.onBackground
         )
     }
@@ -486,7 +486,7 @@ fun BadgeStatoDashboard(
             text = statoVisualizzato.ifBlank { "—" },
             color = colore,
             fontWeight = FontWeight.Bold,
-            fontSize = if (compatto) 10.sp else 11.sp,
+            fontSize = if (compatto) 11.sp else 12.sp,
             modifier = Modifier.padding(
                 horizontal = if (compatto) 7.dp else 9.dp,
                 vertical = if (compatto) 3.dp else 4.dp
@@ -577,7 +577,7 @@ fun VoceStatoCard(
                 Text(
                     text = nome,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = if (compatto) 14.sp else 16.sp,
+                    fontSize = if (compatto) 15.sp else 17.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
@@ -587,7 +587,7 @@ fun VoceStatoCard(
                     Text(
                         text = canaleAttuale,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = if (compatto) 11.sp else 12.sp,
+                        fontSize = if (compatto) 12.sp else 13.sp,
                         maxLines = 2
                     )
                 }
@@ -711,7 +711,7 @@ fun RigaDettaglioClient(
         Text(
             text = etichetta,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = if (compatto) 10.sp else 11.sp
+            fontSize = if (compatto) 11.sp else 12.sp
         )
 
         Spacer(modifier = Modifier.width(5.dp))
@@ -720,7 +720,7 @@ fun RigaDettaglioClient(
             text = valore,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Medium,
-            fontSize = if (compatto) 12.sp else 13.sp
+            fontSize = if (compatto) 13.sp else 14.sp
         )
     }
 }
@@ -752,7 +752,7 @@ fun MiniDatoClient(
             Text(
                 text = etichetta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = if (compatto) 10.sp else 11.sp,
+                fontSize = if (compatto) 11.sp else 12.sp,
                 softWrap = !compatto
             )
 
@@ -762,7 +762,7 @@ fun MiniDatoClient(
                 text = valore,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
-                fontSize = if (compatto) 12.sp else 13.sp,
+                fontSize = if (compatto) 13.sp else 14.sp,
                 softWrap = !compatto
             )
         }
@@ -1020,7 +1020,7 @@ fun ClientInfoCard(
                     Text(
                         text = nome.ifBlank { "Client" },
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = if (compatto) 14.sp else 16.sp,
+                        fontSize = if (compatto) 15.sp else 17.sp,
                         maxLines = 1
                     )
 
@@ -1031,7 +1031,7 @@ fun ClientInfoCard(
                             text = canale,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium,
-                            fontSize = if (compatto) 11.sp else 12.sp,
+                            fontSize = if (compatto) 12.sp else 13.sp,
                             maxLines = 1
                         )
                     }

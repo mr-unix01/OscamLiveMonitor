@@ -88,7 +88,6 @@
     <string name="dashboard_readers_list">Reader list</string>
     <string name="dashboard_proxies_list">Proxy list</string>
     <string name="dashboard_users_clients">Users / Clients</string>
-    <string name="dashboard_connected_clients">Connected clients</string>
     <string name="dashboard_unknown_status">Unknown connection status</string>
     <string name="dashboard_no_users">no users configured</string>
     <string name="dashboard_no_clients_one">no clients connected · 1 user</string>
@@ -270,4 +269,6 @@
     <string name="network_permission_required">Local network access permission required to connect to OSCam</string>
     <string name="common_ok">OK</string>
     <string name="dashboard_protocol_label">Protocol</string>
+    <string name="dashboard_expand_details">Expand details</string>
+    <string name="dashboard_collapse_details">Collapse details</string>
 </resources>

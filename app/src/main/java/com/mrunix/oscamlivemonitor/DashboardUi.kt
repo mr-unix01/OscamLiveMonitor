@@ -32,9 +32,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -660,7 +658,7 @@ fun VoceStatoCard(
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
                         verticalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        dettagli.forEach { (etichetta, valore) ->
+                        dettagli.filter { it.first != "Request" }.forEach { (etichetta, valore) ->
                             MiniDatoClient(
                                 etichetta = if (etichetta == "Protocollo") {
                                     stringResource(R.string.dashboard_protocol_label)
@@ -690,8 +688,8 @@ fun VoceStatoCard(
                             Icons.Default.ExpandMore
                         },
                         contentDescription =
-                            if (espanso) "Chiudi dettagli"
-                            else "Apri dettagli",
+                            if (espanso) stringResource(R.string.dashboard_collapse_details)
+                            else stringResource(R.string.dashboard_expand_details),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(19.dp)
                     )
@@ -898,8 +896,7 @@ fun ClientInfoCard(
     toggleUserInCorso: Boolean = false,
     onToggleUser: (() -> Unit)? = null,
     espanso: Boolean = false,
-    onToggleEspanso: (() -> Unit)? = null,
-    onHeightIncrease: ((Int) -> Unit)? = null
+    onToggleEspanso: (() -> Unit)? = null
 ) {
     val righe = testo
         .lines()
@@ -966,28 +963,8 @@ fun ClientInfoCard(
     val temaScuroClient =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
-    var altezzaPrecedenteCard by remember {
-        mutableIntStateOf(0)
-    }
-
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onSizeChanged { size ->
-                val precedente = altezzaPrecedenteCard
-
-                if (
-                    compatto &&
-                    precedente > 0 &&
-                    size.height > precedente
-                ) {
-                    onHeightIncrease?.invoke(
-                        size.height - precedente
-                    )
-                }
-
-                altezzaPrecedenteCard = size.height
-            },
+        modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
             if (compatto) 18.dp else 22.dp
         ),
@@ -1260,9 +1237,9 @@ fun ClientInfoCard(
                             Icons.Default.ExpandMore
                         },
                         contentDescription = if (espanso) {
-                            "Chiudi dettagli"
+                            stringResource(R.string.dashboard_collapse_details)
                         } else {
-                            "Apri dettagli"
+                            stringResource(R.string.dashboard_expand_details)
                         },
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(19.dp)

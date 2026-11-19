@@ -690,7 +690,7 @@ class OscamApi {
                     val richiesta = buildString {
                         append(canale)
                         if (provider.isNotBlank()) {
-                            append(" [$provider]")
+                            append(" [${provider.removeSurrounding("[", "]")}]")
                         }
                     }
                     aggiungi("Request", richiesta)

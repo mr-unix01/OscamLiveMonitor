@@ -346,8 +346,6 @@ fun Greeting(
     val elencoProxies = dashboardState.elencoProxies
     val dettagliProxies = dashboardState.dettagliProxies
 
-    val elencoClients = dashboardState.elencoClients
-
     val elencoUsers = dashboardState.elencoUsers
 
     val readerAbilitati = dashboardState.readerAbilitati
@@ -456,7 +454,9 @@ fun Greeting(
     var mostraReaders by remember { mutableStateOf(true) }
     var mostraProxies by remember { mutableStateOf(true) }
     var mostraClients by remember { mutableStateOf(true) }
-    var userEspanso by remember { mutableStateOf<String?>(null) }
+    var userEspanso by remember(serverIdAttivo) {
+        mutableStateOf<String?>(null)
+    }
     var readerEspanso by remember(serverIdAttivo) {
         mutableStateOf<String?>(null)
     }
@@ -1486,11 +1486,6 @@ fun Greeting(
                 serverSalvati.isNotEmpty()
 
         val scrollHome = rememberScrollState()
-
-        val sogliaAutoscrollClient =
-            with(androidx.compose.ui.platform.LocalDensity.current) {
-                240.dp.roundToPx()
-            }
 
         val contenutoPrincipale: @Composable () -> Unit = contenuto@ {
             if (mostraConnessione) {

@@ -628,6 +628,93 @@ class OscamApi {
         }
     }
 
+
+    fun estraiDettagliReaderProxyJson(
+        json: String,
+        tipo: String
+    ): Map<String, List<Pair<String, String>>> {
+        return try {
+            val risultato = mutableMapOf<String, List<Pair<String, String>>>()
+            val clients = estraiArrayClient(json)
+
+            fun durata(secondi: String): String? {
+                val valore = secondi.toLongOrNull()
+                    ?.takeIf { it >= 0 } ?: return null
+
+                val giorni = valore / 86400
+                val ore = (valore % 86400) / 3600
+                val minuti = (valore % 3600) / 60
+                val sec = valore % 60
+
+                return "${giorni}d${ore}h${minuti}m${sec}s"
+            }
+
+            for (indice in 0 until clients.length()) {
+                val c = clients.getJSONObject(indice)
+                if (c.optString("type") != tipo) continue
+
+                val nome = c.optString("rname_enc")
+                    .replace("%2b", "+", ignoreCase = true)
+                    .trim()
+                if (nome.isBlank()) continue
+
+                val dettagli = mutableListOf<Pair<String, String>>()
+
+                fun aggiungi(etichetta: String, valore: String) {
+                    if (valore.isNotBlank()) {
+                        dettagli.add(etichetta to valore)
+                    }
+                }
+
+                val conn = c.optJSONObject("connection")
+                val tempi = c.optJSONObject("times")
+                val req = c.optJSONObject("request")
+
+                aggiungi("IP", conn?.optString("ip", "").orEmpty())
+                aggiungi("Protocollo", c.optString("protocol", ""))
+
+                durata(tempi?.optString("online", "").orEmpty())
+                    ?.let { aggiungi("Online", it) }
+
+                durata(tempi?.optString("idle", "").orEmpty())
+                    ?.let { aggiungi("Idle", it) }
+
+                val canale = req?.optString("chname", "")
+                    .orEmpty().trim()
+                val provider = req?.optString("chprovider", "")
+                    .orEmpty().trim()
+                val caid = req?.optString("caid", "")
+                    .orEmpty().trim()
+
+                if (canale.isNotBlank()) {
+                    val richiesta = buildString {
+                        append(canale)
+                        if (provider.isNotBlank()) {
+                            append(" [$provider]")
+                        }
+                    }
+                    aggiungi("Request", richiesta)
+                }
+
+                if (caid.isNotBlank() && caid != "0000") {
+                    aggiungi("CAID", caid)
+                }
+
+                val ecm = req?.optString("ecmtime", "")
+                    .orEmpty().trim()
+                if (ecm.isNotBlank() && ecm != "0") {
+                    aggiungi("ECM", "$ecm ms")
+                }
+
+                risultato[nome] = dettagli
+            }
+
+            risultato
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
     fun estraiElencoProxiesJson(json: String): List<String> {
         return try {
             val clients = estraiArrayClient(json)
@@ -1068,6 +1155,45 @@ class OscamApi {
                         tempoSulCanale.isNotBlank()
                     ) {
                         righe.add("Canale: $canale")
+                    }
+
+                    val statistiche = user.optJSONObject("stats")
+
+                    if (statistiche != null) {
+                        fun valore(campo: String): String =
+                            statistiche.optString(campo, "").trim()
+
+                        fun aggiungiContatori(
+                            etichetta: String,
+                            vararg campi: String
+                        ) {
+                            val valori = campi.map { valore(it) }
+
+                            if (valori.any { it.isNotBlank() }) {
+                                righe.add(
+                                    "$etichetta: " +
+                                        valori.joinToString("/") {
+                                            it.ifBlank { "—" }
+                                        }
+                                )
+                            }
+                        }
+
+                        aggiungiContatori(
+                            "OK/Cache", "cwok", "cwcache"
+                        )
+                        aggiungiContatori(
+                            "NOK/Ignore/Timeout",
+                            "cwnok", "cwignore", "cwtimeout"
+                        )
+                        aggiungiContatori(
+                            "EMM OK/NOK", "emmok", "emmnok"
+                        )
+
+                        val ecm = valore("cwlastresptimems")
+                        if (ecm.isNotBlank() && ecm != "0") {
+                            righe.add("ECM $ecm ms")
+                        }
                     }
 
                     righe.joinToString("\n")

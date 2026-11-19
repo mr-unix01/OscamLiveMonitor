@@ -341,8 +341,10 @@ fun Greeting(
     val elencoServers = dashboardState.elencoServers
 
     val elencoReaders = dashboardState.elencoReaders
+    val dettagliReaders = dashboardState.dettagliReaders
 
     val elencoProxies = dashboardState.elencoProxies
+    val dettagliProxies = dashboardState.dettagliProxies
 
     val elencoClients = dashboardState.elencoClients
 
@@ -454,6 +456,13 @@ fun Greeting(
     var mostraReaders by remember { mutableStateOf(true) }
     var mostraProxies by remember { mutableStateOf(true) }
     var mostraClients by remember { mutableStateOf(true) }
+    var userEspanso by remember { mutableStateOf<String?>(null) }
+    var readerEspanso by remember(serverIdAttivo) {
+        mutableStateOf<String?>(null)
+    }
+    var proxyEspanso by remember(serverIdAttivo) {
+        mutableStateOf<String?>(null)
+    }
 
     var mostraSpiegazionePermesso by remember {
         mutableStateOf(false)
@@ -2071,6 +2080,22 @@ fun Greeting(
                         coloreAccento = Color(0xFF66BB6A),
                         compatto = schermoCompatto,
                         mostraToggleReader = true,
+                        dettagli = dettagliReaders[
+                            reader.substringBeforeLast(
+                                "—", reader
+                            ).trim()
+                        ].orEmpty(),
+                        espanso = readerEspanso ==
+                            reader.substringBeforeLast(
+                                "—", reader
+                            ).trim(),
+                        onToggleEspanso = {
+                            val nome = reader.substringBeforeLast(
+                                "—", reader
+                            ).trim()
+                            readerEspanso =
+                                if (readerEspanso == nome) null else nome
+                        },
                         readerAbilitato = readerAbilitati[
                             reader.substringBeforeLast("—", reader).trim()
                         ] ?: true,
@@ -2148,6 +2173,22 @@ fun Greeting(
                         coloreAccento = Color(0xFFAB47BC),
                         compatto = schermoCompatto,
                         mostraToggleReader = true,
+                        dettagli = dettagliProxies[
+                            proxy.substringBeforeLast(
+                                "—", proxy
+                            ).trim()
+                        ].orEmpty(),
+                        espanso = proxyEspanso ==
+                            proxy.substringBeforeLast(
+                                "—", proxy
+                            ).trim(),
+                        onToggleEspanso = {
+                            val nome = proxy.substringBeforeLast(
+                                "—", proxy
+                            ).trim()
+                            proxyEspanso =
+                                if (proxyEspanso == nome) null else nome
+                        },
                         readerAbilitato = readerAbilitati[
                             proxy.substringBeforeLast("—", proxy).trim()
                         ] ?: true,
@@ -2223,6 +2264,15 @@ fun Greeting(
                         testo = user,
                         compatto = schermoCompatto,
                         mostraToggleUser = true,
+                        espanso = userEspanso ==
+                            user.lineSequence().first()
+                                .substringBeforeLast("—").trim(),
+                        onToggleEspanso = {
+                            val nome = user.lineSequence().first()
+                                .substringBeforeLast("—").trim()
+                            userEspanso =
+                                if (userEspanso == nome) null else nome
+                        },
                         userAbilitato = userAbilitati[
                             user.lineSequence()
                                 .firstOrNull()
@@ -2290,51 +2340,7 @@ fun Greeting(
                 }
             }
 
-            if (!mostraConnessione && mostraClients && elencoClients.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(14.dp))
 
-                TitoloSezioneDashboard(
-                    titolo = stringResource(R.string.dashboard_connected_clients),
-                    icona = Icons.Default.Devices,
-                    coloreAccento = Color(0xFFFFA726),
-                    compatto = schermoCompatto
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                elencoClients.forEachIndexed { indice, client ->
-                    ClientInfoCard(
-                        testo = client,
-                        compatto = schermoCompatto,
-                        onHeightIncrease = { incremento ->
-                            val distanzaDalFondo =
-                                scrollHome.maxValue - scrollHome.value
-
-                            if (
-                                schermoCompatto &&
-                                distanzaDalFondo <= sogliaAutoscrollClient
-                            ) {
-                                coroutineScope.launch {
-                                    kotlinx.coroutines.delay(50)
-
-                                    scrollHome.animateScrollTo(
-                                        (
-                                            scrollHome.value +
-                                                incremento
-                                        ).coerceAtMost(
-                                            scrollHome.maxValue
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    )
-
-                    if (indice < elencoClients.lastIndex) {
-                        Spacer(modifier = Modifier.height(5.dp))
-                    }
-                }
-            }
             }
             }
         }

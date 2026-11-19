@@ -88,6 +88,10 @@ class DashboardViewModel(
                         datiStatus.cpuOscam,
                     ramOscam =
                         datiStatus.ramOscam,
+                    dettagliReaders =
+                        datiStatus.dettagliReaders,
+                    dettagliProxies =
+                        datiStatus.dettagliProxies,
                     servers =
                         datiStatus.servers,
                     readers =
@@ -120,7 +124,10 @@ class DashboardViewModel(
                     _uiState.value =
                         _uiState.value.copy(
                             elencoUsers =
-                                datiUsers.elencoUsers,
+                                integraDettagliClientNegliUsers(
+                                    datiUsers.elencoUsers,
+                                    datiStatus.elencoClients
+                                ),
                             userAbilitati =
                                 datiUsers.userAbilitati
                         )

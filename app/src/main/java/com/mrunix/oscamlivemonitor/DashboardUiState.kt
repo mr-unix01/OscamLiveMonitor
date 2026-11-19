@@ -15,7 +15,11 @@ data class DashboardUiState(
     val userAbilitati: Map<String, Boolean> = emptyMap(),
     val elencoServers: List<String> = emptyList(),
     val elencoReaders: List<String> = emptyList(),
+    val dettagliReaders: Map<String, List<Pair<String, String>>> =
+        emptyMap(),
     val elencoProxies: List<String> = emptyList(),
+    val dettagliProxies: Map<String, List<Pair<String, String>>> =
+        emptyMap(),
     val readerAbilitati: Map<String, Boolean> = emptyMap(),
     val elencoClients: List<String> = emptyList(),
     val ultimoAggiornamento: String = "",

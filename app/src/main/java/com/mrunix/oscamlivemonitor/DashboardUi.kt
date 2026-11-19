@@ -507,7 +507,10 @@ fun VoceStatoCard(
     mostraToggleReader: Boolean = false,
     readerAbilitato: Boolean = true,
     toggleReaderInCorso: Boolean = false,
-    onToggleReader: (() -> Unit)? = null
+    onToggleReader: (() -> Unit)? = null,
+    dettagli: List<Pair<String, String>> = emptyList(),
+    espanso: Boolean = false,
+    onToggleEspanso: (() -> Unit)? = null
 ) {
     val temaScuroVoce =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
@@ -519,6 +522,9 @@ fun VoceStatoCard(
     val stato = testo
         .substringAfterLast("—", "")
         .trim()
+
+    val canaleAttuale =
+        dettagli.firstOrNull { it.first == "Request" }?.second
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -569,14 +575,25 @@ fun VoceStatoCard(
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            Text(
-                text = nome,
-                modifier = Modifier.weight(1f),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = if (compatto) 14.sp else 16.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = nome,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = if (compatto) 14.sp else 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+
+                if (!canaleAttuale.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(1.dp))
+                    Text(
+                        text = canaleAttuale,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = if (compatto) 11.sp else 12.sp,
+                        maxLines = 2
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.width(7.dp))
 
@@ -621,9 +638,68 @@ fun VoceStatoCard(
                 }
             }
         }
+        if (dettagli.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = if (compatto) 11.dp else 14.dp,
+                        vertical = 2.dp
+                    )
+            ) {
+                if (espanso) {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant
+                            .copy(alpha = 0.60f)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        dettagli.forEach { (etichetta, valore) ->
+                            MiniDatoClient(
+                                etichetta = if (etichetta == "Protocollo") {
+                                    stringResource(R.string.dashboard_protocol_label)
+                                } else {
+                                    etichetta
+                                },
+                                valore = valore,
+                                compatto = compatto
+                            )
+                        }
+                    }
+                }
+
+                IconButton(
+                    onClick = { onToggleEspanso?.invoke() },
+                    enabled = onToggleEspanso != null,
+                    modifier = Modifier
+                        .align(
+                            androidx.compose.ui.Alignment.CenterHorizontally
+                        )
+                        .size(if (compatto) 25.dp else 28.dp)
+                ) {
+                    Icon(
+                        imageVector = if (espanso) {
+                            Icons.Default.ExpandLess
+                        } else {
+                            Icons.Default.ExpandMore
+                        },
+                        contentDescription =
+                            if (espanso) "Chiudi dettagli"
+                            else "Apri dettagli",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
+            }
+        }
     }
 }
-
 
 @Composable
 fun RigaDettaglioClient(
@@ -678,7 +754,7 @@ fun MiniDatoClient(
             Text(
                 text = etichetta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = if (compatto) 9.sp else 10.sp,
+                fontSize = if (compatto) 10.sp else 11.sp,
                 softWrap = !compatto
             )
 
@@ -688,7 +764,7 @@ fun MiniDatoClient(
                 text = valore,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
-                fontSize = if (compatto) 11.sp else 12.sp,
+                fontSize = if (compatto) 12.sp else 13.sp,
                 softWrap = !compatto
             )
         }
@@ -821,6 +897,8 @@ fun ClientInfoCard(
     userAbilitato: Boolean = true,
     toggleUserInCorso: Boolean = false,
     onToggleUser: (() -> Unit)? = null,
+    espanso: Boolean = false,
+    onToggleEspanso: (() -> Unit)? = null,
     onHeightIncrease: ((Int) -> Unit)? = null
 ) {
     val righe = testo
@@ -873,6 +951,17 @@ fun ClientInfoCard(
         .firstOrNull { it.startsWith("ECM ", ignoreCase = true) }
         ?.substringAfter(" ")
         ?.trim()
+
+    val statisticheUser =
+        listOf("OK/Cache", "NOK/Ignore/Timeout", "EMM OK/NOK")
+            .mapNotNull { etichetta ->
+                righe.firstOrNull {
+                    it.startsWith("$etichetta:", ignoreCase = true)
+                }?.substringAfter(":")
+                    ?.trim()
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { valore -> etichetta to valore }
+            }
 
     val temaScuroClient =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
@@ -965,7 +1054,7 @@ fun ClientInfoCard(
                             text = canale,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium,
-                            fontSize = if (compatto) 10.sp else 11.sp,
+                            fontSize = if (compatto) 11.sp else 12.sp,
                             maxLines = 1
                         )
                     }
@@ -1017,9 +1106,10 @@ fun ClientInfoCard(
                 !provider.isNullOrBlank() ||
                 !caid.isNullOrBlank() ||
                 !ecm.isNullOrBlank() ||
-                !reader.isNullOrBlank()
+                !reader.isNullOrBlank() ||
+                statisticheUser.isNotEmpty()
 
-            if (haDettagli) {
+            if (haDettagli && (!mostraToggleUser || espanso)) {
                 Spacer(modifier = Modifier.height(4.dp))
 
                 HorizontalDivider(
@@ -1032,7 +1122,7 @@ fun ClientInfoCard(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            if (haDettagli) {
+            if (haDettagli && (!mostraToggleUser || espanso)) {
                 if (compatto) {
                     androidx.compose.foundation.layout.FlowRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -1135,6 +1225,48 @@ fun ClientInfoCard(
                             }
                         }
                     }
+                }
+
+                if (statisticheUser.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    androidx.compose.foundation.layout.FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        statisticheUser.forEach { (etichetta, valore) ->
+                            MiniDatoClient(
+                                etichetta = etichetta,
+                                valore = valore,
+                                compatto = compatto
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (mostraToggleUser && haDettagli) {
+                IconButton(
+                    onClick = { onToggleEspanso?.invoke() },
+                    modifier = Modifier
+                        .align(androidx.compose.ui.Alignment.CenterHorizontally)
+                        .size(if (compatto) 25.dp else 28.dp)
+                ) {
+                    Icon(
+                        imageVector = if (espanso) {
+                            Icons.Default.ExpandLess
+                        } else {
+                            Icons.Default.ExpandMore
+                        },
+                        contentDescription = if (espanso) {
+                            "Chiudi dettagli"
+                        } else {
+                            "Apri dettagli"
+                        },
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(19.dp)
+                    )
                 }
             }
         }

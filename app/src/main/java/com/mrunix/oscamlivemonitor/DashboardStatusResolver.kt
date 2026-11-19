@@ -30,7 +30,9 @@ data class DashboardStatusData(
     val clients: String,
     val elencoServers: List<String>,
     val elencoReaders: List<String>,
+    val dettagliReaders: Map<String, List<Pair<String, String>>>,
     val elencoProxies: List<String>,
+    val dettagliProxies: Map<String, List<Pair<String, String>>>,
     val elencoClients: List<String>
 )
 
@@ -61,8 +63,12 @@ fun estraiDatiStatusDashboard(
             ),
         elencoReaders =
             api.estraiElencoReadersJson(risultato),
+        dettagliReaders =
+            api.estraiDettagliReaderProxyJson(risultato, "r"),
         elencoProxies =
             api.estraiElencoProxiesJson(risultato),
+        dettagliProxies =
+            api.estraiDettagliReaderProxyJson(risultato, "p"),
         elencoClients =
             api.estraiElencoClientsJson(risultato)
     )

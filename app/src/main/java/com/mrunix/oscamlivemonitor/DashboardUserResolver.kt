@@ -35,6 +35,92 @@ suspend fun caricaUserConfigDashboard(
         )
     }
 
+
+fun integraDettagliClientNegliUsers(
+    elencoUsers: List<String>,
+    elencoClients: List<String>
+): List<String> {
+    fun nomeVoce(testo: String): String =
+        testo.lineSequence()
+            .firstOrNull()
+            .orEmpty()
+            .substringBeforeLast("—", "")
+            .trim()
+            .lowercase()
+
+    val clientsPerNome = elencoClients.groupBy(::nomeVoce)
+
+    return elencoUsers.map { utente ->
+        val righe = utente.lines()
+        val intestazione = righe.firstOrNull().orEmpty()
+
+        val stato = intestazione
+            .substringAfterLast("—", "")
+            .trim()
+
+        if (
+            stato.equals("OFFLINE", ignoreCase = true) ||
+            stato.equals("DISABILITATO", ignoreCase = true)
+        ) {
+            return@map utente
+        }
+
+        val corrispondenze =
+            clientsPerNome[nomeVoce(utente)].orEmpty()
+
+        // Evita di associare la sessione sbagliata
+        // se più client usano lo stesso account.
+        if (corrispondenze.size != 1) {
+            return@map utente
+        }
+
+        val righeClient = corrispondenze.single()
+            .lines()
+            .drop(1)
+            .map { it.trim() }
+
+        val canalePresente = righe.any {
+            it.startsWith("Canale:", ignoreCase = true)
+        }
+
+        val aggiunte = righeClient.filter { riga ->
+            when {
+                riga.startsWith("Canale:", true) ->
+                    !canalePresente
+
+                riga.startsWith("Provider:", true) -> true
+                riga.startsWith("CAID ", true) -> true
+                riga.startsWith("ECM ", true) -> true
+                riga.startsWith("Reader:", true) -> true
+                else -> false
+            }
+        }
+
+        if (aggiunte.isEmpty()) {
+            return@map utente
+        }
+
+        val ecmLive = aggiunte.any {
+            it.startsWith("CAID ", true) ||
+                it.startsWith("ECM ", true)
+        }
+
+        val righeBase = if (ecmLive) {
+            righe.filterNot {
+                it.startsWith("ECM ", ignoreCase = true)
+            }
+        } else {
+            righe
+        }
+
+        (
+            listOf(righeBase.first()) +
+                aggiunte +
+                righeBase.drop(1)
+        ).joinToString("\n")
+    }
+}
+
 data class DashboardUserData(
     val users: String,
     val elencoUsers: List<String>?,

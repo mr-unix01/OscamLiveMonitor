@@ -472,18 +472,31 @@ fun BadgeStatoDashboard(
             else -> stato
         }
 
-    val colore = coloreStatoDashboard(stato)
-    val temaScuroBadge = com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+    val temaScuroBadge =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
+    val coloreOriginale = coloreStatoDashboard(stato)
+
+    val colore = if (temaScuroBadge) {
+        coloreOriginale
+    } else {
+        when (coloreOriginale) {
+            Color(0xFF4CAF50) -> Color(0xFF206A39)
+            Color(0xFFF44336) -> Color(0xFFB3261E)
+            Color(0xFFFF9800) -> Color(0xFF915200)
+            else -> coloreOriginale
+        }
+    }
 
     androidx.compose.material3.Surface(
         shape = androidx.compose.foundation.shape.RoundedCornerShape(50),
         color = colore.copy(
-            alpha = if (temaScuroBadge) 0.11f else 0.07f
+            alpha = if (temaScuroBadge) 0.11f else 0.10f
         ),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             colore.copy(
-                alpha = if (temaScuroBadge) 0.32f else 0.38f
+                alpha = if (temaScuroBadge) 0.32f else 0.60f
             )
         )
     ) {
@@ -550,9 +563,11 @@ fun VoceStatoCard(
         ),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(
-                alpha = if (temaScuroVoce) 0.65f else 0.75f
-            )
+            if (temaScuroVoce) {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
+            } else {
+                Color(0xFFB8C4D0)
+            }
         ),
         colors = CardDefaults.cardColors(
             containerColor = if (temaScuroVoce) {
@@ -697,8 +712,12 @@ fun VoceStatoCard(
             ) {
                 if (espanso) {
                     HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant
-                            .copy(alpha = 0.60f)
+                        color = if (temaScuroVoce) {
+                            MaterialTheme.colorScheme.outlineVariant
+                                .copy(alpha = 0.60f)
+                        } else {
+                            Color(0xFFB9C5D1)
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -813,13 +832,24 @@ fun MiniDatoClient(
     modifier: Modifier = Modifier,
     extraSp: Int = 0
 ) {
+    val temaScuroChip =
+        com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
+
     androidx.compose.material3.Surface(
         modifier = modifier,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.52f),
+        color = if (temaScuroChip) {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
+        } else {
+            Color(0xFFF0F4FA)
+        },
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            if (temaScuroChip) {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            } else {
+                Color(0xFFB2C0D1)
+            }
         )
     ) {
         Row(
@@ -831,7 +861,11 @@ fun MiniDatoClient(
         ) {
             Text(
                 text = etichetta,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (temaScuroChip) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    Color(0xFF394759)
+                },
                 fontSize = (if (compatto) 12 + extraSp else 13 + extraSp).sp,
                 softWrap = !compatto
             )
@@ -840,7 +874,11 @@ fun MiniDatoClient(
 
             Text(
                 text = valore,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (temaScuroChip) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    Color(0xFF172435)
+                },
                 fontWeight = FontWeight.Bold,
                 fontSize = (if (compatto) 14 + extraSp else 15 + extraSp).sp,
                 softWrap = !compatto
@@ -1070,9 +1108,11 @@ fun ClientInfoCard(
         ),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(
-                alpha = if (temaScuroClient) 0.65f else 0.75f
-            )
+            if (temaScuroClient) {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
+            } else {
+                Color(0xFFB8C4D0)
+            }
         ),
         colors = CardDefaults.cardColors(
             containerColor =
@@ -1186,10 +1226,12 @@ fun ClientInfoCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 HorizontalDivider(
-                    color =
-                        MaterialTheme.colorScheme.outlineVariant.copy(
-                            alpha = 0.60f
-                        )
+                    color = if (temaScuroClient) {
+                        MaterialTheme.colorScheme.outlineVariant
+                            .copy(alpha = 0.60f)
+                    } else {
+                        Color(0xFFB9C5D1)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))

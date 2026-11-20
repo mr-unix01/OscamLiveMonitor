@@ -2076,6 +2076,7 @@ fun Greeting(
                         coloreAccento = Color(0xFF66BB6A),
                         compatto = schermoCompatto,
                         mostraToggleReader = true,
+                        canaleLarghezzaIntera = true,
                         dettagli = dettagliReaders[
                             reader.substringBeforeLast(
                                 "—", reader

@@ -508,7 +508,9 @@ fun VoceStatoCard(
     onToggleReader: (() -> Unit)? = null,
     dettagli: List<Pair<String, String>> = emptyList(),
     espanso: Boolean = false,
-    onToggleEspanso: (() -> Unit)? = null
+    onToggleEspanso: (() -> Unit)? = null,
+    canaleLarghezzaIntera: Boolean = false,
+    dettagliExtraSp: Int = 0
 ) {
     val temaScuroVoce =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
@@ -550,8 +552,19 @@ fun VoceStatoCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = if (compatto) 11.dp else 14.dp,
-                    vertical = if (compatto) 9.dp else 11.dp
+                    start = if (compatto) 11.dp else 14.dp,
+                    end = if (compatto) 11.dp else 14.dp,
+                    top = if (canaleLarghezzaIntera) 5.dp
+                        else if (compatto) 9.dp else 11.dp,
+                    bottom = if (!espanso && dettagli.isNotEmpty()) {
+                        2.dp
+                    } else if (canaleLarghezzaIntera) {
+                        5.dp
+                    } else if (compatto) {
+                        9.dp
+                    } else {
+                        11.dp
+                    }
                 ),
             verticalAlignment =
                 androidx.compose.ui.Alignment.CenterVertically
@@ -582,7 +595,7 @@ fun VoceStatoCard(
                     maxLines = 1
                 )
 
-                if (!canaleAttuale.isNullOrBlank()) {
+                if (!canaleLarghezzaIntera && !canaleAttuale.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(1.dp))
                     Text(
                         text = canaleAttuale,
@@ -636,13 +649,33 @@ fun VoceStatoCard(
                 }
             }
         }
+
+        if (canaleLarghezzaIntera &&
+            !canaleAttuale.isNullOrBlank()
+        ) {
+            Text(
+                text = canaleAttuale,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = if (compatto) 11.dp else 14.dp,
+                        vertical = 2.dp
+                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = if (compatto) 14.sp else 15.sp,
+                maxLines = 1,
+                overflow =
+                    androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+
         if (dettagli.isNotEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
                         horizontal = if (compatto) 11.dp else 14.dp,
-                        vertical = 2.dp
+                        vertical = if (espanso) 2.dp else 0.dp
                     )
             ) {
                 if (espanso) {
@@ -666,12 +699,39 @@ fun VoceStatoCard(
                                     etichetta
                                 },
                                 valore = valore,
-                                compatto = compatto
+                                compatto = compatto,
+                                extraSp = dettagliExtraSp
                             )
                         }
                     }
                 }
 
+                if (!espanso) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(22.dp)
+                            .clickable(
+                                enabled = onToggleEspanso != null,
+                                role = androidx.compose.ui.semantics.Role.Button,
+                                onClickLabel = stringResource(
+                                    R.string.dashboard_expand_details
+                                ),
+                                onClick = {
+                                    onToggleEspanso?.invoke()
+                                }
+                            ),
+                        contentAlignment =
+                            androidx.compose.ui.Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+                } else {
                 IconButton(
                     onClick = { onToggleEspanso?.invoke() },
                     enabled = onToggleEspanso != null,
@@ -693,6 +753,7 @@ fun VoceStatoCard(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(19.dp)
                     )
+                }
                 }
             }
         }
@@ -731,7 +792,8 @@ fun MiniDatoClient(
     etichetta: String,
     valore: String,
     compatto: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    extraSp: Int = 0
 ) {
     androidx.compose.material3.Surface(
         modifier = modifier,
@@ -752,7 +814,7 @@ fun MiniDatoClient(
             Text(
                 text = etichetta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = if (compatto) 11.sp else 12.sp,
+                fontSize = (if (compatto) 12 + extraSp else 13 + extraSp).sp,
                 softWrap = !compatto
             )
 
@@ -762,7 +824,7 @@ fun MiniDatoClient(
                 text = valore,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
-                fontSize = if (compatto) 13.sp else 14.sp,
+                fontSize = (if (compatto) 14 + extraSp else 15 + extraSp).sp,
                 softWrap = !compatto
             )
         }
@@ -963,6 +1025,14 @@ fun ClientInfoCard(
     val temaScuroClient =
         com.mrunix.oscamlivemonitor.ui.theme.LocalAppDarkTheme.current
 
+    val haDettagli =
+        (!mostraToggleUser && !canale.isNullOrBlank()) ||
+        !provider.isNullOrBlank() ||
+        !caid.isNullOrBlank() ||
+        !ecm.isNullOrBlank() ||
+        !reader.isNullOrBlank() ||
+        statisticheUser.isNotEmpty()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
@@ -988,8 +1058,12 @@ fun ClientInfoCard(
     ) {
         Column(
             modifier = Modifier.padding(
-                horizontal = if (compatto) 11.dp else 14.dp,
-                vertical = if (compatto) 9.dp else 11.dp
+                start = if (compatto) 11.dp else 14.dp,
+                end = if (compatto) 11.dp else 14.dp,
+                top = if (compatto) 9.dp else 11.dp,
+                bottom = if (
+                    !espanso && mostraToggleUser && haDettagli
+                ) 2.dp else if (compatto) 9.dp else 11.dp
             )
         ) {
             Row(
@@ -1077,14 +1151,6 @@ fun ClientInfoCard(
                     }
                 }
             }
-
-            val haDettagli =
-                (!mostraToggleUser && !canale.isNullOrBlank()) ||
-                !provider.isNullOrBlank() ||
-                !caid.isNullOrBlank() ||
-                !ecm.isNullOrBlank() ||
-                !reader.isNullOrBlank() ||
-                statisticheUser.isNotEmpty()
 
             if (haDettagli && (!mostraToggleUser || espanso)) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -1224,6 +1290,32 @@ fun ClientInfoCard(
             }
 
             if (mostraToggleUser && haDettagli) {
+                if (!espanso) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(22.dp)
+                            .clickable(
+                                enabled = onToggleEspanso != null,
+                                role = androidx.compose.ui.semantics.Role.Button,
+                                onClickLabel = stringResource(
+                                    R.string.dashboard_expand_details
+                                ),
+                                onClick = {
+                                    onToggleEspanso?.invoke()
+                                }
+                            ),
+                        contentAlignment =
+                            androidx.compose.ui.Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExpandMore,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+                } else {
                 IconButton(
                     onClick = { onToggleEspanso?.invoke() },
                     modifier = Modifier
@@ -1244,6 +1336,7 @@ fun ClientInfoCard(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(19.dp)
                     )
+                }
                 }
             }
         }

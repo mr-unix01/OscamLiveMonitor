@@ -8,6 +8,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
@@ -526,6 +531,18 @@ fun VoceStatoCard(
     val canaleAttuale =
         dettagli.firstOrNull { it.first == "Request" }?.second
 
+
+    val richiestaVisibilita = remember {
+        BringIntoViewRequester()
+    }
+
+    LaunchedEffect(espanso) {
+        if (espanso) {
+            withFrameNanos { }
+            richiestaVisibilita.bringIntoView()
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
@@ -736,6 +753,7 @@ fun VoceStatoCard(
                     onClick = { onToggleEspanso?.invoke() },
                     enabled = onToggleEspanso != null,
                     modifier = Modifier
+                        .bringIntoViewRequester(richiestaVisibilita)
                         .align(
                             androidx.compose.ui.Alignment.CenterHorizontally
                         )
@@ -1033,6 +1051,18 @@ fun ClientInfoCard(
         !reader.isNullOrBlank() ||
         statisticheUser.isNotEmpty()
 
+
+    val richiestaVisibilita = remember {
+        BringIntoViewRequester()
+    }
+
+    LaunchedEffect(espanso) {
+        if (espanso) {
+            withFrameNanos { }
+            richiestaVisibilita.bringIntoView()
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(
@@ -1319,6 +1349,7 @@ fun ClientInfoCard(
                 IconButton(
                     onClick = { onToggleEspanso?.invoke() },
                     modifier = Modifier
+                        .bringIntoViewRequester(richiestaVisibilita)
                         .align(androidx.compose.ui.Alignment.CenterHorizontally)
                         .size(if (compatto) 25.dp else 28.dp)
                 ) {

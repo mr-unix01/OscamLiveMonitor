@@ -65,6 +65,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import androidx.compose.foundation.clickable
 
 class MainActivity : ComponentActivity() {
@@ -1487,6 +1488,11 @@ fun Greeting(
                 serverSalvati.isNotEmpty()
 
         val scrollHome = rememberScrollState()
+        val sogliaFondoPx = with(
+            androidx.compose.ui.platform.LocalDensity.current
+        ) {
+            180.dp.roundToPx()
+        }
 
         val contenutoPrincipale: @Composable () -> Unit = contenuto@ {
             if (mostraConnessione) {
@@ -2270,11 +2276,31 @@ fun Greeting(
                         onToggleEspanso = {
                             val nome = user.lineSequence().first()
                                 .substringBeforeLast("—").trim()
+
+                            val aprendo = nome !in usersEspansi
+                            val limitePrima = scrollHome.maxValue
+                            val eraVicinoAlFondo =
+                                limitePrima - scrollHome.value <= sogliaFondoPx
+
                             usersEspansi =
-                                if (nome in usersEspansi)
-                                    usersEspansi - nome
-                                else
-                                    usersEspansi + nome
+                                if (aprendo) usersEspansi + nome
+                                else usersEspansi - nome
+
+                            if (aprendo && eraVicinoAlFondo) {
+                                coroutineScope.launch {
+                                    kotlinx.coroutines.withTimeoutOrNull(2000L) {
+                                        snapshotFlow { scrollHome.maxValue }
+                                            .first { it > limitePrima }
+                                    }
+
+                                    withFrameNanos { }
+                                    withFrameNanos { }
+
+                                    scrollHome.animateScrollTo(
+                                        scrollHome.maxValue
+                                    )
+                                }
+                            }
                         },
                         userAbilitato = userAbilitati[
                             user.lineSequence()

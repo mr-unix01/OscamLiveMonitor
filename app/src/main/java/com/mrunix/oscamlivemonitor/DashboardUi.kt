@@ -841,14 +841,14 @@ fun MiniDatoClient(
         color = if (temaScuroChip) {
             MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
         } else {
-            Color(0xFFF0F4FA)
+            Color(0xFFE6EDF8)
         },
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             if (temaScuroChip) {
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
             } else {
-                Color(0xFFB2C0D1)
+                Color(0xFF8A9DB5)
             }
         )
     ) {
@@ -864,9 +864,10 @@ fun MiniDatoClient(
                 color = if (temaScuroChip) {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 } else {
-                    Color(0xFF394759)
+                    Color(0xFF2B394B)
                 },
                 fontSize = (if (compatto) 12 + extraSp else 13 + extraSp).sp,
+                fontWeight = if (temaScuroChip) FontWeight.Normal else FontWeight.Medium,
                 softWrap = !compatto
             )
 
@@ -877,7 +878,7 @@ fun MiniDatoClient(
                 color = if (temaScuroChip) {
                     MaterialTheme.colorScheme.onSurface
                 } else {
-                    Color(0xFF172435)
+                    Color(0xFF0F1B2D)
                 },
                 fontWeight = FontWeight.Bold,
                 fontSize = (if (compatto) 14 + extraSp else 15 + extraSp).sp,
